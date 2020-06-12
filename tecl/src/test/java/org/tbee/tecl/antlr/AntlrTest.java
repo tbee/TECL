@@ -1,0 +1,41 @@
+package org.tbee.tecl.antlr;
+
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CodePointCharStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.tbee.tecl.TECL;
+
+@RunWith(MockitoJUnitRunner.class)
+public class AntlrTest {
+
+	@Test
+	public void empty() {
+		TECL tecl = parse("");
+		Assert.assertNull(tecl.str("key"));
+	}
+	
+	@Test
+	public void simpleProperty() {
+		TECL tecl = parse("key = value");
+		Assert.assertEquals("value", tecl.str("key"));
+	}
+
+	private TECL parse(String s) {
+		CodePointCharStream input = CharStreams.fromString(s.toLowerCase());
+        TECLLexer lexer = new TECLLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+		TECLParser actionsParser = new TECLParser(tokens);
+		actionsParser.configs();
+		return actionsParser.getTECL();
+	}
+}
+
