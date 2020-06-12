@@ -23,7 +23,7 @@ configs : EOF
 config : property
        ;
 
-property : ID '=' STRING_LITERAL NEWLINE?          { this.tecl.addProperty($ID.text, $STRING_LITERAL.text); }
+property : ID '=' STRING_LITERAL NEWLINE?          { this.tecl.addProperty($ID.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
          | key=ID '=' val=ID NEWLINE?              { this.tecl.addProperty($key.text, $val.text); }
          ;          
 

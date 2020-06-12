@@ -29,8 +29,20 @@ public class AntlrTest {
 		Assert.assertEquals("value", tecl.str("key"));
 	}
 
+	@Test
+	public void propertyWithQuotedString() {
+		TECL tecl = parse("key = \" value \" ");
+		Assert.assertEquals(" value ", tecl.str("key"));
+	}
+
+	// TODO: @Test
+	public void propertyWithQuotedStringWithQuoteInside() {
+		TECL tecl = parse("key = \" val\\\"ue \" ");
+		Assert.assertEquals(" val\"ue ", tecl.str("key"));
+	}
+	
 	private TECL parse(String s) {
-		CodePointCharStream input = CharStreams.fromString(s.toLowerCase());
+		CodePointCharStream input = CharStreams.fromString(s);
         TECLLexer lexer = new TECLLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 		TECLParser actionsParser = new TECLParser(tokens);
