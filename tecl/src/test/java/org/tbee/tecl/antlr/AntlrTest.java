@@ -41,12 +41,26 @@ public class AntlrTest {
 		Assert.assertEquals(" val\"ue ", tecl.str("key"));
 	}
 	
+	@Test
+	public void emptyGroup() {
+		TECL tecl = parse("groupId { }");
+		Assert.assertNotNull(tecl.get("groupId"));
+	}
+	
+	@Test
+	public void groupWithSimpleProperty() {
+		TECL tecl = parse("groupId { key = value }");
+		Assert.assertNotNull(tecl.get("groupId"));
+		Assert.assertEquals("value", tecl.get("groupId").str("key"));
+	}
+
 	private TECL parse(String s) {
 		CodePointCharStream input = CharStreams.fromString(s);
         TECLLexer lexer = new TECLLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 		TECLParser actionsParser = new TECLParser(tokens);
-		actionsParser.configs();
+		actionsParser.parse();
+		// TODO: fail on parse errors
 		return actionsParser.getTECL();
 	}
 }
