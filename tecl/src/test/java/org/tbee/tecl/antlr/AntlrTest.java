@@ -1,16 +1,8 @@
 package org.tbee.tecl.antlr;
 
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CodePointCharStream;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.tbee.tecl.TECL;
 
@@ -49,19 +41,24 @@ public class AntlrTest {
 	
 	@Test
 	public void groupWithSimpleProperty() {
-		TECL tecl = parse("groupId { key = value }");
+		TECL tecl = parse("groupId { \n    key = value \n}");
 		Assert.assertNotNull(tecl.get("groupId"));
 		Assert.assertEquals("value", tecl.get("groupId").str("key"));
 	}
+	
+	@Test
+	public void table() {
+		TECL tecl = parse(""
+				+ "| id  | type   | \n "
+				+ "| id1 | string | \n"
+				+ "| id2 | int    | \n"				
+				);
+		Assert.assertEquals("id1", tecl.str(0, "id"));
+		Assert.assertEquals("int", tecl.str(1, "type"));
+	}
 
 	private TECL parse(String s) {
-		CodePointCharStream input = CharStreams.fromString(s);
-        TECLLexer lexer = new TECLLexer(input);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-		TECLParser actionsParser = new TECLParser(tokens);
-		actionsParser.parse();
-		// TODO: fail on parse errors
-		return actionsParser.getTECL();
+		return TECL.parser().parse(s);
 	}
 }
 
