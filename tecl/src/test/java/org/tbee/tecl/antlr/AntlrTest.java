@@ -26,6 +26,12 @@ public class AntlrTest {
 	}
 
 	@Test
+	public void emptyProperty() {
+		TECL tecl = parse("key = ");
+		assertEquals("", tecl.str("key"));
+	}
+
+	@Test
 	public void twoProperties() {
 		TECL tecl = parse(""
 				+ "key1 = value1\n"

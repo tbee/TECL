@@ -89,25 +89,26 @@ table : tableHeader tableData*;
 tableHeader : '|'                                   { startTable(); } 
               (tableHeaderCol '|')+                 
               (COMMENT)? NEWLINE;
-tableHeaderCol : STRING                             { tableKeys.add($STRING.text); }
+tableHeaderCol : ID                             	{ tableKeys.add($ID.text); }
                ;
                
 tableData : (COMMENT NEWLINE)						// with a table data block only comment lines are allowed, no empty lines				
           | ('|'                                    { tableVals.clear(); }                                   
             (tableDataCol '|')+                     { addTableData(); }
             (COMMENT)? NEWLINE);
-tableDataCol : STRING                               { tableVals.add($STRING.text); }
+tableDataCol : ID                               	{ tableVals.add($ID.text); }
              | STRING_LITERAL                       { tableVals.add($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
              ;
              
-group : STRING ((COMMENT)? NEWLINE)* 				{ startGroup($STRING.text); }
+group : ID ((COMMENT)? NEWLINE)* 					{ startGroup($ID.text); }
         '{' ((COMMENT)? NEWLINE)*                    
         configs* 
         '}'                                         { endGroup(); }
         ;          
 
-property : STRING '=' STRING_LITERAL                { tecl.addProperty($STRING.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
-         | key=STRING '=' val=STRING                { tecl.addProperty($key.text, $val.text); }
+property : ID '=' STRING_LITERAL                	{ tecl.addProperty($ID.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
+         | ID '=' val=ID               				{ tecl.addProperty($ID.text, $val.text); } // TBEERNOT: ID as value is not good, we need to match more characters, like spaces etc
+         | ID '=' 		               				{ tecl.addProperty($ID.text, ""); }
          ;          
 
 /*------------------------------------------------------------------
@@ -115,7 +116,7 @@ property : STRING '=' STRING_LITERAL                { tecl.addProperty($STRING.t
  *------------------------------------------------------------------*/
 
 STRING_LITERAL : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"';
-STRING : [a-zA-Z0-9_]+; 
+ID : [a-zA-Z0-9_]+; 
 COMMENT : '#' (~('\r' | '\n'))*;
 NEWLINE : ('\r\n' | '\n');
 WS: [ \t]+ -> skip;
