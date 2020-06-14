@@ -10,7 +10,7 @@ grammar TECL;
 @parser::members
 {
 	public void parse() {
-		teclStack.push(tecl);	
+		teclStack.push(toplevelTECL);
 		this.configs();
 	}
 	
@@ -19,11 +19,25 @@ grammar TECL;
 	
 	/** */
 	public TECL getTECL() {
-		return this.tecl;
+		return this.toplevelTECL;
 	}
-	private final TECL tecl = new TECL();	
+	private final TECL toplevelTECL = new TECL();	
 	
 	private final Stack<TECL> teclStack = new Stack<>();
+	private TECL tecl = toplevelTECL;	
+	
+	// --------------
+	// GROUP
+	
+	private void startGroup(String id) {
+		teclStack.push( teclStack.peek().addGroup(id) ); 
+		tecl = teclStack.peek();		
+	}
+	
+	private void endGroup() {
+		teclStack.pop(); 
+		tecl = teclStack.peek();		
+	}
 	
 	// --------------
 	// TABLE
@@ -32,16 +46,28 @@ grammar TECL;
 	private final List<String> tableVals = new ArrayList<>();
 	private int tableRowIdx;
 	private final List<TECL> teclsContainingTable = new ArrayList<>();
-	
+
+	private void validateOneTablePerGroup() {
+		if (teclsContainingTable.contains(tecl)) {
+			throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
+		} 
+		teclsContainingTable.add(tecl);
+	}
+		
 	private void addTableData() {
 		System.out.println("vals=" + tableVals);
-		TECL tecl = teclStack.peek();
 		for (int i = 0; i < tableKeys.size(); i++) {
 			String key = tableKeys.get(i);
 			String val = tableVals.get(i);
 			tecl.addIndexedProperty(tableRowIdx, key, val);
 		}
 		tableRowIdx++;
+	}
+	
+	private void startTable() {
+		validateOneTablePerGroup();  
+		tableKeys.clear(); 
+		tableRowIdx = 0;		
 	}
 }
 
@@ -55,39 +81,33 @@ configs : EOF
 config : group
        | table
        | property
+       | COMMENT
        | NEWLINE
        ;
 
-table : tableHeader tableData+;
+table : tableHeader tableData*;
 
-tableHeader : '|'                                   {
-														TECL tecl = teclStack.peek();
-														if (teclsContainingTable.contains(tecl)) {
-															throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
-														} 
-														teclsContainingTable.add(tecl);
-														tableKeys.clear(); 
-														tableRowIdx = 0;
-													} 
-              (tableHeaderCol '|')+                { System.out.println("keys=" + this.tableKeys); }
-              NEWLINE;
-tableHeaderCol : ID                                { tableKeys.add($ID.text); }
+tableHeader : '|'                                   { startTable(); } 
+              (tableHeaderCol '|')+                 
+              (COMMENT)? NEWLINE;
+tableHeaderCol : STRING                             { tableKeys.add($STRING.text); }
                ;
                
-tableData : '|'                                    { tableVals.clear(); }                                   
-            (tableDataCol '|')+                    { addTableData(); }
-            NEWLINE;
-tableDataCol : ID                                  { tableVals.add($ID.text); }
-             | STRING_LITERAL                      { tableVals.add($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
+tableData : (COMMENT NEWLINE)						
+          | ('|'                                    { tableVals.clear(); }                                   
+            (tableDataCol '|')+                     { addTableData(); }
+            (COMMENT)? NEWLINE);
+tableDataCol : STRING                               { tableVals.add($STRING.text); }
+             | STRING_LITERAL                       { tableVals.add($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
              ;
              
-group : ID NEWLINE* '{' NEWLINE*                   { teclStack.push( this.teclStack.peek().addGroup($ID.text) ); } 
+group : STRING ((COMMENT)? NEWLINE)* '{' ((COMMENT)? NEWLINE)*                { startGroup($STRING.text); } 
         configs* 
-        '}'                                        { teclStack.pop(); }
+        '}'                                         { endGroup(); }
         ;          
 
-property : ID '=' STRING_LITERAL NEWLINE?          { teclStack.peek().addProperty($ID.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
-         | key=ID '=' val=ID NEWLINE?              { teclStack.peek().addProperty($key.text, $val.text); }
+property : STRING '=' STRING_LITERAL        { tecl.addProperty($STRING.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
+         | key=STRING '=' val=STRING        { tecl.addProperty($key.text, $val.text); }
          ;          
 
 /*------------------------------------------------------------------
@@ -95,6 +115,7 @@ property : ID '=' STRING_LITERAL NEWLINE?          { teclStack.peek().addPropert
  *------------------------------------------------------------------*/
 
 STRING_LITERAL : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"';
-ID : [a-zA-Z0-9_]+; 
-NEWLINE : ('#' .*)? '\r\n' | '\n';
+STRING : [a-zA-Z0-9_]+; 
+COMMENT : '#' (~('\r' | '\n'))*;
+NEWLINE : ('\r\n' | '\n');
 WS: [ \t]+ -> skip;

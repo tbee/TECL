@@ -43,10 +43,32 @@ public class AntlrTest {
 		assertEquals(" value ", tecl.str("key"));
 	}
 
-	// TODO: @Test
+	// TODO: @Test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	public void propertyWithQuotedStringWithQuoteInside() {
 		TECL tecl = parse("key = \" val\\\"ue \" ");
 		assertEquals(" val\"ue ", tecl.str("key"));
+	}
+	
+	@Test
+	public void comment() {
+		TECL tecl = parse("# this is a comment");
+	}
+	
+	@Test
+	public void commentPlusNewline() {
+		TECL tecl = parse("# this is a comment\n");
+	}
+
+	@Test
+	public void twoPropertiesWithComments() {
+		TECL tecl = parse(""
+				+ "# comment\n"
+				+ "key1 = value1 # comment\n"
+				+ "key2 = value2# comment\n"
+				+ "# comment"
+				);
+		assertEquals("value1", tecl.str("key1"));
+		assertEquals("value2", tecl.str("key2"));
 	}
 	
 	@Test
@@ -73,6 +95,19 @@ public class AntlrTest {
 		assertEquals("int", tecl.str(1, "type"));
 	}
 	
+	
+	@Test
+	public void tableWithComments() {
+		TECL tecl = parse(""
+				+ "    | id  | type   | # comment \n "
+				+ "    | id1 | string | # comment \n"
+				+ "    # comment \n"
+				+ "    | id2 | int    | \n"				
+				);
+		assertEquals("id1", tecl.str(0, "id"));
+		assertEquals("int", tecl.str(1, "type"));
+	}
+
 	@Test
 	public void twoTablesAreNotAllowed() {
 		assertThrows(IllegalStateException.class, () -> {
