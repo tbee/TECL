@@ -14,6 +14,9 @@ grammar TECL;
 		this.configs();
 	}
 	
+	// --------------
+	// TECL
+	
 	/** */
 	public TECL getTECL() {
 		return this.tecl;
@@ -21,9 +24,14 @@ grammar TECL;
 	private final TECL tecl = new TECL();	
 	
 	private final Stack<TECL> teclStack = new Stack<>();
+	
+	// --------------
+	// TABLE
+	
 	private final List<String> tableKeys = new ArrayList<>();
 	private final List<String> tableVals = new ArrayList<>();
 	private int tableRowIdx;
+	private final List<TECL> teclsContainingTable = new ArrayList<>();
 	
 	private void addTableData() {
 		System.out.println("vals=" + tableVals);
@@ -47,11 +55,20 @@ configs : EOF
 config : group
        | table
        | property
+       | NEWLINE
        ;
 
 table : tableHeader tableData+;
 
-tableHeader : '|'                                  { tableKeys.clear(); tableRowIdx = 0; } 
+tableHeader : '|'                                   {
+														TECL tecl = teclStack.peek();
+														if (teclsContainingTable.contains(tecl)) {
+															throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
+														} 
+														teclsContainingTable.add(tecl);
+														tableKeys.clear(); 
+														tableRowIdx = 0;
+													} 
               (tableHeaderCol '|')+                { System.out.println("keys=" + this.tableKeys); }
               NEWLINE;
 tableHeaderCol : ID                                { tableKeys.add($ID.text); }
@@ -78,6 +95,6 @@ property : ID '=' STRING_LITERAL NEWLINE?          { teclStack.peek().addPropert
  *------------------------------------------------------------------*/
 
 STRING_LITERAL : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"';
-ID : [a-zA-Z_][a-zA-Z0-9_]+; 
-NEWLINE : '\r\n' | '\n';
+ID : [a-zA-Z0-9_]+; 
+NEWLINE : ('#' .*)? '\r\n' | '\n';
 WS: [ \t]+ -> skip;

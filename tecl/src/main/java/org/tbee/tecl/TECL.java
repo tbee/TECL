@@ -14,6 +14,15 @@ public class TECL {
 		return new TECLParser();
 	}
 	
+	
+	// =====================================
+	// ID
+	
+	private String id = "<toplevel>";
+	public String getId() {
+		return id;
+	}
+	
 	// =====================================
 	// properties
 	
@@ -70,6 +79,7 @@ public class TECL {
 			throw new IllegalStateException("Group " + id + " already exists in the context");
 		}
 		TECL tecl = new TECL();
+		tecl.id = id; 
 		this.groups.put(id, tecl);
 		return tecl;
 	}
