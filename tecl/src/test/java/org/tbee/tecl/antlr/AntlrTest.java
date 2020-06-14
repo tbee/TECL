@@ -1,17 +1,12 @@
 package org.tbee.tecl.antlr;
 
-import org.mockito.junit.MockitoJUnitRunner;
-import org.tbee.tecl.TECL;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.tbee.tecl.TECL;
 
 public class AntlrTest {
 
@@ -20,6 +15,9 @@ public class AntlrTest {
 		TECL tecl = parse("");
 		assertNull(tecl.str("key"));
 	}
+	
+	// ========================
+	// PROPERTIES
 	
 	@Test
 	public void simpleProperty() {
@@ -49,6 +47,9 @@ public class AntlrTest {
 		assertEquals(" val\"ue ", tecl.str("key"));
 	}
 	
+	// ========================
+	// COMMENTS
+	
 	@Test
 	public void comment() {
 		TECL tecl = parse("# this is a comment");
@@ -71,18 +72,54 @@ public class AntlrTest {
 		assertEquals("value2", tecl.str("key2"));
 	}
 	
+	// ========================
+	// GROUP
+	
 	@Test
 	public void emptyGroup() {
 		TECL tecl = parse("groupId { }");
-		assertNotNull(tecl.get("groupId"));
+		assertEquals("groupId", tecl.get("groupId").getId());
 	}
 	
 	@Test
-	public void groupWithSimpleProperty() {
-		TECL tecl = parse("groupId { \n    key = value \n}");
-		assertNotNull(tecl.get("groupId"));
-		assertEquals("value", tecl.get("groupId").str("key"));
+	public void groupWithContent() {
+		TECL tecl = parse(""
+				+ "groupId { \n" 
+				+ "    key1 = value1\n"
+				+ "}\n");
+		assertEquals("groupId", tecl.get("groupId").getId());
+		assertEquals("value1", tecl.get("groupId").str("key1"));
 	}
+	
+	@Test
+	public void notExistingGroup() {
+		TECL tecl = parse("");
+		assertTrue(tecl.get("groupId").getId().contains("not exist"));
+	}
+	
+	@Test
+	public void identicalGroups() {
+		assertThrows(IllegalStateException.class, () -> {
+			TECL tecl = parse(""
+					+ "groupId { }\n"
+					+ "groupId { }\n"
+					);
+		});
+	}
+	
+	@Test
+	public void nestedGroups() {
+		TECL tecl = parse(""
+				+ "groupId1 { \n"
+				+ "    groupId2 { }\n"
+				+ "}"
+				);
+		assertEquals("groupId1", tecl.get("groupId1").getId());
+		assertEquals("groupId2", tecl.get("groupId1").get("groupId2").getId());
+	}
+	
+	// ========================
+	// TABLE
 	
 	@Test
 	public void table() {
@@ -122,6 +159,8 @@ public class AntlrTest {
 		});
 	}
 
+	// ========================
+	
 	private TECL parse(String s) {
 		return TECL.parser().parse(s);
 	}

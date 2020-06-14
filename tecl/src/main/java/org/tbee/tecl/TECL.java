@@ -16,9 +16,13 @@ public class TECL {
 	
 	
 	// =====================================
-	// ID
+	// Constructor
 	
-	private String id = "<toplevel>";
+	public TECL(String id) {
+		this.id = id;
+	}
+	private final String id;
+	
 	public String getId() {
 		return id;
 	}
@@ -28,6 +32,7 @@ public class TECL {
 	
 	private final Map<String, String> properties = new HashMap<>();
 	public void addProperty(String key, String value) {
+		//System.out.println("@"  + id + ": Adding property "  + key + " = " + value);
 		if (this.groups.containsKey(key) ) {
 			throw new IllegalStateException("Property " + key + " already exists in the context");
 		}
@@ -54,7 +59,7 @@ public class TECL {
 		}
 		TECL tableTECL = tableTECLS.get(rowIdx);
 		if (tableTECL == null) {
-			tableTECL = new TECL();
+			tableTECL = new TECL("<table row " + rowIdx + ">");
 			tableTECLS.set(rowIdx, tableTECL);
 		}
 		
@@ -75,17 +80,20 @@ public class TECL {
 	
 	private final Map<String, TECL> groups = new HashMap<>();
 	public TECL addGroup(String id) {
+		//System.out.println("@"  + this.id + ": Adding group "  + id);
 		if (this.groups.containsKey(id) ) {
 			throw new IllegalStateException("Group " + id + " already exists in the context");
 		}
-		TECL tecl = new TECL();
-		tecl.id = id; 
+		TECL tecl = new TECL(id);
 		this.groups.put(id, tecl);
 		return tecl;
 	}
 	
 	public TECL get(String id) {
 		TECL tecl = groups.get(id);
-		return (tecl == null ? new TECL() : tecl);
+		if (tecl == null) {
+			tecl = new TECL("<group '" + id + "' does not exist>");
+		}
+		return tecl;
 	}
 }

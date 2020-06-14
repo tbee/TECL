@@ -21,7 +21,7 @@ grammar TECL;
 	public TECL getTECL() {
 		return this.toplevelTECL;
 	}
-	private final TECL toplevelTECL = new TECL();	
+	private final TECL toplevelTECL = new TECL("<toplevel>");	
 	
 	private final Stack<TECL> teclStack = new Stack<>();
 	private TECL tecl = toplevelTECL;	
@@ -55,7 +55,6 @@ grammar TECL;
 	}
 		
 	private void addTableData() {
-		System.out.println("vals=" + tableVals);
 		for (int i = 0; i < tableKeys.size(); i++) {
 			String key = tableKeys.get(i);
 			String val = tableVals.get(i);
@@ -93,7 +92,7 @@ tableHeader : '|'                                   { startTable(); }
 tableHeaderCol : STRING                             { tableKeys.add($STRING.text); }
                ;
                
-tableData : (COMMENT NEWLINE)						
+tableData : (COMMENT NEWLINE)						// with a table data block only comment lines are allowed, no empty lines				
           | ('|'                                    { tableVals.clear(); }                                   
             (tableDataCol '|')+                     { addTableData(); }
             (COMMENT)? NEWLINE);
@@ -101,13 +100,14 @@ tableDataCol : STRING                               { tableVals.add($STRING.text
              | STRING_LITERAL                       { tableVals.add($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
              ;
              
-group : STRING ((COMMENT)? NEWLINE)* '{' ((COMMENT)? NEWLINE)*                { startGroup($STRING.text); } 
+group : STRING ((COMMENT)? NEWLINE)* 				{ startGroup($STRING.text); }
+        '{' ((COMMENT)? NEWLINE)*                    
         configs* 
         '}'                                         { endGroup(); }
         ;          
 
-property : STRING '=' STRING_LITERAL        { tecl.addProperty($STRING.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
-         | key=STRING '=' val=STRING        { tecl.addProperty($key.text, $val.text); }
+property : STRING '=' STRING_LITERAL                { tecl.addProperty($STRING.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
+         | key=STRING '=' val=STRING                { tecl.addProperty($key.text, $val.text); }
          ;          
 
 /*------------------------------------------------------------------

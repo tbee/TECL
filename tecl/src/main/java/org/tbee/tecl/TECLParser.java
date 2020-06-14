@@ -25,16 +25,16 @@ public class TECLParser {
 	}
 	
 	/**
-	 * @param file assumed to use UTF-8 encoding
+	 * @param file file to parse
 	 * @return
 	 * @throws IOException 
 	 * @throws FileNotFoundException 
 	 */
-	public TECL parse(File file) throws FileNotFoundException, IOException {
+	public TECL parse(File file, java.nio.charset.Charset charset) throws FileNotFoundException, IOException {
 		try (
 			FileInputStream fileInputStream = new FileInputStream(file); 
 		){ 
-			return parse(CharStreams.fromStream(fileInputStream));
+			return parse(CharStreams.fromStream(fileInputStream, charset));
 		}
 	}
 
