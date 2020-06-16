@@ -97,7 +97,6 @@ tableData : (COMMENT NEWLINE)						// with a table data block only comment lines
             (tableDataCol '|')+                     { addTableData(); }
             (COMMENT)? NEWLINE);
 tableDataCol : ID                               	{ tableVals.add($ID.text); }
-             | STRING_LITERAL                       { tableVals.add($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
              ;
              
 group : ID ((COMMENT)? NEWLINE)* 					{ startGroup($ID.text); }
@@ -106,23 +105,15 @@ group : ID ((COMMENT)? NEWLINE)* 					{ startGroup($ID.text); }
         '}'                                         { endGroup(); }
         ;          
 
-property : ID '=' val=STRING_LITERAL                { tecl.addProperty($ID.text, $val.text.substring(1, $val.text.length() - 1)); }
-         | ID '=' val=ID 							{ tecl.addProperty($ID.text, $val.text); } // TBEERNOT: ID as value is not good, we need to match more characters, like spaces etc. How about comments?
-         | ID '=' val=VAL							{ tecl.addProperty($ID.text, $val.text); } // TBEERNOT: ID as value is not good, we need to match more characters, like spaces etc. How about comments?
-         | ID '=' 		               				{ tecl.addProperty($ID.text, ""); }
-         ;          
-until_eol_string : no_newline+ NEWLINE;				
-no_newline: NO_NEWLINE								{ System.out.print($NO_NEWLINE.text); }
-          ;
-
+property : ID val=ASSIGMENT NEWLINE					{ tecl.addProperty($ID.text, ANTLRHelper.me().sanatizeAssignment($val.text)); } 
+         ;
+         
 /*------------------------------------------------------------------
  * LEXER RULES
  *------------------------------------------------------------------*/
 
-STRING_LITERAL : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"';
 ID : [a-zA-Z0-9_]+; 
-VAL : [a-zA-Z0-9!_/]+; 
+ASSIGMENT : ':' (~('\r' | '\n'))+;
 COMMENT : '#' (~('\r' | '\n'))*;
 NEWLINE : ('\r\n' | '\n');
-NO_NEWLINE : ~('#' | ' ' | '\r' | '\n');
 WS: [ \t]+ -> skip;

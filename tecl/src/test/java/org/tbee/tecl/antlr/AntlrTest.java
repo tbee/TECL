@@ -11,7 +11,7 @@ import org.tbee.tecl.TECL;
 public class AntlrTest {
 
 	@Test
-	public void empty() {
+	public void emptyFile() {
 		TECL tecl = parse("");
 		assertNull(tecl.str("key"));
 	}
@@ -21,29 +21,30 @@ public class AntlrTest {
 	
 	@Test
 	public void simpleProperty() {
-		TECL tecl = parse("key = value! ");
-		assertEquals("value!", tecl.str("key"));
+		String value = "value0 $^&*%";
+		TECL tecl = parse("key : " + value + " \n");
+		assertEquals(value, tecl.str("key"));
 	}
 
 	@Test
 	public void emptyProperty() {
-		TECL tecl = parse("key = ");
+		TECL tecl = parse("key : \n");
 		assertEquals("", tecl.str("key"));
 	}
 
 	// TODO: multi line string
 	
-	// !!!!!! WILL WE SUPPORT THIS? @Test
+	@Test
 	public void unquotedProperty() {
-		TECL tecl = parse("key = more words than one! ");
+		TECL tecl = parse("key : more words than one! \n");
 		assertEquals("more words than one!", tecl.str("key"));
 	}
 
 	@Test
 	public void twoProperties() {
 		TECL tecl = parse(""
-				+ "key1 = value1\n"
-				+ "key2 = value2\n"
+				+ "key1 : value1\n"
+				+ "key2 : value2\n"
 				);
 		assertEquals("value1", tecl.str("key1"));
 		assertEquals("value2", tecl.str("key2"));
@@ -51,13 +52,14 @@ public class AntlrTest {
 
 	@Test
 	public void propertyWithQuotedString() {
-		TECL tecl = parse("key = \" value and more difficult!&# 345 symbols \" ");
-		assertEquals(" value and more difficult!&# 345 symbols ", tecl.str("key"));
+		String value = " value and more difficult!&# 345 symbols ";
+		TECL tecl = parse("key : \"" + value + "\" \n");
+		assertEquals(value, tecl.str("key"));
 	}
 
-	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: @Test
+	@Test
 	public void propertyWithQuotedStringWithQuoteInside() {
-		TECL tecl = parse("key = \" val\\\"ue \" ");
+		TECL tecl = parse("key : \" val\\\"ue \" \n");
 		assertEquals(" val\"ue ", tecl.str("key"));
 	}
 	
@@ -78,8 +80,8 @@ public class AntlrTest {
 	public void twoPropertiesWithComments() {
 		TECL tecl = parse(""
 				+ "# comment\n"
-				+ "key1 = value1 # comment\n"
-				+ "key2 = value2# comment\n"
+				+ "key1 : value1 # comment\n"
+				+ "key2 : value2# comment\n"
 				+ "# comment"
 				);
 		assertEquals("value1", tecl.str("key1"));
@@ -99,7 +101,7 @@ public class AntlrTest {
 	public void groupWithContent() {
 		TECL tecl = parse(""
 				+ "groupId { \n" 
-				+ "    key1 = value1\n"
+				+ "    key1 : value1\n"
 				+ "}\n");
 		assertEquals("groupId", tecl.grp("groupId").getId());
 		assertEquals("value1", tecl.grp("groupId").str("key1"));
@@ -115,10 +117,10 @@ public class AntlrTest {
 	public void identicalGroups() {
 		TECL tecl = parse(""
 				+ "groupId { \n" 
-				+ "    key = value1\n"
+				+ "    key : value1\n"
 				+ "}\n"
 				+ "groupId { \n" 
-				+ "    key = value2\n"
+				+ "    key : value2\n"
 				+ "}\n"
 				);
 		assertEquals("value1", tecl.grp(0, "groupId").str("key"));
