@@ -21,7 +21,7 @@ grammar TECL;
 	public TECL getTECL() {
 		return this.toplevelTECL;
 	}
-	private final TECL toplevelTECL = new TECL("<toplevel>");	
+	private final TECL toplevelTECL = new TECL("$");	
 	
 	private final Stack<TECL> teclStack = new Stack<>();
 	private TECL tecl = toplevelTECL;	
@@ -58,7 +58,7 @@ grammar TECL;
 		for (int i = 0; i < tableKeys.size(); i++) {
 			String key = tableKeys.get(i);
 			String val = tableVals.get(i);
-			tecl.addIndexedProperty(tableRowIdx, key, val);
+			tecl.setProperty(tableRowIdx, key, val);
 		}
 		tableRowIdx++;
 	}
@@ -106,10 +106,14 @@ group : ID ((COMMENT)? NEWLINE)* 					{ startGroup($ID.text); }
         '}'                                         { endGroup(); }
         ;          
 
-property : ID '=' STRING_LITERAL                	{ tecl.addProperty($ID.text, $STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1)); }
-         | ID '=' val=ID               				{ tecl.addProperty($ID.text, $val.text); } // TBEERNOT: ID as value is not good, we need to match more characters, like spaces etc
+property : ID '=' val=STRING_LITERAL                { tecl.addProperty($ID.text, $val.text.substring(1, $val.text.length() - 1)); }
+         | ID '=' val=ID 							{ tecl.addProperty($ID.text, $val.text); } // TBEERNOT: ID as value is not good, we need to match more characters, like spaces etc. How about comments?
+         | ID '=' val=VAL							{ tecl.addProperty($ID.text, $val.text); } // TBEERNOT: ID as value is not good, we need to match more characters, like spaces etc. How about comments?
          | ID '=' 		               				{ tecl.addProperty($ID.text, ""); }
          ;          
+until_eol_string : no_newline+ NEWLINE;				
+no_newline: NO_NEWLINE								{ System.out.print($NO_NEWLINE.text); }
+          ;
 
 /*------------------------------------------------------------------
  * LEXER RULES
@@ -117,6 +121,8 @@ property : ID '=' STRING_LITERAL                	{ tecl.addProperty($ID.text, $S
 
 STRING_LITERAL : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"';
 ID : [a-zA-Z0-9_]+; 
+VAL : [a-zA-Z0-9!_/]+; 
 COMMENT : '#' (~('\r' | '\n'))*;
 NEWLINE : ('\r\n' | '\n');
+NO_NEWLINE : ~('#' | ' ' | '\r' | '\n');
 WS: [ \t]+ -> skip;

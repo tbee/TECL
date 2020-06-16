@@ -21,14 +21,22 @@ public class AntlrTest {
 	
 	@Test
 	public void simpleProperty() {
-		TECL tecl = parse("key = value");
-		assertEquals("value", tecl.str("key"));
+		TECL tecl = parse("key = value! ");
+		assertEquals("value!", tecl.str("key"));
 	}
 
 	@Test
 	public void emptyProperty() {
 		TECL tecl = parse("key = ");
 		assertEquals("", tecl.str("key"));
+	}
+
+	// TODO: multi line string
+	
+	// !!!!!! WILL WE SUPPORT THIS? @Test
+	public void unquotedProperty() {
+		TECL tecl = parse("key = more words than one! ");
+		assertEquals("more words than one!", tecl.str("key"));
 	}
 
 	@Test
@@ -43,11 +51,11 @@ public class AntlrTest {
 
 	@Test
 	public void propertyWithQuotedString() {
-		TECL tecl = parse("key = \" value \" ");
-		assertEquals(" value ", tecl.str("key"));
+		TECL tecl = parse("key = \" value and more difficult!&# 345 symbols \" ");
+		assertEquals(" value and more difficult!&# 345 symbols ", tecl.str("key"));
 	}
 
-	// TODO: @Test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: @Test
 	public void propertyWithQuotedStringWithQuoteInside() {
 		TECL tecl = parse("key = \" val\\\"ue \" ");
 		assertEquals(" val\"ue ", tecl.str("key"));
@@ -84,7 +92,7 @@ public class AntlrTest {
 	@Test
 	public void emptyGroup() {
 		TECL tecl = parse("groupId { }");
-		assertEquals("groupId", tecl.get("groupId").getId());
+		assertEquals("groupId", tecl.grp("groupId").getId());
 	}
 	
 	@Test
@@ -93,35 +101,43 @@ public class AntlrTest {
 				+ "groupId { \n" 
 				+ "    key1 = value1\n"
 				+ "}\n");
-		assertEquals("groupId", tecl.get("groupId").getId());
-		assertEquals("value1", tecl.get("groupId").str("key1"));
+		assertEquals("groupId", tecl.grp("groupId").getId());
+		assertEquals("value1", tecl.grp("groupId").str("key1"));
 	}
 	
 	@Test
 	public void notExistingGroup() {
 		TECL tecl = parse("");
-		assertTrue(tecl.get("groupId").getId().contains("not exist"));
+		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
 	}
 	
 	@Test
 	public void identicalGroups() {
-		assertThrows(IllegalStateException.class, () -> {
-			TECL tecl = parse(""
-					+ "groupId { }\n"
-					+ "groupId { }\n"
-					);
-		});
+		TECL tecl = parse(""
+				+ "groupId { \n" 
+				+ "    key = value1\n"
+				+ "}\n"
+				+ "groupId { \n" 
+				+ "    key = value2\n"
+				+ "}\n"
+				);
+		assertEquals("value1", tecl.grp(0, "groupId").str("key"));
+		assertEquals("value2", tecl.grp(1, "groupId").str("key"));
 	}
 	
 	@Test
 	public void nestedGroups() {
 		TECL tecl = parse(""
 				+ "groupId1 { \n"
-				+ "    groupId2 { }\n"
-				+ "}"
+				+ "    groupId2 {"
+				+ "        groupId3 { }"
+				+ "        }\n"
+				+ "    }\n"
+				+ "}\n"
 				);
-		assertEquals("groupId1", tecl.get("groupId1").getId());
-		assertEquals("groupId2", tecl.get("groupId1").get("groupId2").getId());
+		assertEquals("groupId1", tecl.grp("groupId1").getId());
+		assertEquals("groupId2", tecl.grp("groupId1").grp("groupId2").getId());
+		assertEquals("groupId3", tecl.grp("groupId1").grp("groupId2").grp("groupId3").getId());
 	}
 	
 	// ========================
