@@ -74,46 +74,99 @@ grammar TECL;
  * PARSER RULES
  *------------------------------------------------------------------*/
 
-configs : EOF 
-        | config+;
+input_file
+ : configs EOF
+ ;
 
-config : group
-       | table
-       | property
-       | COMMENT
-       | NEWLINE
-       ;
+configs
+ : NL* ( config ( NL+ config )* NL* )?
+ ;
 
-table : tableHeader tableData*;
+config
+ : property
+ | group
+ | table
+ ;
 
-tableHeader : '|'                                   { startTable(); } 
-              (tableHeaderCol '|')+                 
-              (COMMENT)? NEWLINE;
-tableHeaderCol : ID                             	{ tableKeys.add($ID.text); }
-               ;
-               
-tableData : (COMMENT NEWLINE)						// with a table data block only comment lines are allowed, no empty lines				
-          | ('|'                                    { tableVals.clear(); }                                   
-            (tableDataCol '|')+                     { addTableData(); }
-            (COMMENT)? NEWLINE);
-tableDataCol : ID                               	{ tableVals.add($ID.text); }
-             ;
-             
-group : ID ((COMMENT)? NEWLINE)* 					{ startGroup($ID.text); }
-        '{' ((COMMENT)? NEWLINE)*                    
-        configs* 
-        '}'                                         { endGroup(); }
-        ;          
+property
+ : WORD conditions? ASSIGN value						{ tecl.addProperty($WORD.text, ANTLRHelper.me().sanatizeAssignment($value.text)); } 
+ | WORD conditions? ASSIGN       						{ tecl.addProperty($WORD.text, ""); } 
+ ;
 
-property : ID val=ASSIGMENT NEWLINE					{ tecl.addProperty($ID.text, ANTLRHelper.me().sanatizeAssignment($val.text)); } 
-         ;
-         
+group
+ : WORD conditions? NL* OBRACE configs CBRACE
+ ;
+
+conditions
+ : OBRACK condition ( AND condition )* CBRACK
+ ;
+
+condition
+ : WORD EQUALS value						 
+ ;
+
+table
+ : row ( NL+ row )*
+ ;
+
+row
+ : PIPE ( col_value PIPE )+
+ ;
+
+col_value
+ : ~( PIPE | NL )*
+ ;
+
+value
+ : WORD
+ | VARIABLE
+ | string
+ | list
+ ;
+
+string
+ : STRING
+ | WORD+
+ ;
+
+list
+ : OBRACK ( value ( COMMA value )* )? CBRACK
+ ;
+
 /*------------------------------------------------------------------
  * LEXER RULES
  *------------------------------------------------------------------*/
 
-ID : [a-zA-Z0-9_]+; 
-ASSIGMENT : ':' (~('\r' | '\n'))+;
-COMMENT : '#' (~('\r' | '\n'))*;
-NEWLINE : ('\r\n' | '\n');
-WS: [ \t]+ -> skip;
+ASSIGN : ':';
+OBRACK : '[';
+CBRACK : ']';
+OBRACE : '{';
+CBRACE : '}';
+COMMA  : ',';
+PIPE   : '|';
+AND    : '&';
+EQUALS : '=';
+
+VARIABLE
+ : '$' WORD
+ ;
+
+NL
+ : [\r\n]+
+ ;
+
+STRING
+ : '"' ( ~[\\"] | '\\' . )* '"'
+ ;
+
+WORD
+ : ~[ \t\r\n[\]{}:=,|&]+
+ ;
+
+COMMENT
+ : '#' ~[\r\n]* -> skip
+ ;
+
+SPACES
+ : [ \t]+ -> skip
+ ;
