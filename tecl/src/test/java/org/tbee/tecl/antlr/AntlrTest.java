@@ -107,7 +107,7 @@ public class AntlrTest {
 	@Test
 	public void emptyGroup() {
 		TECL tecl = parse("groupId { }");
-//		assertEquals("groupId", tecl.grp("groupId").getId());
+		assertEquals("groupId", tecl.grp("groupId").getId());
 	}
 	
 	@Test
@@ -116,14 +116,14 @@ public class AntlrTest {
 				+ "groupId { \n" 
 				+ "    key1 : value1\n"
 				+ "}\n");
-//		assertEquals("groupId", tecl.grp("groupId").getId());
-//		assertEquals("value1", tecl.grp("groupId").str("key1"));
+		assertEquals("groupId", tecl.grp("groupId").getId());
+		assertEquals("value1", tecl.grp("groupId").str("key1"));
 	}
 	
 	@Test
 	public void notExistingGroup() {
 		TECL tecl = parse("");
-//		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
+		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
 	}
 	
 	@Test
@@ -136,8 +136,8 @@ public class AntlrTest {
 				+ "    key : value2\n"
 				+ "}\n"
 				);
-//		assertEquals("value1", tecl.grp(0, "groupId").str("key"));
-//		assertEquals("value2", tecl.grp(1, "groupId").str("key"));
+		assertEquals("value1", tecl.grp(0, "groupId").str("key"));
+		assertEquals("value2", tecl.grp(1, "groupId").str("key"));
 	}
 	
 	@Test
@@ -150,9 +150,9 @@ public class AntlrTest {
 				+ "    }\n"
 				+ "}\n"
 				);
-//		assertEquals("groupId1", tecl.grp("groupId1").getId());
-//		assertEquals("groupId2", tecl.grp("groupId1").grp("groupId2").getId());
-//		assertEquals("groupId3", tecl.grp("groupId1").grp("groupId2").grp("groupId3").getId());
+		assertEquals("groupId1", tecl.grp("groupId1").getId());
+		assertEquals("groupId2", tecl.grp("groupId1").grp("groupId2").getId());
+		assertEquals("groupId3", tecl.grp("groupId1").grp("groupId2").grp("groupId3").getId());
 	}
 	
 	// ========================
@@ -208,7 +208,7 @@ public class AntlrTest {
 	@Test
 	public void conditionedGroup() {
 		TECL tecl = parse("groupId[sys=A] { }");
-//		assertEquals("groupId", tecl.grp("groupId").getId());
+		assertEquals("groupId", tecl.grp("groupId").getId());
 	}
 	
 	// ========================

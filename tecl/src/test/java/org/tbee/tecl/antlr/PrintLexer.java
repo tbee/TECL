@@ -44,7 +44,7 @@ public class PrintLexer {
         }
         System.out.println("\n[PARSE-TREE]");
         TECLParser parser = new TECLParser(tokens);
-        ParserRuleContext context = parser.input_file();
+        ParserRuleContext context = parser.parse();
         String tree = context.toStringTree(parser);
         printPrettyLispTree(tree);
     }

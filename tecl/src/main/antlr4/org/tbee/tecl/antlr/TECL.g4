@@ -9,9 +9,10 @@ grammar TECL;
 
 @parser::members
 {
-	public void parse() {
+	public ParserRuleContext parse() {
+		System.out.println("push $");
 		teclStack.push(toplevelTECL);
-		this.configs();
+		return this.configs();
 	}
 	
 	// --------------
@@ -30,11 +31,13 @@ grammar TECL;
 	// GROUP
 	
 	private void startGroup(String id) {
+		System.out.println("startGroup " + id);
 		teclStack.push( teclStack.peek().addGroup(id) ); 
 		tecl = teclStack.peek();		
 	}
 	
 	private void endGroup() {
+		System.out.println("endGroup " + teclStack.peek().getId());
 		teclStack.pop(); 
 		tecl = teclStack.peek();		
 	}
@@ -94,7 +97,8 @@ property
  ;
 
 group
- : WORD conditions? NL* OBRACE configs CBRACE
+ : WORD conditions?                                     { startGroup($WORD.text); } 
+   NL* OBRACE configs CBRACE                            { endGroup(); }
  ;
 
 conditions
