@@ -1,5 +1,6 @@
 # This is the most simple configuration, if you need spaces or new lines you'll need quotes
 title : "TECL rulez"
+escaped : "escaped\"quote"
  
 # We use ISO notations only, so no local styles
 releaseDateTime : 2020-09-12T06:34

@@ -163,9 +163,11 @@ public class AntlrTest {
 				+ "| id  | type   | \n "
 				+ "| id1 | string | \n"
 				+ "| id2 | int    | \n"				
+				+ "| id3 | date   | \n"				
 				);
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
+		assertEquals("int", tecl.str("id", "id2", "type"));
 	}
 	
 	
@@ -231,6 +233,7 @@ public class AntlrTest {
 	public void testFile() throws IOException {
 		TECL tecl = TECL.parser().parse(this.getClass().getResourceAsStream("test.tecl"), Charset.forName("UTF-8"));
 		assertEquals("TECL rulez", tecl.str("title"));
+		assertEquals("escaped\"quote", tecl.str("escaped"));
 	}
 	
 	// ========================

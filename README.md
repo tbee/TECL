@@ -76,3 +76,93 @@ environment[env=production] {
     datesource : prd
 }
 ```
+
+Equally interesting is of course how this configuration can be accessed:
+
+```java
+// Conditions are resolved at parse time.
+// So in memory there will be only one version of an id like "environment".
+TECL tecl = TECL.parser()
+.addCondition("env", "production")
+.parse("..filename..");
+ 
+// The initial object will point to the toplevel.
+// The method name indicates the return type.
+String title = tecl.str("title"); 
+LocalDateTime releaseDateTime = tecl.localDateTime("releaseDateTime");
+List<String> hosts = tecl.strs("hosts");
+ 
+// You can specify defaults in value methods
+String port = tecl.int("port", 80);
+ 
+// I would love to take the type defined in the schema into account, 
+// but not sure how. And it would mean the schema needs to be present.
+var alsoTitle = tecl.val("title")
+ 
+// The grp method takes it one level / group deeper.
+// You simply get a new TECL object for inside that group.
+TECL databaseTECL = tecl.grp("database");
+ 
+// So fields are accessed just like in the toplevel
+String url = databaseTECL.str("url");
+String password = databaseTECL.decrypt("password");
+ 
+// Or directly using method chaining
+String url2 = tecl.grp("database").str("url");
+ 
+// Or dot notation?
+String url3 = tecl.str("database.url");
+ 
+// And you can move back up
+String title2 = databaseTECL.parent().str("title");
+ 
+// In case a group was not defined, get ALWAYS returns an empty TECL.
+// This will prevent null pointers in call chains.
+// Only a leaf (value) method will return a null if undefined.
+// So in the case below, field will be null, but no NPE will be thrown.
+String field = tecl.grp("notThere").grp("alsoNotThere").str("field");
+ 
+// Tables use indexes and lists
+// Index is the first parameter in order not to confuse with defaults
+String ip = tecl.grp("servers").str(0, "ip");
+int timeout = tecl.grp("servers").grp(3, "settings").int("timeout");
+String datasource = tecl.grp("servers").grp(4, "settings").str("datasource");
+ 
+// You can also index by using one key to search of
+int maxSessions = servers.grp("servers").int("name", "gamma", "MaxSessions"); // returns 12
+ 
+// Or use a dot notation with array style index?
+String ip2 = tecl.str("servers[0].ip");
+```
+
+And of course you would want to make sure the TECL file matches an agreed upon format, by using a TECL schema (not implemented yet):
+
+```bash
+version = 1
+ 
+| id              | type          | subtype  | minValues | maxValues |
+| title           | string        |          | 1         |           |
+| description     | string        |          |           |           |
+| releaseDateTime | localDateTime |          |           |           |
+| hosts           | list          | string   | 1         | 5         |
+| database        | database      |          |           |           |
+| servers         | table         | servers  |           | 10        |
+| protocol        | protos        |          |           |           |
+| protocols       | list          | protos   |           |           |
+ 
+database {
+    | id       | type      | minLen | maxLen |
+    | url      | string    | 10     | 255    |
+    | username | string    |        |        |
+    | password | encrypted |        |        |
+}
+ 
+servers {
+    | id          | type   | min | max |
+    | id          | string |     |     |
+    | datacenter  | string |     |     |
+    | maxSessions | int    | 0   | 50  |
+}
+ 
+protos = [http, https]
+```

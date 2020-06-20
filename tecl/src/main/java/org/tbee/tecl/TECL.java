@@ -2,17 +2,19 @@ package org.tbee.tecl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 
  * TODO:
- * - escaped characters in quoted string 
  * - conditions
  * - dot notation
  * - indexed properties via key (first column)
- * - references via dot notation 
+ * - references via dot notation
+ * - many type methods for int, dbl, localDate, etc 
+ * - encrypted strings
  * 
  *
  */
@@ -83,6 +85,10 @@ public class TECL {
 	public void setProperty(int idx, String key, String value) {
 		properties.set(idx, key, value);
 	}	
+	
+	public int indexOf(String key, String value) {
+		return properties.indexOf(key, value);		
+	}
 
 	public String str(String key) {
 		return properties.get(0, key);
@@ -90,12 +96,17 @@ public class TECL {
 	public String str(String key, String def) {
 		return properties.get(0, key, def);
 	}
-
 	public String str(int idx, String key) {
 		return properties.get(idx, key);
 	}
 	public String str(int idx, String key, String def) {
 		return properties.get(idx, key, def);
+	}
+	public String str(String indexOfKey, String indexOfValue, String key) {
+		return properties.get(indexOfKey, indexOfValue, key);
+	}
+	public String str(String indexOfKey, String indexOfValue, String key, String def) {
+		return properties.get(indexOfKey, indexOfValue, key, def);
 	}
 	
 	// =====================================
@@ -123,6 +134,11 @@ public class TECL {
 		return tecl;
 	}
 
+	// public int indexOfGrp(String key, String value) {
+	//	return groups.indexOf(key, value); // group id's are indentical, so what to compare on?
+	//}
+
+
 	// =====================================
 	// SUPPORT
 	
@@ -130,9 +146,9 @@ public class TECL {
 	 * Implements an indexed store
 	 */
 	private class IndexedValues<T> {
-		private final Map<String, List<T>> keyTovaluesMap = new HashMap<>();
+		private final Map<String, List<T>> keyTovaluesMap = new LinkedHashMap<>();
 		
-		public void set(int idx, String key, T value) {
+		void set(int idx, String key, T value) {
 			
 			// First get the list of values
 			List<T> values = keyTovaluesMap.get(key);
@@ -155,13 +171,13 @@ public class TECL {
 			values.set(idx, value);
 		}
 
-		public int add(String key, T value) {
+		int add(String key, T value) {
 			int idx = count(key);
 			set(idx, key, value);
 			return idx;
 		}
 
-		public int count(String key) {
+		int count(String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values == null) {
 				return 0;
@@ -169,11 +185,11 @@ public class TECL {
 			return values.size();
 		}
 		
-		public boolean contains(String key) {
+		boolean contains(String key) {
 			return keyTovaluesMap.containsKey(key);
 		}
 		
-		public T get(int idx, String key) {
+		T get(int idx, String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values == null) {
 				return null;
@@ -181,9 +197,48 @@ public class TECL {
 			return values.get(idx);
 		}
 		
-		public T get(int idx, String key, T def) {
+		T get(int idx, String key, T def) {
 			T value = get(idx, key);
 			return value == null ? def : value;
+		}
+		
+		/*
+		 * Find the index of a value within a key.
+		 * This can be used to determine the row in a table, in order to support value-based-indexes. 
+		 * For example
+		 * 
+		 * | id  | value |
+		 * | id1 | val1  |
+		 * | id2 | val2  |
+		 * | id3 | val3  |
+		 * 
+		 * int idx = indexof("id", "id2");
+		 * String val = get(idx, "value"); // This will hold "val2";
+		 */
+		int indexOf(String key, T value) {
+			List<T> values = keyTovaluesMap.get(key);
+			if (values == null) {
+				return -1;
+			}
+			return values.indexOf(value);
+		}
+		
+		/*
+		 * Get method using indexOf to determine the index first
+		 */
+		public T get(String indexOfKey, T value, String key) {
+			return get(indexOfKey, value, key, null);
+		}
+		
+		/*
+		 * Get method using indexOf to determine the index first
+		 */
+		public T get(String indexOfKey, T value, String key, T def) {
+			int idx = indexOf(indexOfKey, value);
+			if (idx < 0) {
+				return null;
+			}
+			return get(idx, key, def);
 		}
 	}
 }
