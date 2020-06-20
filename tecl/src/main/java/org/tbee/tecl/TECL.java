@@ -15,7 +15,7 @@ import java.util.Map;
  * - references via dot notation
  * - many type methods for int, dbl, localDate, etc 
  * - encrypted strings
- * 
+ * - lists List<String> hosts = tecl.strs("hosts");
  *
  */
 public class TECL {

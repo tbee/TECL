@@ -95,10 +95,6 @@ List<String> hosts = tecl.strs("hosts");
 // You can specify defaults in value methods
 String port = tecl.int("port", 80);
  
-// I would love to take the type defined in the schema into account, 
-// but not sure how. And it would mean the schema needs to be present.
-var alsoTitle = tecl.val("title")
- 
 // The grp method takes it one level / group deeper.
 // You simply get a new TECL object for inside that group.
 TECL databaseTECL = tecl.grp("database");
