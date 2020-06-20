@@ -61,7 +61,6 @@ public class TECLParser {
         parser.addErrorListener(throwingErrorListener);
 		parser.parse();
 		return parser.getTECL();
-		
 	}
 	
 	private class ThrowingErrorListener extends BaseErrorListener {

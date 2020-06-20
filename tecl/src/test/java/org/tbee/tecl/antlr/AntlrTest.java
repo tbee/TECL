@@ -75,6 +75,49 @@ public class AntlrTest {
 		assertEquals(value, tecl.str("key"));
 	}
 	
+	@Test
+	public void stringPropertyDefault() {
+		TECL tecl = parse("key : abc \n");
+		assertEquals("default", tecl.str("otherKey", "default"));
+	}
+	
+	@Test
+	public void stringPropertyDefaultNotUsed() {
+		TECL tecl = parse("key : abc \n");
+		assertEquals("abc", tecl.str("key", "default"));
+	}
+	
+	@Test
+	public void stringPropertyIdx0() {
+		TECL tecl = parse("key : abc \n");
+		assertEquals("abc", tecl.str(0, "key"));
+	}
+	
+	@Test
+	public void stringPropertyIdx0Default() {
+		TECL tecl = parse("key : abc \n");
+		assertEquals("default", tecl.str(0, "otherKey", "default"));
+	}
+	
+	@Test
+	public void stringPropertyIdx0DefaultNotUsed() {
+		TECL tecl = parse("key : abc \n");
+		assertEquals("abc", tecl.str(0, "key", "default"));
+	}
+
+	@Test
+	public void integerProperty() {
+		TECL tecl = parse("key : 123 \n");
+		assertEquals(Integer.valueOf(123), tecl.integer("key"));
+	}
+	
+	@Test
+	public void doubleProperty() {
+		TECL tecl = parse("key : 123.4 \n");
+		assertEquals(Double.valueOf(123.4), tecl.dbl("key"));
+	}
+
+
 	// ========================
 	// COMMENTS
 	

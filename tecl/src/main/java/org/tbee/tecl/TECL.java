@@ -5,13 +5,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * 
  * TODO:
  * - conditions
  * - dot notation
- * - indexed properties via key (first column)
  * - references via dot notation
  * - many type methods for int, dbl, localDate, etc 
  * - encrypted strings
@@ -90,23 +90,64 @@ public class TECL {
 		return properties.indexOf(key, value);		
 	}
 
+	// STR
 	public String str(String key) {
-		return properties.get(0, key);
+		return properties.get(0, key, null, (s) -> s);
 	}
 	public String str(String key, String def) {
-		return properties.get(0, key, def);
+		return properties.get(0, key, def, (s) -> s);
 	}
 	public String str(int idx, String key) {
-		return properties.get(idx, key);
+		return properties.get(idx, key, null, (s) -> s);
 	}
 	public String str(int idx, String key, String def) {
-		return properties.get(idx, key, def);
+		return properties.get(idx, key, def, (s) -> s);
 	}
 	public String str(String indexOfKey, String indexOfValue, String key) {
-		return properties.get(indexOfKey, indexOfValue, key);
+		return properties.get(indexOfKey, indexOfValue, key, null, (s) -> s);
 	}
 	public String str(String indexOfKey, String indexOfValue, String key, String def) {
-		return properties.get(indexOfKey, indexOfValue, key, def);
+		return properties.get(indexOfKey, indexOfValue, key, def, (s) -> s);
+	}
+	
+	// INTEGER
+	public Integer integer(String key) {
+		return properties.get(0, key, null, Integer::valueOf);
+	}
+	public Integer integer(String key, Integer def) {
+		return properties.get(0, key, def, Integer::valueOf);
+	}
+	public Integer integer(int idx, String key) {
+		return properties.get(idx, key, null, Integer::valueOf);
+	}
+	public Integer integer(int idx, String key, Integer def) {
+		return properties.get(idx, key, def, Integer::valueOf);
+	}
+	public Integer integer(String indexOfKey, String indexOfValue, String key) {
+		return properties.get(indexOfKey, indexOfValue, key, null, Integer::valueOf);
+	}
+	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
+		return properties.get(indexOfKey, indexOfValue, key, def, Integer::valueOf);
+	}
+	
+	// DOUBLE
+	public Double dbl(String key) {
+		return properties.get(0, key, null, Double::valueOf);
+	}
+	public Double dbl(String key, Double def) {
+		return properties.get(0, key, def, Double::valueOf);
+	}
+	public Double dbl(int idx, String key) {
+		return properties.get(idx, key, null, Double::valueOf);
+	}
+	public Double dbl(int idx, String key, Double def) {
+		return properties.get(idx, key, def, Double::valueOf);
+	}
+	public Double dbl(String indexOfKey, String indexOfValue, String key) {
+		return properties.get(indexOfKey, indexOfValue, key, null, Double::valueOf);
+	}
+	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
+		return properties.get(indexOfKey, indexOfValue, key, def, Double::valueOf);
 	}
 	
 	// =====================================
@@ -126,7 +167,7 @@ public class TECL {
 	}
 	
 	public TECL grp(int idx, String id) {
-		TECL tecl = groups.get(idx, id);
+		TECL tecl = groups.get(idx, id, null, (g) -> g);
 		if (tecl == null) {
 			tecl = new TECL("<group '" + id + "' does not exist>");
 			tecl.setParent(this, -1);
@@ -189,19 +230,6 @@ public class TECL {
 			return keyTovaluesMap.containsKey(key);
 		}
 		
-		T get(int idx, String key) {
-			List<T> values = keyTovaluesMap.get(key);
-			if (values == null) {
-				return null;
-			}
-			return values.get(idx);
-		}
-		
-		T get(int idx, String key, T def) {
-			T value = get(idx, key);
-			return value == null ? def : value;
-		}
-		
 		/*
 		 * Find the index of a value within a key.
 		 * This can be used to determine the row in a table, in order to support value-based-indexes. 
@@ -222,23 +250,28 @@ public class TECL {
 			}
 			return values.indexOf(value);
 		}
-		
+
 		/*
-		 * Get method using indexOf to determine the index first
+		 * Get based on index
 		 */
-		public T get(String indexOfKey, T value, String key) {
-			return get(indexOfKey, value, key, null);
+		<R> R get(int idx, String key, R def, Function<T, R> convertStringToReturnType) {
+			List<T> values = keyTovaluesMap.get(key);
+			if (values == null) {
+				return def;
+			}
+			T value = values.get(idx);
+			return value == null ? def : convertStringToReturnType.apply(value);
 		}
 		
 		/*
 		 * Get method using indexOf to determine the index first
 		 */
-		public T get(String indexOfKey, T value, String key, T def) {
+		<R> R get(String indexOfKey, T value, String key, R def, Function<T, R> convertStringToReturnType) {
 			int idx = indexOf(indexOfKey, value);
 			if (idx < 0) {
 				return null;
 			}
-			return get(idx, key, def);
+			return get(idx, key, def, convertStringToReturnType);
 		}
 	}
 }
