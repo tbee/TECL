@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+
 import org.junit.jupiter.api.Test;
 import org.tbee.tecl.TECL;
 
@@ -165,8 +168,8 @@ public class AntlrTest {
 				+ "| id1 | string | \n"
 				+ "| id2 | int    | \n"				
 				);
-//		assertEquals("id1", tecl.str(0, "id"));
-//		assertEquals("int", tecl.str(1, "type"));
+		assertEquals("id1", tecl.str(0, "id"));
+		assertEquals("int", tecl.str(1, "type"));
 	}
 	
 	
@@ -178,13 +181,13 @@ public class AntlrTest {
 				+ "    # comment \n"
 				+ "    | id2 | int    | \n"				
 				);
-//		assertEquals("id1", tecl.str(0, "id"));
-//		assertEquals("int", tecl.str(1, "type"));
+		assertEquals("id1", tecl.str(0, "id"));
+		assertEquals("int", tecl.str(1, "type"));
 	}
 
 	@Test
 	public void twoTablesAreNotAllowed() {
-//		assertThrows(IllegalStateException.class, () -> {
+		assertThrows(IllegalStateException.class, () -> {
 			TECL tecl = parse(""
 					+ "| id  | type   | \n "
 					+ "| id1 | string | \n"
@@ -193,7 +196,21 @@ public class AntlrTest {
 					+ "| len  | dep   | \n "
 					+ "| 10   | 20    | \n"
 					);
-//		});
+		});
+	}
+
+	@Test
+	public void twoTablesAreNotAllowed2() {
+		assertThrows(IllegalStateException.class, () -> {
+			TECL tecl = parse(""
+					+ "| id  | type   | \n "
+					+ "| id1 | string | \n"
+					+ "| id2 | int    | \n"				
+					+ "key : value\n"				
+					+ "| len  | dep   | \n "
+					+ "| 10   | 20    | \n"
+					);
+		});
 	}
 
 	// ========================
@@ -209,6 +226,15 @@ public class AntlrTest {
 	public void conditionedGroup() {
 		TECL tecl = parse("groupId[sys=A] { }");
 		assertEquals("groupId", tecl.grp("groupId").getId());
+	}
+	
+	// ========================
+	// FILE
+
+	@Test
+	public void testFile() throws IOException {
+		TECL tecl = TECL.parser().parse(this.getClass().getResourceAsStream("test.tecl"), Charset.forName("UTF-8"));
+		assertEquals("TECL rulez", tecl.str("title"));
 	}
 	
 	// ========================

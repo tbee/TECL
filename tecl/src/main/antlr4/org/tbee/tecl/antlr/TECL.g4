@@ -10,7 +10,7 @@ grammar TECL;
 @parser::members
 {
 	public ParserRuleContext parse() {
-		System.out.println("push $");
+		System.out.println("startGroup $");
 		teclStack.push(toplevelTECL);
 		return this.configs();
 	}
@@ -48,7 +48,9 @@ grammar TECL;
 	private final List<String> tableKeys = new ArrayList<>();
 	private final List<String> tableVals = new ArrayList<>();
 	private int tableRowIdx;
+	private int tableColIdx;
 	private final List<TECL> teclsContainingTable = new ArrayList<>();
+	private final List<TECL> teclsWithTerminatedTable = new ArrayList<>();
 
 	private void validateOneTablePerGroup() {
 		if (teclsContainingTable.contains(tecl)) {
@@ -56,20 +58,42 @@ grammar TECL;
 		} 
 		teclsContainingTable.add(tecl);
 	}
-		
-	private void addTableData() {
-		for (int i = 0; i < tableKeys.size(); i++) {
-			String key = tableKeys.get(i);
-			String val = tableVals.get(i);
-			tecl.setProperty(tableRowIdx, key, val);
-		}
-		tableRowIdx++;
+	private void validateTerminatedTable() {
+		if (teclsWithTerminatedTable.contains(tecl)) {
+			throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
+		} 
 	}
-	
+	private void terminateTable() {
+		System.out.println("terminateTable");
+		teclsWithTerminatedTable.add(tecl);
+	}	
+		
 	private void startTable() {
+		System.out.println("startTable");
 		validateOneTablePerGroup();  
 		tableKeys.clear(); 
-		tableRowIdx = 0;		
+		tableRowIdx = -2;		
+	}
+	
+	private void startTableRow() {
+		tableColIdx = 0;
+		tableRowIdx++;
+		System.out.println("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
+	}	
+
+	private void addTableData(String value) {
+		validateTerminatedTable();
+		System.out.println("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
+		if (tableRowIdx < 0) {
+			System.out.println("addTableRow add header " + value);
+			tableKeys.add(value);
+		}
+		else {
+			String key = tableKeys.get(tableColIdx);
+			System.out.println("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
+			tecl.setProperty(tableRowIdx, key, value);
+		}
+		tableColIdx++;
 	}
 }
 
@@ -110,16 +134,25 @@ condition
  ;
 
 table
- : row ( NL+ row )*
+ :														{ startTable(); } 
+ row 
+ ( 
+	(
+		COMMENT? NL										{ if ($NL.text.length() > 1) { terminateTable(); } }		
+	)+
+ 	row
+ )*
  ;
 
 row
- : PIPE ( col_value PIPE )+
+ :														{ startTableRow(); } 
+ PIPE ( 
+ 	col_value											{ addTableData($col_value.text); } 
+ 	PIPE
+ )+		
  ;
 
-col_value
- : ~( PIPE | NL )*
- ;
+col_value : ~( PIPE | NL )*;
 
 value
  : WORD

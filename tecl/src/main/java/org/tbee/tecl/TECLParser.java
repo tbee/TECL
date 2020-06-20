@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -36,6 +37,16 @@ public class TECLParser {
 		){ 
 			return parse(CharStreams.fromStream(fileInputStream, charset));
 		}
+	}
+	
+	/**
+	 * @param inputStream inputStream to parse
+	 * @return
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 */
+	public TECL parse(InputStream inputStream, java.nio.charset.Charset charset) throws IOException {
+		return parse(CharStreams.fromStream(inputStream, charset));
 	}
 
 	/*

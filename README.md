@@ -1,29 +1,12 @@
-# README #
+# TECL #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+People have complaints about configuration languages all the time; properties are too simple, XML is too verbose, JSON doesn’t allow comments, YAML is only suited for small configuration files, TOML’s tables are a bit weird (IMHO). So how about we throw all the good aspects onto a heap and see what comes out of it? And with only one task in mind: configuration. (Just like JSON is intended for datatransfer, hence it does not support comments.) Therefor I’m introducing TECL, the Totally Encompassing Configuration Language.
 
-### What is this repository for? ###
-
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+The goals are:
+* Simple, like properties, but supporting a hierarchy
+* Compact, like JSON, but allowing comments
+* Schema support
+* Formal hierarchy, unlike YAML’s indentation based one
+* Conditions
+* Multi line strings
+* Tables
