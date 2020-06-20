@@ -12,6 +12,8 @@ The goals are:
 - Multi line strings
 - Tables
 
+To get an impression of a TECL configuration file, look at the example below:
+
 ```bash
 # This is the most simple configuration, if you need spaces or new lines you'll need quotes
 title : "TECL rulez"
