@@ -12,6 +12,7 @@ The goals are:
 - Multi line strings
 - Tables
 
+## Example ##
 To get an impression of a TECL configuration file, look at the example below:
 
 ```bash
@@ -77,6 +78,7 @@ environment[env=production] {
 }
 ```
 
+## Usage ##
 Equally interesting is of course how this configuration can be accessed:
 
 ```java
@@ -131,7 +133,8 @@ int maxSessions = servers.grp("servers").int("name", "gamma", "MaxSessions"); //
 String ip2 = tecl.str("servers[0].ip");
 ```
 
-And of course you would want to make sure the TECL file matches an agreed upon format, by using a TECL schema (not implemented yet):
+## Validation ##
+And of course you would want to make sure the TECL file matches an agreed upon format, by using a TECL schema:
 
 ```bash
 version = 1
