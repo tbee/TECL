@@ -90,64 +90,84 @@ public class TECL {
 		return properties.indexOf(key, value);		
 	}
 
+	// GET: methods that have a convert function to change the String value to whatever is wanted
+	public <R> R get(String key, Function<String, R> convertFunction) {
+		return properties.get(0, key, null, convertFunction);
+	}
+	public <R> R get(String key, R def, Function<String, R> convertFunction) {
+		return properties.get(0, key, def, convertFunction);
+	}
+	public <R> R get(int idx, String key, Function<String, R> convertFunction) {
+		return properties.get(idx, key, null, convertFunction);
+	}
+	public <R> R get(int idx, String key, R def, Function<String, R> convertFunction) {
+		return properties.get(idx, key, def, convertFunction);
+	}
+	public <R> R get(String indexOfKey, String indexOfValue, String key, Function<String, R> convertFunction) {
+		return properties.get(indexOfKey, indexOfValue, key, null, convertFunction);
+	}
+	public <R> R get(String indexOfKey, String indexOfValue, String key, R def, Function<String, R> convertFunction) {
+		return properties.get(indexOfKey, indexOfValue, key, def, convertFunction);
+	}
+	
 	// STR
 	public String str(String key) {
-		return properties.get(0, key, null, (s) -> s);
+		return get(0, key, null, (s) -> s);
 	}
 	public String str(String key, String def) {
-		return properties.get(0, key, def, (s) -> s);
+		return get(0, key, def, (s) -> s);
 	}
 	public String str(int idx, String key) {
-		return properties.get(idx, key, null, (s) -> s);
+		return get(idx, key, null, (s) -> s);
 	}
 	public String str(int idx, String key, String def) {
-		return properties.get(idx, key, def, (s) -> s);
+		return get(idx, key, def, (s) -> s);
 	}
 	public String str(String indexOfKey, String indexOfValue, String key) {
-		return properties.get(indexOfKey, indexOfValue, key, null, (s) -> s);
+		return get(indexOfKey, indexOfValue, key, null, (s) -> s);
 	}
 	public String str(String indexOfKey, String indexOfValue, String key, String def) {
-		return properties.get(indexOfKey, indexOfValue, key, def, (s) -> s);
+		return get(indexOfKey, indexOfValue, key, def, (s) -> s);
 	}
 	
 	// INTEGER
 	public Integer integer(String key) {
-		return properties.get(0, key, null, Integer::valueOf);
+		return get(0, key, null, Integer::valueOf);
 	}
 	public Integer integer(String key, Integer def) {
-		return properties.get(0, key, def, Integer::valueOf);
+		return get(0, key, def, Integer::valueOf);
 	}
 	public Integer integer(int idx, String key) {
-		return properties.get(idx, key, null, Integer::valueOf);
+		return get(idx, key, null, Integer::valueOf);
 	}
 	public Integer integer(int idx, String key, Integer def) {
-		return properties.get(idx, key, def, Integer::valueOf);
+		return get(idx, key, def, Integer::valueOf);
 	}
 	public Integer integer(String indexOfKey, String indexOfValue, String key) {
-		return properties.get(indexOfKey, indexOfValue, key, null, Integer::valueOf);
+		return get(indexOfKey, indexOfValue, key, null, Integer::valueOf);
 	}
 	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
-		return properties.get(indexOfKey, indexOfValue, key, def, Integer::valueOf);
+		return get(indexOfKey, indexOfValue, key, def, Integer::valueOf);
 	}
 	
 	// DOUBLE
 	public Double dbl(String key) {
-		return properties.get(0, key, null, Double::valueOf);
+		return get(0, key, null, Double::valueOf);
 	}
 	public Double dbl(String key, Double def) {
-		return properties.get(0, key, def, Double::valueOf);
+		return get(0, key, def, Double::valueOf);
 	}
 	public Double dbl(int idx, String key) {
-		return properties.get(idx, key, null, Double::valueOf);
+		return get(idx, key, null, Double::valueOf);
 	}
 	public Double dbl(int idx, String key, Double def) {
-		return properties.get(idx, key, def, Double::valueOf);
+		return get(idx, key, def, Double::valueOf);
 	}
 	public Double dbl(String indexOfKey, String indexOfValue, String key) {
-		return properties.get(indexOfKey, indexOfValue, key, null, Double::valueOf);
+		return get(indexOfKey, indexOfValue, key, null, Double::valueOf);
 	}
 	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
-		return properties.get(indexOfKey, indexOfValue, key, def, Double::valueOf);
+		return get(indexOfKey, indexOfValue, key, def, Double::valueOf);
 	}
 	
 	// =====================================
