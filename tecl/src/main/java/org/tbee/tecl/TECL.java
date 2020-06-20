@@ -5,6 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 
+ * TODO:
+ * - escaped characters in quoted string 
+ * - conditions
+ * - dot notation
+ * - indexed properties via key (first column)
+ * - references via dot notation 
+ * 
+ *
+ */
 public class TECL {
 	
 	// =====================================

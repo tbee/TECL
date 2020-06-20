@@ -35,12 +35,10 @@ public class AntlrTest {
 		assertEquals("", tecl.str("key"));
 	}
 
-	// TODO: multi line string
-	
 	@Test
 	public void unquotedProperty() {
-		TECL tecl = parse("key : more words than one! \n");
-		assertEquals("morewordsthanone!", tecl.str("key"));
+		TECL tecl = parse("key : more words than one \n");
+		assertEquals("morewordsthanone", tecl.str("key"));
 	}
 
 	@Test
@@ -68,15 +66,13 @@ public class AntlrTest {
 
 	@Test
 	public void multilineProperty() {
+		String value = "this \n"
+				+ "is just!@#$%^&*()\n"
+				+ "a text!\n";
 		TECL tecl = parse(""
-				+ "key : \"this \n"
-				+ "is just\n"
-				+ "a text\n"
-				+ "\""
+				+ "key : \"" + value + "\""
 				);
-		System.out.println("!!!!"  + tecl.str("key"));
-//		assertEquals("value1", tecl.str("key1"));
-//		assertEquals("value2", tecl.str("key2"));
+		assertEquals(value, tecl.str("key"));
 	}
 	
 	// ========================

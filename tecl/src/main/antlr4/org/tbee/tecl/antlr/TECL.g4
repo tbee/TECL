@@ -130,7 +130,7 @@ conditions
  ;
 
 condition
- : WORD EQUALS value						 
+ : WORD COMPAR value						 
  ;
 
 table
@@ -182,7 +182,7 @@ CBRACE : '}';
 COMMA  : ',';
 PIPE   : '|';
 AND    : '&';
-EQUALS : '=';
+COMPAR : '=';
 
 VARIABLE
  : '$' WORD
@@ -197,7 +197,7 @@ STRING
  ;
 
 WORD
- : ~[ \t\r\n[\]{}:=,|&]+
+ : ~[ \t\r\n[\]{}:=<>!,|&]+
  ;
 
 COMMENT
