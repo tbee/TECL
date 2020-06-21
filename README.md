@@ -85,7 +85,7 @@ Equally interesting is of course how this configuration can be accessed:
 // Conditions are resolved at parse time.
 // So in memory there will be only one version of an id like "environment".
 TECL tecl = TECL.parser()
-.addCondition("env", "production")
+.addParameter("env", "production") // to use in conditions
 .parse("..filename..");
  
 // The initial object will point to the toplevel.

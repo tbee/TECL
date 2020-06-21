@@ -20,7 +20,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.commons.text.StringEscapeUtils;
 
-public class TECLParser implements org.tbee.tecl.antlr.TECLParser.Listener {
+public class TECLParser {
 	
 	// ======================================
 	// PARAMETERS
@@ -78,8 +78,6 @@ public class TECLParser implements org.tbee.tecl.antlr.TECLParser.Listener {
 	private TECL parse(CharStream input) {	
 		
 		// init
-		System.out.println("startGroup $");
-		teclStack.push(toplevelTECL);
 		
 		// Trigger the ANTLR parser
 		ThrowingErrorListener throwingErrorListener = new ThrowingErrorListener();
@@ -88,8 +86,9 @@ public class TECLParser implements org.tbee.tecl.antlr.TECLParser.Listener {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         org.tbee.tecl.antlr.TECLParser parser = new org.tbee.tecl.antlr.TECLParser(tokens);
         parser.addErrorListener(throwingErrorListener);
-		parser.parse(this);
-		return toplevelTECL;
+        ParserListener parserListener = new ParserListener();
+		parser.parse(parserListener); 
+		return parserListener.toplevelTECL;
 	}
 	
 	private class ThrowingErrorListener extends BaseErrorListener {
@@ -101,113 +100,121 @@ public class TECLParser implements org.tbee.tecl.antlr.TECLParser.Listener {
 	
 	// ======================================
 	// GRAMMAR
-
-	// This is the toplevel
-	private final TECL toplevelTECL = new TECL("$");	
 	
-	// This is the active TECL within the scope
-	private final Stack<TECL> teclStack = new Stack<>();
-	private TECL tecl = toplevelTECL;
-		
-	// --------------
-	// PROPERTY
+	class ParserListener implements org.tbee.tecl.antlr.TECLParser.Listener { 
 	
-	public void addProperty(String key, String value) {		
-		tecl.addProperty(key, sanatizeAssignment(value), useConditions()); // TBEERNOT move ANTLR helper into this class
-	}	
-
-	public void setProperty(int idx, String key, String value) {
-		tecl.addProperty(key, "", useConditions());
-	}	
-
-	// --------------
-	// GROUP
-	
-	public void startGroup(String id) {
-		System.out.println("startGroup " + id);
-		teclStack.push( teclStack.peek().addGroup(id, useConditions()) ); 
-		tecl = teclStack.peek();		
-	}
-	
-	public void endGroup() {
-		System.out.println("endGroup " + teclStack.peek().getId());
-		teclStack.pop(); 
-		tecl = teclStack.peek();		
-	}
-	
-	// --------------
-	// CONDITIONS
-	private List<TECL.Condition> conditions;
-	
-	public void startConditions() {
-		conditions = new ArrayList<TECL.Condition>();	
-	}
-	
-	public void addCondition(String key, String comparator, String value) {
-		conditions.add(new TECL.Condition(key, comparator, value));
-	}
-	
-	public List<TECL.Condition> useConditions() {
-		List<TECL.Condition> conditions = this.conditions;
-		this.conditions = null;
-		return conditions;
-	}
-	
-	// --------------
-	// TABLE
-	
-	private final List<String> tableKeys = new ArrayList<>();
-	private final List<String> tableVals = new ArrayList<>();
-	private int tableRowIdx;
-	private int tableColIdx;
-	private final List<TECL> teclsContainingTable = new ArrayList<>();
-	private final List<TECL> teclsWithTerminatedTable = new ArrayList<>();
-
-	private void validateOneTablePerGroup() {
-		if (teclsContainingTable.contains(tecl)) {
-			throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
-		} 
-		teclsContainingTable.add(tecl);
-	}
-	private void validateTerminatedTable() {
-		if (teclsWithTerminatedTable.contains(tecl)) {
-			throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
-		} 
-	}
-		
-	public void startTable() {
-		System.out.println("startTable");
-		validateOneTablePerGroup();  
-		tableKeys.clear(); 
-		tableRowIdx = -2;		
-	}
-	
-	public void terminateTable() {
-		System.out.println("terminateTable");
-		teclsWithTerminatedTable.add(tecl);
-	}	
-	
-	public void startTableRow() {
-		tableColIdx = 0;
-		tableRowIdx++;
-		System.out.println("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
-	}	
-
-	public void addTableData(String value) {
-		validateTerminatedTable();
-		System.out.println("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
-		if (tableRowIdx < 0) {
-			System.out.println("addTableRow add header " + value);
-			tableKeys.add(value);
+		public ParserListener() {
+			System.out.println("startGroup $");
+			teclStack.push(toplevelTECL);
 		}
-		else {
-			String key = tableKeys.get(tableColIdx);
-			System.out.println("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
-			tecl.setProperty(tableRowIdx, key, value, null);
+		// This is the toplevel
+		private final TECL toplevelTECL = new TECL("$");	
+		
+		// This is the active TECL within the group
+		private final Stack<TECL> teclStack = new Stack<>();
+		private TECL tecl = toplevelTECL;
+			
+		// --------------
+		// PROPERTY
+		
+		public void addProperty(String key, String value) {		
+			tecl.addProperty(key, sanatizeAssignment(value), useConditions());
+		}	
+	
+		public void setProperty(int idx, String key, String value) {
+			tecl.addProperty(key, "", useConditions());
+		}	
+	
+		// --------------
+		// GROUP
+		
+		public void startGroup(String id) {
+			System.out.println("startGroup " + id);
+			teclStack.push( teclStack.peek().addGroup(id, useConditions()) ); 
+			tecl = teclStack.peek();		
 		}
-		tableColIdx++;
+		
+		public void endGroup() {
+			System.out.println("endGroup " + teclStack.peek().getId());
+			teclStack.pop(); 
+			tecl = teclStack.peek();		
+		}
+		
+		
+		// --------------
+		// CONDITIONS
+		
+		private List<TECL.Condition> conditions;
+		
+		public void startConditions() {
+			conditions = new ArrayList<TECL.Condition>();	
+		}
+		
+		public void addCondition(String key, String comparator, String value) {
+			conditions.add(new TECL.Condition(key, comparator, value));
+		}
+		
+		public List<TECL.Condition> useConditions() {
+			List<TECL.Condition> conditions = this.conditions;
+			this.conditions = null;
+			return conditions;
+		}
+		
+		// --------------
+		// TABLE
+		
+		private final List<String> tableKeys = new ArrayList<>();
+		private int tableRowIdx;
+		private int tableColIdx;
+		private final List<TECL> teclsContainingTable = new ArrayList<>();
+		private final List<TECL> teclsWithTerminatedTable = new ArrayList<>();
+	
+		private void validateOneTablePerGroup() {
+			if (teclsContainingTable.contains(tecl)) {
+				throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
+			} 
+			teclsContainingTable.add(tecl);
+		}
+		private void validateTerminatedTable() {
+			if (teclsWithTerminatedTable.contains(tecl)) {
+				throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
+			} 
+		}
+			
+		public void startTable() {
+			System.out.println("startTable");
+			validateOneTablePerGroup();  
+			tableKeys.clear(); 
+			tableRowIdx = -2;		
+		}
+		
+		public void terminateTable() {
+			System.out.println("terminateTable");
+			teclsWithTerminatedTable.add(tecl);
+		}	
+		
+		public void startTableRow() {
+			tableColIdx = 0;
+			tableRowIdx++;
+			System.out.println("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
+		}	
+	
+		public void addTableData(String value) {
+			validateTerminatedTable();
+			System.out.println("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
+			if (tableRowIdx < 0) {
+				System.out.println("addTableRow add header " + value);
+				tableKeys.add(value);
+			}
+			else {
+				String key = tableKeys.get(tableColIdx);
+				System.out.println("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
+				tecl.setProperty(tableRowIdx, key, value, null);
+			}
+			tableColIdx++;
+		}
 	}
-
+	
 	
 	// ======================================
 	// SUPPORT
