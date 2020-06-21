@@ -278,12 +278,20 @@ public class AntlrTest {
 		assertEquals(null, tecl.str("key"));
 	}
 
-	@Test
 	public void conditionedGroupWithMatchingCondition() {
 		TECL tecl = parse("groupId[sys=A] { }");
 		assertEquals("groupId", tecl.grp("groupId").getId());
 	}
-	
+
+	@Test
+	public void conditionedGroupWithNotMatchingCondition() {
+		TECL tecl = parse(""
+				+ "groupId[sys=other] {\n"
+				+ "     key : value\n"
+				+ "} \n"
+				);
+		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
+	}	
 
 	// ========================
 	// FILE

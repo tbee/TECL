@@ -134,9 +134,16 @@ public class TECLParser {
 		// GROUP
 		
 		public void startGroup(String id) {
+
 			System.out.println("startGroup " + id);
-			teclStack.push( teclStack.peek().addGroup(id) ); 
-			tecl = teclStack.peek();		
+			if (matchConditions(useConditions()) >= 0) {
+				tecl = teclStack.peek().addGroup(id);
+			}
+			else {
+				// We create a TECL so we can continue parsing the file, but it is not added as a group
+				tecl = new TECL("<skipping all contents because of conditions>");
+			}
+			teclStack.push(tecl);
 		}
 		
 		public void endGroup() {
@@ -206,6 +213,7 @@ public class TECLParser {
 		public void addTableData(String value) {
 			validateTerminatedTable();
 			System.out.println("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
+			
 			if (tableRowIdx < 0) {
 				System.out.println("addTableRow add header " + value);
 				tableKeys.add(value);
