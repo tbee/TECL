@@ -202,7 +202,7 @@ public class AntlrTest {
 		TECL tecl = parse(""
 				+ "groupId1 { \n"
 				+ "    groupId2 {"
-				+ "        groupId3 { }"
+				+ "        groupId3 { "
 				+ "        }\n"
 				+ "    }\n"
 				+ "}\n"
@@ -341,6 +341,32 @@ public class AntlrTest {
 		assertEquals("group2", tecl.grp(1, "groupId").str("key"));
 	}
 
+	// ========================
+	// VAR
+	
+	@Test
+	public void var() {
+		TECL tecl = parse(""
+				+ "groupId1 { \n"
+				+ "    key : value1 \n "
+				+ ""
+				+ "    groupId2 {"
+				+ "        key : value2 \n "
+				+ ""
+				+ "        groupId3 { \n"
+				+ "            key : value3 \n "
+				+ "        }\n"
+				+ "    }\n"
+				+ "}\n"
+				);
+		assertEquals("value2", tecl.var("$groupId1.groupId2.key", null, (s) -> s));
+		assertEquals("value1", tecl.var("$groupId1.groupId2.parent.key", null, (s) -> s));
+		
+		// Start half way
+		TECL group2TECL = tecl.grp("groupId1").grp("groupId2");
+		assertEquals("value3", group2TECL.var("$.groupId3.key", null, (s) -> s));
+	}
+	
 	// ========================
 	// FILE
 

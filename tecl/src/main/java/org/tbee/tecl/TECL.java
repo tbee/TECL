@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.commons.text.StringTokenizer;
+
 /**
  * 
  * TODO:
@@ -49,7 +51,7 @@ public class TECL {
 	}
 	
 	/*
-	 * Dot separated path from toplevel to here
+	 * Dot separated path from root to here
 	 */
 	public String getPath() {
 		String path = (parent == null ? "" : parent.getPath());
@@ -71,6 +73,14 @@ public class TECL {
 	
 	public TECL getParent() {
 		return parent;
+	}
+	
+	public TECL getRoot() {
+		TECL tecl = this;
+		while (tecl.parent != null) {
+			tecl = tecl.parent;
+		}
+		return tecl;
 	}
 	
 	
@@ -254,6 +264,82 @@ public class TECL {
 
 	
 	// =====================================
+	// REFERENCE
+	
+	/**
+	 * Use a path notation to access a property
+	 * - Start at the root: $groupId.groupId2.property
+	 * - Starting at the current node: $.property
+	 * - Via an index $groupId.groupId2.property[2]
+	 */
+	public <R> R var(String address, R def, Function<String, R> convertFunction) {
+		TokenContext tokenContext = resolve(address);
+		return tokenContext.tecl.get(tokenContext.token, def, convertFunction);
+	}
+	
+	/**
+	 * Use a path notation to access a property
+	 * - Start at the root: $groupId.groupId2
+	 * - Starting at the current node: $.groupID
+	 * - Via an index $groupId.groupId2
+	 */
+	public TECL var(String address) {
+		TokenContext tokenContext = resolve(address + ".<dummy>"); // resolve groups all the way to the last token, so we add one to act as the final property 
+		return tokenContext.tecl;
+	}
+	
+	private TokenContext resolve(String address) {
+		if (!address.startsWith("$")) {
+			throw new IllegalArgumentException("Variables must start with a $");
+		}
+	
+		// First split into its parts
+		List<String> tokens = new StringTokenizer(address, ".").getTokenList();
+		System.out.println("var tokenized: "  + tokens);
+		
+		// Determine the starting point
+		String token = tokens.remove(0);
+		System.out.println("first token= "  + token);
+		TECL tecl = null;
+		if ("$".equals(token)) {
+			// This means the address started with "$."
+			tecl = this;
+			token = tokens.remove(0);
+			System.out.println("start at current tecl, token= "  + token);
+		}
+		else {
+			tecl = this.getRoot();
+			token = token.substring(1);
+			System.out.println("start at root, token= "  + token);
+		}
+		
+		// Navigate
+		do {
+			if ("parent".equals(token)) {
+				tecl = tecl.parent;
+			}
+			else {
+				tecl = tecl.grp(token);				
+			}
+			token = tokens.remove(0);
+			System.out.println("TECL= "  + tecl.getPath());
+			System.out.println("Next token= "  + token);
+		} while (tokens.size() > 0);
+		
+		// final token
+		return new TokenContext(tecl, token);
+	}
+	class TokenContext {
+		final TECL tecl;
+		final String token;
+		
+		TokenContext(TECL tecl,String token) {
+			this.tecl = tecl;
+			this.token = token;
+		}
+	}
+	
+	// =====================================
 	// SUPPORT
 	
 	/**
@@ -349,6 +435,10 @@ public class TECL {
 				return null;
 			}
 			return get(idx, key, def, convertStringToReturnTypeFunction);
+		}
+		
+		public String toString() {
+			return keyTovaluesMap.toString();
 		}
 	}
 	
