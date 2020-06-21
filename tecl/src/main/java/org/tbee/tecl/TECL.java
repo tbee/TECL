@@ -1,7 +1,8 @@
 package org.tbee.tecl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,8 +11,7 @@ import java.util.function.Function;
 /**
  * 
  * TODO:
- * - conditions
- * - dot or slash notation
+ * - get via dot or slash notation
  * - references via dot notation
  * - encrypted strings
  * - lists List<String> hosts = tecl.strs("hosts");
@@ -169,6 +169,46 @@ public class TECL {
 	}
 	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
 		return get(indexOfKey, indexOfValue, key, def, Double::valueOf);
+	}
+	
+	// LocalDate
+	public LocalDate localDate(String key) {
+		return get(0, key, null, LocalDate::parse);
+	}
+	public LocalDate localDate(String key, LocalDate def) {
+		return get(0, key, def, LocalDate::parse);
+	}
+	public LocalDate localDate(int idx, String key) {
+		return get(idx, key, null, LocalDate::parse);
+	}
+	public LocalDate localDate(int idx, String key, LocalDate def) {
+		return get(idx, key, def, LocalDate::parse);
+	}
+	public LocalDate localDate(String indexOfKey, String indexOfValue, String key) {
+		return get(indexOfKey, indexOfValue, key, null, LocalDate::parse);
+	}
+	public LocalDate localDate(String indexOfKey, String indexOfValue, String key, LocalDate def) {
+		return get(indexOfKey, indexOfValue, key, def, LocalDate::parse);
+	}
+	
+	// LocalDateTime
+	public LocalDateTime localDateTime(String key) {
+		return get(0, key, null, LocalDateTime::parse);
+	}
+	public LocalDateTime localDateTime(String key, LocalDateTime def) {
+		return get(0, key, def, LocalDateTime::parse);
+	}
+	public LocalDateTime localDateTime(int idx, String key) {
+		return get(idx, key, null, LocalDateTime::parse);
+	}
+	public LocalDateTime localDateTime(int idx, String key, LocalDateTime def) {
+		return get(idx, key, def, LocalDateTime::parse);
+	}
+	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key) {
+		return get(indexOfKey, indexOfValue, key, null, LocalDateTime::parse);
+	}
+	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
+		return get(indexOfKey, indexOfValue, key, def, LocalDateTime::parse);
 	}
 	
 	// =====================================
