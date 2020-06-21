@@ -1,10 +1,16 @@
 package org.tbee.tecl.antlr;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 import org.tbee.tecl.TECL;
 
@@ -112,6 +118,18 @@ public class AntlrTest {
 	public void doubleProperty() {
 		TECL tecl = parse("key : 123.4 \n");
 		assertEquals(Double.valueOf(123.4), tecl.dbl("key"));
+	}
+	
+	@Test
+	public void localDateProperty() {
+		TECL tecl = parse("key : 2020-06-20 \n");
+		assertEquals(LocalDate.of(2020, 06, 20), tecl.localDate("key"));
+	}
+	
+	@Test
+	public void localDateTmeProperty() {
+		TECL tecl = parse("key : \"2020-06-20T12:34:56\" \n");
+		assertEquals(LocalDateTime.of(2020, 06, 20, 12, 34, 56), tecl.localDateTime("key"));
 	}
 
 
@@ -331,6 +349,7 @@ public class AntlrTest {
 		TECL tecl = TECL.parser().parse(this.getClass().getResourceAsStream("test.tecl"), Charset.forName("UTF-8"));
 		assertEquals("TECL rulez", tecl.str("title"));
 		assertEquals("escaped\"quote", tecl.str("escaped"));
+		assertEquals(LocalDateTime.of(2020, 9, 12, 12, 34, 56), tecl.localDateTime("releaseDateTime"));
 	}
 	
 	// ========================

@@ -2,8 +2,8 @@
 title : "TECL rulez"
 escaped : "escaped\"quote"
  
-# We use ISO notations only, so no local styles
-releaseDateTime : 2020-09-12T06:34
+# We use ISO notations only, so no local styles, but using colons needs quoting
+releaseDateTime : "2020-09-12T12:34:56"
  
 # Multiline strings
 description : "So,
@@ -16,8 +16,8 @@ protocol : http
  
 # Conditions allow for overriding, best match wins (most conditions)
 # If multiple condition sets equally match, the first one will win.
-title[env=production] : "One config file to rule them all"
-title[env=production & os=osx] : "Even on Mac"
+title2[env=production] : "One config file to rule them all"
+title2[env=production & os=osx] : "Even on Mac"
  
 # Lists
 hosts : [alpha, beta]
@@ -26,7 +26,7 @@ hosts : [alpha, beta]
 database {
  
     # indenting is allowed and encouraged, but has no semantic meaning
-    url : jdbc://...
+    url : "jdbc://..."
     user : "admin"
  
     # Strings support default encryption with a external key file, like maven
