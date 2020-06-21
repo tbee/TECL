@@ -79,10 +79,6 @@ public class TECL {
 	
 	private final IndexedValues<String> properties = new IndexedValues<>();
 	
-	public void addProperty(String key, String value) {		
-		properties.add(key, value);
-	}	
-
 	public void setProperty(int idx, String key, String value) {
 		properties.set(idx, key, value);
 	}	

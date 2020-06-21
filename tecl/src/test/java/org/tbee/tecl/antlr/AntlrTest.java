@@ -278,6 +278,24 @@ public class AntlrTest {
 		assertEquals(null, tecl.str("key"));
 	}
 
+	@Test
+	public void conditionedPropertyWithFirstBestMatch() {
+		TECL tecl = parse(""
+				+ "key[sys=A & env=test] : value1\n"
+				+ "key[sys=A] : value2\n"
+				);
+		assertEquals("value1", tecl.str("key"));
+	}
+
+	@Test
+	public void conditionedPropertyWithLastBestMatch() {
+		TECL tecl = parse(""
+				+ "key[sys=A] : value2\n"
+				+ "key[sys=A & env=test] : value1\n"
+				);
+		assertEquals("value1", tecl.str("key"));
+	}
+
 	public void conditionedGroupWithMatchingCondition() {
 		TECL tecl = parse("groupId[sys=A] { }");
 		assertEquals("groupId", tecl.grp("groupId").getId());
@@ -286,12 +304,26 @@ public class AntlrTest {
 	@Test
 	public void conditionedGroupWithNotMatchingCondition() {
 		TECL tecl = parse(""
-				+ "groupId[sys=other] {\n"
-				+ "     key : value\n"
-				+ "} \n"
+				+ "groupId[sys=other] { } \n"
 				);
 		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
 	}	
+
+	// TBEERNOT: so groups behave differently from properties, if two groups match they both are added, 
+	// while two matching properties only the best match is added
+	@Test
+	public void conditioned2GroupsWithMatchingCondition() {
+		TECL tecl = parse("" 
+				+ "groupId[sys=A & env=test] { \n"
+				+ "    key : group1 \n"
+				+ "} \n"
+				+ "groupId[sys=A] { \n"
+				+ "    key : group2 \n"
+				+ "} \n"
+				);
+		assertEquals("group1", tecl.grp(0, "groupId").str("key"));
+		assertEquals("group2", tecl.grp(1, "groupId").str("key"));
+	}
 
 	// ========================
 	// FILE
