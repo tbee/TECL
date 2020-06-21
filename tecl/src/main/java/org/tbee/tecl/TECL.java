@@ -86,6 +86,10 @@ public class TECL {
 	public int indexOf(String key, String value) {
 		return properties.indexOf(key, value);		
 	}
+	
+	public int count(String key) {
+		return properties.count(key);		
+	}
 
 	// GET: methods that have a convert function to change the String value to whatever is wanted
 	public <R> R get(String key, Function<String, R> convertFunction) {
@@ -178,7 +182,19 @@ public class TECL {
 		tecl.setParent(this, idx);
 		return tecl;
 	}
+
+// TBEERNOT: so groups behave differently from properties, if two groups match they both are added, while two matching properties only the best match is added
+//	public TECL setGroup(int idx, String id) {
+//		TECL tecl = new TECL(id);
+//		groups.set(idx, id, tecl);
+//		tecl.setParent(this, idx);
+//		return tecl;
+//	}
 	
+	public int countGrp(String key) {
+		return groups.count(key);		
+	}
+
 	public TECL grp(String id) {
 		return grp(0, id);
 	}

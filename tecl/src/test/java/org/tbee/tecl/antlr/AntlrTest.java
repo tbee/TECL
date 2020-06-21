@@ -309,8 +309,6 @@ public class AntlrTest {
 		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
 	}	
 
-	// TBEERNOT: so groups behave differently from properties, if two groups match they both are added, 
-	// while two matching properties only the best match is added
 	@Test
 	public void conditioned2GroupsWithMatchingCondition() {
 		TECL tecl = parse("" 

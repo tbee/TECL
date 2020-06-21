@@ -144,7 +144,7 @@ public class TECLParser {
 		public void startGroup(String id) {
 
 			System.out.println("startGroup " + id);
-			if (matchConditions(useConditions(), null, id)) {
+			if (matchConditions(useConditions(), null /*teclContext*/, id)) {
 				teclContext = new TECLContext(teclContext.tecl.addGroup(id));
 			}
 			else {
