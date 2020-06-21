@@ -9,92 +9,27 @@ grammar TECL;
 
 @parser::members
 {
-	public ParserRuleContext parse() {
-		System.out.println("startGroup $");
-		teclStack.push(toplevelTECL);
-		return this.configs();
-	}
-	
-	// --------------
-	// TECL
-	
-	/** */
-	public TECL getTECL() {
-		return this.toplevelTECL;
-	}
-	private final TECL toplevelTECL = new TECL("$");	
-	
-	private final Stack<TECL> teclStack = new Stack<>();
-	private TECL tecl = toplevelTECL;	
-	
-	// --------------
-	// GROUP
-	
-	private void startGroup(String id) {
-		System.out.println("startGroup " + id);
-		teclStack.push( teclStack.peek().addGroup(id) ); 
-		tecl = teclStack.peek();		
-	}
-	
-	private void endGroup() {
-		System.out.println("endGroup " + teclStack.peek().getId());
-		teclStack.pop(); 
-		tecl = teclStack.peek();		
-	}
-	
-	// --------------
-	// TABLE
-	
-	private final List<String> tableKeys = new ArrayList<>();
-	private final List<String> tableVals = new ArrayList<>();
-	private int tableRowIdx;
-	private int tableColIdx;
-	private final List<TECL> teclsContainingTable = new ArrayList<>();
-	private final List<TECL> teclsWithTerminatedTable = new ArrayList<>();
-
-	private void validateOneTablePerGroup() {
-		if (teclsContainingTable.contains(tecl)) {
-			throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
-		} 
-		teclsContainingTable.add(tecl);
-	}
-	private void validateTerminatedTable() {
-		if (teclsWithTerminatedTable.contains(tecl)) {
-			throw new IllegalStateException("Group " + tecl.getId() + " already contains a table, only one table per group is allowed.");
-		} 
-	}
-	private void terminateTable() {
-		System.out.println("terminateTable");
-		teclsWithTerminatedTable.add(tecl);
-	}	
+	static public interface Listener {
+		void addProperty(String key, String value);
+		void setProperty(int idx, String key, String value);
 		
-	private void startTable() {
-		System.out.println("startTable");
-		validateOneTablePerGroup();  
-		tableKeys.clear(); 
-		tableRowIdx = -2;		
+		void startGroup(String id);
+		void endGroup();
+		
+		void startConditions();		
+		void addCondition(String key, String comparator, String value);
+		
+		void startTable();
+		void terminateTable();
+		void startTableRow();
+		void addTableData(String value);
 	}
 	
-	private void startTableRow() {
-		tableColIdx = 0;
-		tableRowIdx++;
-		System.out.println("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
-	}	
-
-	private void addTableData(String value) {
-		validateTerminatedTable();
-		System.out.println("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
-		if (tableRowIdx < 0) {
-			System.out.println("addTableRow add header " + value);
-			tableKeys.add(value);
-		}
-		else {
-			String key = tableKeys.get(tableColIdx);
-			System.out.println("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
-			tecl.setProperty(tableRowIdx, key, value);
-		}
-		tableColIdx++;
+	public ParserRuleContext parse(Listener listener) {
+		this.listener = listener;
+		return this.configs();	
 	}
+	private Listener listener;
 }
 
 /*------------------------------------------------------------------
@@ -116,38 +51,39 @@ config
  ;
 
 property
- : WORD conditions? ASSIGN value						{ tecl.addProperty($WORD.text, ANTLRHelper.me().sanatizeAssignment($value.text)); } 
- | WORD conditions? ASSIGN       						{ tecl.addProperty($WORD.text, ""); } 
+ : WORD conditions? ASSIGN value						{ listener.addProperty($WORD.text, $value.text); } 
+ | WORD conditions? ASSIGN       						{ listener.addProperty($WORD.text, ""); } 
  ;
 
 group
- : WORD conditions?                                     { startGroup($WORD.text); } 
-   NL* OBRACE configs CBRACE                            { endGroup(); }
+ : WORD conditions?                                     { listener.startGroup($WORD.text); } 
+   NL* OBRACE configs CBRACE                            { listener.endGroup(); }
  ;
 
 conditions
- : OBRACK condition ( AND condition )* CBRACK
+ : OBRACK												{ listener.startConditions(); } 
+   condition ( AND condition )* CBRACK
  ;
 
 condition
- : WORD COMPAR value						 
+ : WORD COMPAR value						 			{ listener.addCondition($WORD.text, $COMPAR.text, $value.text); }
  ;
 
 table
- :														{ startTable(); } 
+ :														{ listener.startTable(); } 
  row 
  ( 
 	(
-		COMMENT? NL										{ if ($NL.text.length() > 1) { terminateTable(); } }		
+		COMMENT? NL										{ if ($NL.text.length() > 1) { listener.terminateTable(); } }		
 	)+
  	row
  )*
  ;
 
 row
- :														{ startTableRow(); } 
+ :														{ listener.startTableRow(); } 
  PIPE ( 
- 	col_value											{ addTableData($col_value.text); } 
+ 	col_value											{ listener.addTableData($col_value.text); } 
  	PIPE
  )+		
  ;

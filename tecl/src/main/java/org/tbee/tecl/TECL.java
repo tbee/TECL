@@ -11,11 +11,12 @@ import java.util.function.Function;
  * 
  * TODO:
  * - conditions
- * - dot notation
+ * - dot or slash notation
  * - references via dot notation
- * - many type methods for int, dbl, localDate, etc 
  * - encrypted strings
  * - lists List<String> hosts = tecl.strs("hosts");
+ * - slf4j
+ * - many type methods for int, dbl, localDate, etc... 
  *
  */
 public class TECL {
@@ -78,11 +79,11 @@ public class TECL {
 	
 	private final IndexedValues<String> properties = new IndexedValues<>();
 	
-	public void addProperty(String key, String value) {		
+	public void addProperty(String key, String value, List<TECL.Condition> conditions) {		
 		properties.add(key, value);
 	}	
 
-	public void setProperty(int idx, String key, String value) {
+	public void setProperty(int idx, String key, String value, List<TECL.Condition> conditions) {
 		properties.set(idx, key, value);
 	}	
 	
@@ -175,7 +176,7 @@ public class TECL {
 	
 	private final IndexedValues<TECL> groups = new IndexedValues<>();
 	
-	public TECL addGroup(String id) {
+	public TECL addGroup(String id, List<TECL.Condition> conditions) {
 		TECL tecl = new TECL(id);
 		int idx = groups.add(id, tecl);
 		tecl.setParent(this, idx);
@@ -195,11 +196,27 @@ public class TECL {
 		return tecl;
 	}
 
-	// public int indexOfGrp(String key, String value) {
-	//	return groups.indexOf(key, value); // group id's are indentical, so what to compare on?
+	// public int indexOfGrp(String id) {
+	//	return groups.indexOf(key, value); // group id's are identical, so what to compare on? Provide a matcher function <TECL, Boolean>?
 	//}
 
 
+	// =====================================
+	// CONDITIONS
+	
+	public static class Condition {
+		final String key;
+		final String comparator;
+		final String value;
+		
+		public Condition(String key, String comparator, String value) {
+			this.key = key;
+			this.comparator = comparator;
+			this.value = value;
+		}
+	}
+
+	
 	// =====================================
 	// SUPPORT
 	
@@ -226,7 +243,7 @@ public class TECL {
 			// Store the value
 			T oldValue = values.get(idx);
 			if (oldValue != null) {
-				System.out.println("WARN: " + createFullPath(idx, key) + " value is overwritten! " + oldValue + " -> " + value); // TBEERNOT
+				System.out.println("WARN: " + createFullPath(idx, key) + " value is overwritten! " + oldValue + " -> " + value); // TBEERNOT better logging
 			}
 			//System.out.println("@"  + id + ": Adding property "  + key + " = " + value);
 			values.set(idx, value);
@@ -244,10 +261,6 @@ public class TECL {
 				return 0;
 			}
 			return values.size();
-		}
-		
-		boolean contains(String key) {
-			return keyTovaluesMap.containsKey(key);
 		}
 		
 		/*

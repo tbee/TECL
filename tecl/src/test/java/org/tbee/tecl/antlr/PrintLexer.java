@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-public class PrintLexer {
+public class PrintLexer implements org.tbee.tecl.antlr.TECLParser.Listener {
 	private static void printPrettyLispTree(String tree) {
 		int indentation = 1;
 		for (char c : tree.toCharArray()) {
@@ -44,8 +44,68 @@ public class PrintLexer {
         }
         System.out.println("\n[PARSE-TREE]");
         TECLParser parser = new TECLParser(tokens);
-        ParserRuleContext context = parser.parse();
+        ParserRuleContext context = parser.parse(this);
         String tree = context.toStringTree(parser);
         printPrettyLispTree(tree);
     }
+
+	@Override
+	public void addProperty(String key, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setProperty(int idx, String key, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void startGroup(String id) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void endGroup() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void startConditions() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addCondition(String key, String comparator, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void startTable() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void terminateTable() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void startTableRow() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addTableData(String value) {
+		// TODO Auto-generated method stub
+		
+	}
 }
