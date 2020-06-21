@@ -30,8 +30,9 @@ public class TECLParser {
 	 * @param key
 	 * @param value
 	 */
-	public void addParameter(String key, String value) {
+	public TECLParser addParameter(String key, String value) {
 		parameters.put(key, value);
+		return this;
 	}
 	private Map<String, String> parameters = new LinkedHashMap<>(); 
 	
@@ -117,12 +118,16 @@ public class TECLParser {
 		// --------------
 		// PROPERTY
 		
-		public void addProperty(String key, String value) {		
-			tecl.addProperty(key, sanatizeAssignment(value));
+		public void addProperty(String key, String value) {	
+			if (matchConditions(useConditions()) >= 0) {
+				tecl.addProperty(key, sanatizeAssignment(value));
+			}
 		}	
 	
 		public void setProperty(int idx, String key, String value) {
-			tecl.addProperty(key, "");
+			if (matchConditions(useConditions()) >= 0) {
+				tecl.addProperty(key, "");
+			}
 		}	
 	
 		// --------------
@@ -218,7 +223,7 @@ public class TECLParser {
 	// ======================================
 	// SUPPORT
 	
-	public static class Condition {
+	static class Condition {
 		final String key;
 		final String comparator;
 		final String value;
@@ -228,6 +233,41 @@ public class TECLParser {
 			this.comparator = comparator;
 			this.value = value;
 		}
+	}
+	
+	/**
+	 * Give a list of conditions, check how many match against the provided parameters.
+	 * - If a condition is not present in the parameters, it is not counted.
+	 * - If a condition is present, and matches, it is counted as +1
+	 * - If a condition is present, and does not match, the process is aborted with a -1
+	 * 
+	 * @param conditions
+	 * @return < 0 means there is at least one condition that does not match, >=0 the number of matching conditions
+	 */
+	private int matchConditions(List<Condition> conditions) {
+		if (conditions == null) {
+			return 0;
+		}
+
+		// count the matching conditions
+		int cnt = 0;
+		for (Condition condition : conditions) {
+			String parameter = this.parameters.get(condition.key);
+			
+			// condition is not present in the parameters: do not count
+			if (parameter == null) {
+				continue;
+			}
+			
+			// condition is present in the parameters, but does not match
+			if (!parameter.equals(condition.value)) { // TBEERNOT start supporing < > etc?
+				return -1;
+			}
+			
+			// condition is present in the parameters, but and matches
+			cnt++;
+		}
+		return cnt;				
 	}
 
 	/**

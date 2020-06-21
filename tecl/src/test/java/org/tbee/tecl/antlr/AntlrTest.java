@@ -252,20 +252,39 @@ public class AntlrTest {
 	}
 
 	// ========================
-	// GROUP
+	// CONDITIONS
 	
 	@Test
-	public void conditionedProperty() {
+	public void conditionedPropertyWithMatchingCondition() {
 		TECL tecl = parse("key[sys=A] : value\n");
 		assertEquals("value", tecl.str("key"));
 	}
 
 	@Test
-	public void conditionedGroup() {
+	public void conditionedPropertyWithNotMatchingCondition() {
+		TECL tecl = parse("key[sys=other] : value\n");
+		assertEquals(null, tecl.str("key"));
+	}
+
+	@Test
+	public void conditionedPropertyWithMatching2Conditions() {
+		TECL tecl = parse("key[sys=A & env=test] : value\n");
+		assertEquals("value", tecl.str("key"));
+	}
+
+	@Test
+	public void conditionedPropertyWithNotMatching2Conditions() {
+		TECL tecl = parse("key[sys=other & env=test] : value\n");
+		assertEquals(null, tecl.str("key"));
+	}
+
+	@Test
+	public void conditionedGroupWithMatchingCondition() {
 		TECL tecl = parse("groupId[sys=A] { }");
 		assertEquals("groupId", tecl.grp("groupId").getId());
 	}
 	
+
 	// ========================
 	// FILE
 
@@ -280,7 +299,10 @@ public class AntlrTest {
 	
 	private TECL parse(String s) {
 		System.out.println(s); new PrintLexer().lex(s);
-		return TECL.parser().parse(s);
+		return TECL.parser()
+				.addParameter("sys", "A")
+				.addParameter("env", "test")
+				.parse(s);
 	}
 }
 
