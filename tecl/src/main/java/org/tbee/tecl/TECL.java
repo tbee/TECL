@@ -79,11 +79,11 @@ public class TECL {
 	
 	private final IndexedValues<String> properties = new IndexedValues<>();
 	
-	public void addProperty(String key, String value, List<TECL.Condition> conditions) {		
+	public void addProperty(String key, String value) {		
 		properties.add(key, value);
 	}	
 
-	public void setProperty(int idx, String key, String value, List<TECL.Condition> conditions) {
+	public void setProperty(int idx, String key, String value) {
 		properties.set(idx, key, value);
 	}	
 	
@@ -176,7 +176,7 @@ public class TECL {
 	
 	private final IndexedValues<TECL> groups = new IndexedValues<>();
 	
-	public TECL addGroup(String id, List<TECL.Condition> conditions) {
+	public TECL addGroup(String id) {
 		TECL tecl = new TECL(id);
 		int idx = groups.add(id, tecl);
 		tecl.setParent(this, idx);
@@ -199,22 +199,6 @@ public class TECL {
 	// public int indexOfGrp(String id) {
 	//	return groups.indexOf(key, value); // group id's are identical, so what to compare on? Provide a matcher function <TECL, Boolean>?
 	//}
-
-
-	// =====================================
-	// CONDITIONS
-	
-	public static class Condition {
-		final String key;
-		final String comparator;
-		final String value;
-		
-		public Condition(String key, String comparator, String value) {
-			this.key = key;
-			this.comparator = comparator;
-			this.value = value;
-		}
-	}
 
 	
 	// =====================================
@@ -287,24 +271,38 @@ public class TECL {
 		/*
 		 * Get based on index
 		 */
-		<R> R get(int idx, String key, R def, Function<T, R> convertStringToReturnType) {
+		<R> R get(int idx, String key, R def, Function<T, R> convertStringToReturnTypeFunction) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values == null) {
 				return def;
 			}
 			T value = values.get(idx);
-			return value == null ? def : convertStringToReturnType.apply(value);
+			if (value == null) {
+				return def;
+			}
+			try {
+				return convertStringToReturnTypeFunction.apply(value);
+			}
+			catch (Exception e) {
+				throw new ParseException(e);
+			}
 		}
 		
 		/*
 		 * Get method using indexOf to determine the index first
 		 */
-		<R> R get(String indexOfKey, T value, String key, R def, Function<T, R> convertStringToReturnType) {
+		<R> R get(String indexOfKey, T value, String key, R def, Function<T, R> convertStringToReturnTypeFunction) {
 			int idx = indexOf(indexOfKey, value);
 			if (idx < 0) {
 				return null;
 			}
-			return get(idx, key, def, convertStringToReturnType);
+			return get(idx, key, def, convertStringToReturnTypeFunction);
+		}
+	}
+	
+	public static class ParseException extends RuntimeException {
+		public ParseException(Exception e) {
+			super(e);
 		}
 	}
 }

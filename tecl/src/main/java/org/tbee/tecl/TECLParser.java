@@ -118,11 +118,11 @@ public class TECLParser {
 		// PROPERTY
 		
 		public void addProperty(String key, String value) {		
-			tecl.addProperty(key, sanatizeAssignment(value), useConditions());
+			tecl.addProperty(key, sanatizeAssignment(value));
 		}	
 	
 		public void setProperty(int idx, String key, String value) {
-			tecl.addProperty(key, "", useConditions());
+			tecl.addProperty(key, "");
 		}	
 	
 		// --------------
@@ -130,7 +130,7 @@ public class TECLParser {
 		
 		public void startGroup(String id) {
 			System.out.println("startGroup " + id);
-			teclStack.push( teclStack.peek().addGroup(id, useConditions()) ); 
+			teclStack.push( teclStack.peek().addGroup(id) ); 
 			tecl = teclStack.peek();		
 		}
 		
@@ -140,22 +140,21 @@ public class TECLParser {
 			tecl = teclStack.peek();		
 		}
 		
-		
 		// --------------
 		// CONDITIONS
 		
-		private List<TECL.Condition> conditions;
+		private List<Condition> conditions;
 		
 		public void startConditions() {
-			conditions = new ArrayList<TECL.Condition>();	
+			conditions = new ArrayList<Condition>();	
 		}
 		
 		public void addCondition(String key, String comparator, String value) {
-			conditions.add(new TECL.Condition(key, comparator, value));
+			conditions.add(new Condition(key, comparator, value));
 		}
 		
-		public List<TECL.Condition> useConditions() {
-			List<TECL.Condition> conditions = this.conditions;
+		public List<Condition> useConditions() {
+			List<Condition> conditions = this.conditions;
 			this.conditions = null;
 			return conditions;
 		}
@@ -209,7 +208,7 @@ public class TECLParser {
 			else {
 				String key = tableKeys.get(tableColIdx);
 				System.out.println("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
-				tecl.setProperty(tableRowIdx, key, value, null);
+				tecl.setProperty(tableRowIdx, key, value);
 			}
 			tableColIdx++;
 		}
@@ -219,6 +218,18 @@ public class TECLParser {
 	// ======================================
 	// SUPPORT
 	
+	public static class Condition {
+		final String key;
+		final String comparator;
+		final String value;
+		
+		public Condition(String key, String comparator, String value) {
+			this.key = key;
+			this.comparator = comparator;
+			this.value = value;
+		}
+	}
+
 	/**
 	 * @param s
 	 * @return
@@ -227,12 +238,6 @@ public class TECLParser {
 		System.out.println("-----");
 		System.out.println("sanatize:"  + s);
 		
-//		// If the remaining string is blank. it is trimmed to empty
-//		if (s.isBlank()) {
-//			System.out.println("sanitize done: blank string, becomes empty string");
-//			return "";
-//		}
-
 		// check to see if it is quoted
 		String trimmed = s.trim();
 		int trimmedLen = s.length();
