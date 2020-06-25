@@ -385,9 +385,43 @@ public class AntlrTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-//		assertEquals("value2", tecl.str("$group1.key", null, (s) -> s));
+		assertEquals("value2", tecl.grp("group1").str("key"));
+		assertEquals("value2", tecl.var("$group1.key", null, (s) -> s));
 	}
 	
+	@Test
+	public void referenceInTable() {
+		TECL tecl = parse(""
+				+ "| id  | type        | \n "
+				+ "| id1 | $group1.key | \n"
+				+ "\n"
+				+ "group1 { \n"
+				+ "    key : $group2.key \n "
+				+ "}\n"
+				+ "group2 {"
+				+ "    key : value2 \n "
+				+ "}\n"
+				);
+		assertEquals("value2", tecl.str(0, "type"));
+	}
+	
+	@Test
+	public void referenceToIndexedInTable() {
+		TECL tecl = parse(""
+				+ "| id  | type   | \n "
+				+ "| id1 | $group | \n"
+				+ "\n"
+				+ "group { \n"
+				+ "    key : value1 \n "
+				+ "}\n"
+				+ "group {"
+				+ "    key : value2 \n "
+				+ "}\n"
+				);
+		// TBEERNOT, ok, so this is interesting: the index refers to the initial fetch, but the result is a list... How to index that?
+//		assertEquals("value2", tecl.grp(0, "type"));
+	}
+
 	// ========================
 	// FILE
 

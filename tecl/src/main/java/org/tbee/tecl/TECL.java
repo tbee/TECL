@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.text.StringTokenizer;
 
 /**
@@ -103,22 +104,49 @@ public class TECL {
 
 	// GET: methods that have a convert function to change the String value to whatever is wanted
 	public <R> R get(String key, Function<String, R> convertFunction) {
-		return properties.get(0, key, null, convertFunction);
+		String value = properties.get(0, key, null);
+		return optionallResolveVar(value, null, convertFunction);
 	}
 	public <R> R get(String key, R def, Function<String, R> convertFunction) {
-		return properties.get(0, key, def, convertFunction);
+		String value = properties.get(0, key, null);
+		return optionallResolveVar(value, def, convertFunction);
 	}
 	public <R> R get(int idx, String key, Function<String, R> convertFunction) {
-		return properties.get(idx, key, null, convertFunction);
+		String value = properties.get(idx, key, null);
+		return optionallResolveVar(value, null, convertFunction);
 	}
 	public <R> R get(int idx, String key, R def, Function<String, R> convertFunction) {
-		return properties.get(idx, key, def, convertFunction);
+		String value = properties.get(idx, key, null);
+		return optionallResolveVar(value, def, convertFunction);
 	}
 	public <R> R get(String indexOfKey, String indexOfValue, String key, Function<String, R> convertFunction) {
-		return properties.get(indexOfKey, indexOfValue, key, null, convertFunction);
+		String value = properties.get(indexOfKey, indexOfValue, key, null);
+		return optionallResolveVar(value, null, convertFunction);
 	}
 	public <R> R get(String indexOfKey, String indexOfValue, String key, R def, Function<String, R> convertFunction) {
-		return properties.get(indexOfKey, indexOfValue, key, def, convertFunction);
+		String value = properties.get(indexOfKey, indexOfValue, key, null);
+		return optionallResolveVar(value, def, convertFunction);
+	}
+	private <R> R optionallResolveVar(String value, R def, Function<String, R> convertFunction) {
+		if (value == null) {
+			return def;
+		}
+		if (value.startsWith("$")) {
+			return var(value, def, convertFunction);
+		}
+		else {
+			value = sanatizeAssignment(value);
+		}
+		R returnvalue = convert(value, convertFunction);
+		return returnvalue;		
+	}
+	private <R> R convert(String value, Function<String, R> convertFunction) {
+		try {
+			return convertFunction.apply(value);
+		}
+		catch (Exception e) {
+			throw new ParseException(e);
+		}
 	}
 	
 	// STR
@@ -250,7 +278,7 @@ public class TECL {
 	}
 	
 	public TECL grp(int idx, String id) {
-		TECL tecl = groups.get(idx, id, null, (g) -> g);
+		TECL tecl = groups.get(idx, id, null);
 		if (tecl == null) {
 			tecl = new TECL("<group '" + id + "' does not exist>");
 			tecl.setParent(this, -1);
@@ -421,7 +449,7 @@ public class TECL {
 		/*
 		 * Get based on index
 		 */
-		<R> R get(int idx, String key, R def, Function<T, R> convertStringToReturnTypeFunction) {
+		T get(int idx, String key, T def) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values == null) {
 				return def;
@@ -430,23 +458,18 @@ public class TECL {
 			if (value == null) {
 				return def;
 			}
-			try {
-				return convertStringToReturnTypeFunction.apply(value);
-			}
-			catch (Exception e) {
-				throw new ParseException(e);
-			}
+			return value;
 		}
 		
 		/*
 		 * Get method using indexOf to determine the index first
 		 */
-		<R> R get(String indexOfKey, T value, String key, R def, Function<T, R> convertStringToReturnTypeFunction) {
+		T get(String indexOfKey, T value, String key, T def) {
 			int idx = indexOf(indexOfKey, value);
 			if (idx < 0) {
 				return null;
 			}
-			return get(idx, key, def, convertStringToReturnTypeFunction);
+			return get(idx, key, def);
 		}
 		
 		public String toString() {
@@ -459,4 +482,64 @@ public class TECL {
 			super(e);
 		}
 	}
+	
+
+	/**
+	 * @param s
+	 * @return
+	 */
+	private String sanatizeAssignment(String s) {
+//		if (!(t instanceof String)) {
+//			return t;
+//		}
+//		String s = ""  + t;
+		
+		System.out.println("-----");
+		System.out.println("sanatize:"  + s);
+		
+		// check to see if it is quoted
+		String trimmed = s.trim();
+		int trimmedLen = s.length();
+		if ( s.length() > 1 
+		  && "\"".contentEquals(trimmed.substring(0, 1))
+		  && "\"".contentEquals(trimmed.substring(trimmedLen - 1, trimmedLen))
+		  ) {
+			s = sanatizeQuotedString(s);
+		}
+		else {
+			s = sanatizeUnquotedString(s);
+		}
+		
+		System.out.println("sanatize done: >"  + s + "<");
+		return s;
+	}
+
+	/*
+	 * 
+	 */
+	private String sanatizeQuotedString(String s) {
+		System.out.println("sanatize: treat as quoted string" + s);
+
+		// strip quoted
+		s = s.substring(1, s.length() - 1);
+		System.out.println("sanatize: trimmed quotes"  + s);
+		
+		// unescape
+		s = StringEscapeUtils.unescapeJava(s);
+		
+		// done
+		return s;
+	}
+
+	/*
+	 * 
+	 */
+	private String sanatizeUnquotedString(String s) {
+		System.out.println("sanatize: treat as unquoted string" + s);
+
+		// done
+		return s.trim();
+	}
+	
+
 }
