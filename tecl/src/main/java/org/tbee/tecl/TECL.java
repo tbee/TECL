@@ -315,12 +315,24 @@ public class TECL {
 		
 		// Navigate
 		do {
+			// separate an index
+			token = token.trim();
+			int idx = 0;
+			if (token.endsWith("]")) {
+				int startIdx = token.indexOf("[");
+				idx = Integer.parseInt(token.substring(startIdx + 1, token.length() - 1));
+				token= token.substring(0, startIdx);				
+			}
+			
+			// navigate
 			if ("parent".equals(token)) {
 				tecl = tecl.parent;
 			}
 			else {
-				tecl = tecl.grp(token);				
+				tecl = tecl.grp(idx, token);				
 			}
+			
+			// next token
 			token = tokens.remove(0);
 			System.out.println("TECL= "  + tecl.getPath());
 			System.out.println("Next token= "  + token);

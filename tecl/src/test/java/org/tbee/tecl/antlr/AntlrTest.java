@@ -347,24 +347,45 @@ public class AntlrTest {
 	@Test
 	public void var() {
 		TECL tecl = parse(""
-				+ "groupId1 { \n"
+				+ "group1 { \n"
 				+ "    key : value1 \n "
 				+ ""
-				+ "    groupId2 {"
+				+ "    group2 {"
 				+ "        key : value2 \n "
 				+ ""
-				+ "        groupId3 { \n"
+				+ "        group3 { \n"
 				+ "            key : value3 \n "
 				+ "        }\n"
 				+ "    }\n"
+				+ ""
+				+ "    group2 {"
+				+ "        key : value2a \n "
+				+ "    }\n"
 				+ "}\n"
 				);
-		assertEquals("value2", tecl.var("$groupId1.groupId2.key", null, (s) -> s));
-		assertEquals("value1", tecl.var("$groupId1.groupId2.parent.key", null, (s) -> s));
+		assertEquals("value2", tecl.var("$group1.group2.key", null, (s) -> s));
+		assertEquals("value1", tecl.var("$group1.group2.parent.key", null, (s) -> s));
+		assertEquals("value2a", tecl.var("$group1.group2[1].key", null, (s) -> s));
 		
 		// Start half way
-		TECL group2TECL = tecl.grp("groupId1").grp("groupId2");
-		assertEquals("value3", group2TECL.var("$.groupId3.key", null, (s) -> s));
+		TECL group2TECL = tecl.grp("group1").grp("group2");
+		assertEquals("value3", group2TECL.var("$.group3.key", null, (s) -> s));
+		
+		// access a group
+		assertEquals("value2", tecl.var("$group1.group2").str("key"));
+	}
+	
+	@Test
+	public void reference() {
+		TECL tecl = parse(""
+				+ "group1 { \n"
+				+ "    key : $group2.key \n "
+				+ "}\n"
+				+ "group2 {"
+				+ "    key : value2 \n "
+				+ "}\n"
+				);
+//		assertEquals("value2", tecl.str("$group1.key", null, (s) -> s));
 	}
 	
 	// ========================
