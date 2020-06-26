@@ -7,46 +7,48 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 public class PrintLexer implements org.tbee.tecl.antlr.TECLParser.Listener {
-	private static void printPrettyLispTree(String tree) {
+	private static void printPrettyLispTree(String tree, StringBuilder sb) {
 		int indentation = 1;
 		for (char c : tree.toCharArray()) {
 			if (c == '(') {
 				if (indentation > 1) {
-					System.out.println();
+					sb.append("\n");
 				}
 				for (int i = 0; i < indentation; i++) {
-					System.out.print("  ");
+					sb.append("  ");
 				}
 				indentation++;
 			} else if (c == ')') {
 				indentation--;
 			}
-			System.out.print(c);
+			sb.append(c);
 		}
-		System.out.println();
+		sb.append("\n");
 	}
 
-	public void lex(String source) {
-		lex(CharStreams.fromString(source));
+	public String lex(String source) {
+		StringBuilder sb = new StringBuilder();
+		lex(CharStreams.fromString(source), sb);
+		return sb.toString();
 	}
 	
-	private void lex(CharStream input) {
+	private void lex(CharStream input, StringBuilder sb) {
 		TECLLexer lexer = new TECLLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
-        System.out.println("\n[TOKENS]");
+        sb.append("\n[TOKENS]\n");
         for (Token t : tokens.getTokens()) {
             String symbolicName = TECLLexer.VOCABULARY.getSymbolicName(t.getType());
             String literalName = TECLLexer.VOCABULARY.getLiteralName(t.getType());
-            System.out.printf("  %-20s '%s'\n",
+            sb.append(String.format("  %-20s '%s'\n",
                     symbolicName == null ? literalName : symbolicName,
-                    t.getText().replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t"));
+                    t.getText().replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")));
         }
-        System.out.println("\n[PARSE-TREE]");
+        sb.append("\n[PARSE-TREE]\n");
         TECLParser parser = new TECLParser(tokens);
         ParserRuleContext context = parser.parse(this);
         String tree = context.toStringTree(parser);
-        printPrettyLispTree(tree);
+        printPrettyLispTree(tree, sb);
     }
 
 	@Override

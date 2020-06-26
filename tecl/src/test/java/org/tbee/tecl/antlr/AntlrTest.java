@@ -12,9 +12,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECL;
+import org.tbee.tecl.TECLParser;
 
 public class AntlrTest {
+	final Logger logger = LoggerFactory.getLogger(AntlrTest.class);
 
 	@Test
 	public void emptyFile() {
@@ -195,6 +199,7 @@ public class AntlrTest {
 				);
 		assertEquals("value1", tecl.grp(0, "groupId").str("key"));
 		assertEquals("value2", tecl.grp(1, "groupId").str("key"));
+		assertEquals(2, tecl.grps("groupId").size());
 	}
 	
 	@Test
@@ -419,7 +424,7 @@ public class AntlrTest {
 				+ "}\n"
 				);
 		// TBEERNOT, ok, so this is interesting: the index refers to the initial fetch, but the result is a list... How to index that?
-//		assertEquals("value2", tecl.grp(0, "type"));
+//		assertEquals("value2", tecl.grps(0, "type"));
 	}
 
 	// ========================
@@ -436,7 +441,7 @@ public class AntlrTest {
 	// ========================
 	
 	private TECL parse(String s) {
-		System.out.println(s); new PrintLexer().lex(s);
+		logger.atDebug().log("Parsing:\n" + s + new PrintLexer().lex(s));
 		return TECL.parser()
 				.addParameter("sys", "A")
 				.addParameter("env", "test")

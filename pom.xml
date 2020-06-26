@@ -17,6 +17,7 @@
 		<maven.compiler.target>13</maven.compiler.target>
 		<junit.jupiter.version>5.3.1</junit.jupiter.version>
 		<antlr.version>4.8-1</antlr.version>
+		<slf4j.version>2.0.0-alpha1</slf4j.version>
 	</properties>
 
 	<dependencyManagement>
@@ -40,6 +41,16 @@
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-text</artifactId>
 				<version>1.8</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-log4j12</artifactId>
+				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>

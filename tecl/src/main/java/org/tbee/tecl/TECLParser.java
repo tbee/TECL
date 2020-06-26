@@ -18,10 +18,12 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECLParser.ParserListener.TECLContext;
 
 public class TECLParser {
+	final Logger logger = LoggerFactory.getLogger(TECLParser.class);
 	
 	// ======================================
 	// PARAMETERS
@@ -106,7 +108,7 @@ public class TECLParser {
 	class ParserListener implements org.tbee.tecl.antlr.TECLParser.Listener { 
 	
 		public ParserListener() {
-			System.out.println("startGroup $");
+			logger.atDebug().log("startGroup $");
 			teclContextStack.push(teclContext);
 		}
 		// This is the toplevel
@@ -127,14 +129,18 @@ public class TECLParser {
 		// PROPERTY
 		
 		public void addProperty(String key, String value) {	
-			if (matchConditions(useConditions(), teclContext, key)) {
-				teclContext.tecl.setProperty(0, key, value);
+			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
+			if (matchConditions == null || matchConditions) {
+				boolean allowOverwrite = (matchConditions != null);
+				teclContext.tecl.setProperty(0, key, value, allowOverwrite);
 			}
 		}	
 	
 		public void setProperty(int idx, String key, String value) {
-			if (matchConditions(useConditions(), teclContext, key)) {
-				teclContext.tecl.setProperty(0, key, "");
+			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
+			if (matchConditions) {
+				boolean allowOverwrite = (matchConditions != null);
+				teclContext.tecl.setProperty(0, key, "", allowOverwrite);
 			}
 		}	
 	
@@ -143,8 +149,9 @@ public class TECLParser {
 		
 		public void startGroup(String id) {
 
-			System.out.println("startGroup " + id);
-			if (matchConditions(useConditions(), null /*teclContext*/, id)) {
+			logger.atDebug().log("startGroup " + id);
+			Boolean matchConditions = matchConditions(useConditions(), null /*teclContext*/, id);
+			if (matchConditions == null || matchConditions) {
 				teclContext = new TECLContext(teclContext.tecl.addGroup(id));
 			}
 			else {
@@ -155,7 +162,7 @@ public class TECLParser {
 		}
 		
 		public void endGroup() {
-			System.out.println("endGroup " + teclContext.tecl.getId());
+			logger.atDebug().log("endGroup " + teclContext.tecl.getId());
 			teclContextStack.pop(); 
 			teclContext = teclContextStack.peek();		
 		}
@@ -201,34 +208,34 @@ public class TECLParser {
 		}
 			
 		public void startTable() {
-			System.out.println("startTable");
+			logger.atDebug().log("startTable");
 			validateOneTablePerGroup();  
 			tableKeys.clear(); 
 			tableRowIdx = -2;		
 		}
 		
 		public void terminateTable() {
-			System.out.println("terminateTable");
+			logger.atDebug().log("terminateTable");
 			teclsWithTerminatedTable.add(teclContext.tecl);
 		}	
 		
 		public void startTableRow() {
 			tableColIdx = 0;
 			tableRowIdx++;
-			System.out.println("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
+			logger.atDebug().log("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
 		}	
 	
 		public void addTableData(String value) {
 			validateTerminatedTable();
-			System.out.println("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
+			logger.atDebug().log("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
 			
 			if (tableRowIdx < 0) {
-				System.out.println("addTableRow add header " + value);
+				logger.atDebug().log("addTableRow add header " + value);
 				tableKeys.add(value);
 			}
 			else {
 				String key = tableKeys.get(tableColIdx);
-				System.out.println("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
+				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
 				teclContext.tecl.setProperty(tableRowIdx, key, value);
 			}
 			tableColIdx++;
@@ -264,16 +271,16 @@ public class TECLParser {
 	 * @param conditions
 	 * @return < 0 means there is at least one condition that does not match, >=0 the number of matching conditions
 	 */
-	private boolean matchConditions(List<Condition> conditions, TECLContext teclContext, String key) {
-		if (conditions == null) {
-			return true;
+	private Boolean matchConditions(List<Condition> conditions, TECLContext teclContext, String key) {
+		if (conditions == null || conditions.isEmpty()) {
+			return null;
 		}
 
 		// count the matching conditions
 		int cnt = 0;
 		for (Condition condition : conditions) {
 			String parameter = this.parameters.get(condition.key);
-			System.out.println(key + ": " + parameter + " matching " + condition);
+			logger.atDebug().log(key + ": " + parameter + " matching " + condition);
 			
 			// condition is not present in the parameters: do not count
 			if (parameter == null) {
@@ -287,7 +294,7 @@ public class TECLParser {
 			
 			// condition is present in the parameters, but and matches
 			cnt++;
-			System.out.println(key + ": " + "cnt=" + cnt);
+			logger.atDebug().log(key + ": " + "cnt=" + cnt);
 		}
 		
 		// We have a match, but is it better that the previous match
@@ -295,7 +302,7 @@ public class TECLParser {
 			
 			// find previous match
 			Integer previousCnt = teclContext.bestMatchConditions.get(key);
-			System.out.println(key + ": " + "previous bestMatchConditions = " + previousCnt);
+			logger.atDebug().log(key + ": " + "previous bestMatchConditions = " + previousCnt);
 			
 			// Compare with current match
 			if (previousCnt != null && previousCnt.intValue() >= cnt) {
@@ -304,7 +311,7 @@ public class TECLParser {
 			}
 			
 			// We have a (better) match!
-			System.out.println(key + ": " + "bestMatchConditions = " + cnt);
+			logger.atDebug().log(key + ": " + "bestMatchConditions = " + cnt);
 			teclContext.bestMatchConditions.put(key, cnt);
 		}
 		

@@ -3,6 +3,7 @@ package org.tbee.tecl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,12 +11,12 @@ import java.util.function.Function;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.text.StringTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
  * TODO:
- * - get via dot or slash notation
- * - references via dot notation
  * - encrypted strings
  * - lists List<String> hosts = tecl.strs("hosts");
  * - slf4j
@@ -23,6 +24,7 @@ import org.apache.commons.text.StringTokenizer;
  *
  */
 public class TECL {
+	final Logger logger = LoggerFactory.getLogger(TECL.class);
 	
 	// =====================================
 	// parser
@@ -91,7 +93,10 @@ public class TECL {
 	private final IndexedValues<String> properties = new IndexedValues<>();
 	
 	public void setProperty(int idx, String key, String value) {
-		properties.set(idx, key, value);
+		properties.set(idx, key, value, false);
+	}	
+	public void setProperty(int idx, String key, String value, boolean allowOverwrite) {
+		properties.set(idx, key, value, allowOverwrite);
 	}	
 	
 	public int indexOf(String key, String value) {
@@ -261,14 +266,6 @@ public class TECL {
 		return tecl;
 	}
 
-// TBEERNOT: so groups behave differently from properties, if two groups match they both are added, while two matching properties only the best match is added
-//	public TECL setGroup(int idx, String id) {
-//		TECL tecl = new TECL(id);
-//		groups.set(idx, id, tecl);
-//		tecl.setParent(this, idx);
-//		return tecl;
-//	}
-	
 	public int countGrp(String key) {
 		return groups.count(key);		
 	}
@@ -285,12 +282,12 @@ public class TECL {
 		}
 		return tecl;
 	}
-
-	// public int indexOfGrp(String id) {
-	//	return groups.indexOf(key, value); // group id's are identical, so what to compare on? Provide a matcher function <TECL, Boolean>?
-	//}
-
 	
+	public List<TECL> grps(String id) {
+		List<TECL> tecls = groups.get(id);
+		return tecls;
+	}
+
 	// =====================================
 	// REFERENCE
 	
@@ -323,22 +320,22 @@ public class TECL {
 	
 		// First split into its parts
 		List<String> tokens = new StringTokenizer(address, ".").getTokenList();
-		System.out.println("var tokenized: "  + tokens);
+		logger.atDebug().log("var tokenized: "  + tokens);
 		
 		// Determine the starting point
 		String token = tokens.remove(0);
-		System.out.println("first token= "  + token);
+		logger.atDebug().log("first token= "  + token);
 		TECL tecl = null;
 		if ("$".equals(token)) {
 			// This means the address started with "$."
 			tecl = this;
 			token = tokens.remove(0);
-			System.out.println("start at current tecl, token= "  + token);
+			logger.atDebug().log("start at current tecl, token= "  + token);
 		}
 		else {
 			tecl = this.getRoot();
 			token = token.substring(1);
-			System.out.println("start at root, token= "  + token);
+			logger.atDebug().log("start at root, token= "  + token);
 		}
 		
 		// Navigate
@@ -362,8 +359,8 @@ public class TECL {
 			
 			// next token
 			token = tokens.remove(0);
-			System.out.println("TECL= "  + tecl.getPath());
-			System.out.println("Next token= "  + token);
+			logger.atDebug().log("TECL= "  + tecl.getPath());
+			logger.atDebug().log("Next token= "  + token);
 		} while (tokens.size() > 0);
 		
 		// final token
@@ -388,7 +385,7 @@ public class TECL {
 	private class IndexedValues<T> {
 		private final Map<String, List<T>> keyTovaluesMap = new LinkedHashMap<>();
 		
-		void set(int idx, String key, T value) {
+		void set(int idx, String key, T value, boolean allowOverwrite) {
 			
 			// First get the list of values
 			List<T> values = keyTovaluesMap.get(key);
@@ -404,16 +401,16 @@ public class TECL {
 			
 			// Store the value
 			T oldValue = values.get(idx);
-			if (oldValue != null) {
-				System.out.println("WARN: " + createFullPath(idx, key) + " value is overwritten! " + oldValue + " -> " + value); // TBEERNOT better logging
+			if (oldValue != null && !allowOverwrite) {
+				throw new IllegalStateException("WARN: " + createFullPath(idx, key) + " value is overwritten! " + oldValue + " -> " + value);
 			}
-			//System.out.println("@"  + id + ": Adding property "  + key + " = " + value);
+			//logger.atDebug().log("@"  + id + ": Adding property "  + key + " = " + value);
 			values.set(idx, value);
 		}
 
 		int add(String key, T value) {
 			int idx = count(key);
-			set(idx, key, value);
+			set(idx, key, value, false);
 			return idx;
 		}
 
@@ -444,6 +441,19 @@ public class TECL {
 				return -1;
 			}
 			return values.indexOf(value);
+		}
+
+		/*
+		 * Get collection
+		 */
+		List<T> get(String key) {
+			List<T> values = keyTovaluesMap.get(key);
+			if (values == null) {
+				return Collections.emptyList();
+			}
+			values = new ArrayList<T>(values);
+			values.remove(null);
+			return values;
 		}
 
 		/*
@@ -494,8 +504,8 @@ public class TECL {
 //		}
 //		String s = ""  + t;
 		
-		System.out.println("-----");
-		System.out.println("sanatize:"  + s);
+		logger.atDebug().log("-----");
+		logger.atDebug().log("sanatize: >"  + s + "<");
 		
 		// check to see if it is quoted
 		String trimmed = s.trim();
@@ -510,7 +520,7 @@ public class TECL {
 			s = sanatizeUnquotedString(s);
 		}
 		
-		System.out.println("sanatize done: >"  + s + "<");
+		logger.atDebug().log("sanatize: done: >"  + s + "<");
 		return s;
 	}
 
@@ -518,11 +528,11 @@ public class TECL {
 	 * 
 	 */
 	private String sanatizeQuotedString(String s) {
-		System.out.println("sanatize: treat as quoted string" + s);
+		logger.atDebug().log("sanatize: treat as quoted string: >"  + s + "<");
 
 		// strip quoted
 		s = s.substring(1, s.length() - 1);
-		System.out.println("sanatize: trimmed quotes"  + s);
+		logger.atDebug().log("sanatize: trimmed quotes: >"  + s + "<");
 		
 		// unescape
 		s = StringEscapeUtils.unescapeJava(s);
@@ -535,7 +545,7 @@ public class TECL {
 	 * 
 	 */
 	private String sanatizeUnquotedString(String s) {
-		System.out.println("sanatize: treat as unquoted string" + s);
+		logger.atDebug().log("sanatize: treat as unquoted string: >"  + s + "<");
 
 		// done
 		return s.trim();
