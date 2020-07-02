@@ -98,6 +98,9 @@ public class TECL {
 	public void setProperty(int idx, String key, String value, boolean allowOverwrite) {
 		properties.set(idx, key, value, allowOverwrite);
 	}	
+	public int addProperty(String key, String value) {
+		return properties.add(key, value);
+	}	
 	
 	public int indexOf(String key, String value) {
 		return properties.indexOf(key, value);		

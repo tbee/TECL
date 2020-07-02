@@ -11,6 +11,7 @@ grammar TECL;
 {
 	static public interface Listener {
 		void addProperty(String key, String value);
+		void addProperties(String key, List<String> values);
 		void setProperty(int idx, String key, String value);
 		
 		void startGroup(String id);
@@ -30,6 +31,8 @@ grammar TECL;
 		return this.configs();	
 	}
 	private Listener listener;
+	
+	private List<String> listValues = new ArrayList<>();
 }
 
 /*------------------------------------------------------------------
@@ -51,8 +54,9 @@ config
  ;
 
 property
- : WORD conditions? ASSIGN value						{ listener.addProperty($WORD.text, $value.text); } 
- | WORD conditions? ASSIGN       						{ listener.addProperty($WORD.text, ""); } 
+ : WORD conditions? ASSIGN value						{ listener.setProperty(0, $WORD.text, $value.text); } 
+ | WORD conditions? ASSIGN list							{ listener.addProperties($WORD.text, listValues); } 
+ | WORD conditions? ASSIGN       						{ listener.setProperty(0, $WORD.text, ""); } 
  ;
 
 group
@@ -94,7 +98,6 @@ value
  : WORD
  | VARIABLE
  | string
- | list
  ;
 
 string
@@ -103,7 +106,10 @@ string
  ;
 
 list
- : OBRACK ( value ( COMMA value )* )? CBRACK
+ : OBRACK ( value 										{ listValues.clear(); listValues.add($value.text); }									
+ 	( COMMA value 										{ listValues.add($value.text); }
+ 	)*
+ )? CBRACK
  ;
 
 /*------------------------------------------------------------------

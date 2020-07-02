@@ -135,7 +135,29 @@ public class AntlrTest {
 		TECL tecl = parse("key : \"2020-06-20T12:34:56\" \n");
 		assertEquals(LocalDateTime.of(2020, 06, 20, 12, 34, 56), tecl.localDateTime("key"));
 	}
+	
+	
+	// ========================
+	// LIST
+	
+	@Test
+	public void simpleList() {
+		TECL tecl = parse("key : [aaa,bbb,ccc] \n");
+		assertEquals("aaa" , tecl.str(0, "key"));
+		assertEquals("bbb" , tecl.str(1, "key"));
+		assertEquals("ccc" , tecl.str(2, "key"));
+	}
 
+	
+	@Test
+	public void simpleListQuotedStrings() {
+		String value = " value and more difficult!&# 345 symbols ";
+		TECL tecl = parse("key : [\"aa a\",\""  + value + "\",ccc] \n");
+		assertEquals("aa a" , tecl.str(0, "key"));
+		assertEquals(value , tecl.str(1, "key"));
+		assertEquals("ccc" , tecl.str(2, "key"));
+	}
+	
 
 	// ========================
 	// COMMENTS
@@ -161,6 +183,7 @@ public class AntlrTest {
 		assertEquals("value1", tecl.str("key1"));
 		assertEquals("value2", tecl.str("key2"));
 	}
+	
 	
 	// ========================
 	// GROUP
@@ -346,6 +369,21 @@ public class AntlrTest {
 		assertEquals("group2", tecl.grp(1, "groupId").str("key"));
 	}
 
+	@Test
+	public void conditionedList() {
+		TECL tecl = parse("key[sys=A] : [aaa,bbb]\n");
+		assertEquals("aaa", tecl.str(0, "key"));
+		assertEquals("bbb", tecl.str(1, "key"));
+	}
+
+	@Test
+	public void conditionedListNoMath() {
+		TECL tecl = parse("key[sys=other] : [aaa,bbb]\n");
+		assertNull(tecl.str(0, "key"));
+		assertNull(tecl.str(1, "key"));
+	}
+
+	
 	// ========================
 	// VAR
 	

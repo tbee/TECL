@@ -128,25 +128,34 @@ public class TECLParser {
 		// --------------
 		// PROPERTY
 		
+		@Override
 		public void addProperty(String key, String value) {	
 			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
 			if (matchConditions == null || matchConditions) {
-				boolean allowOverwrite = (matchConditions != null);
-				teclContext.tecl.setProperty(0, key, value, allowOverwrite);
+				teclContext.tecl.addProperty(key, value);
+			}
+		}	
+		@Override
+		public void addProperties(String key, List<String> values) {	
+			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
+			if (matchConditions == null || matchConditions) {
+				values.forEach(value -> teclContext.tecl.addProperty(key, value));
 			}
 		}	
 	
+		@Override
 		public void setProperty(int idx, String key, String value) {
 			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
-			if (matchConditions) {
+			if (matchConditions == null || matchConditions) {
 				boolean allowOverwrite = (matchConditions != null);
-				teclContext.tecl.setProperty(0, key, "", allowOverwrite);
+				teclContext.tecl.setProperty(idx, key, value, allowOverwrite);
 			}
 		}	
 	
 		// --------------
 		// GROUP
 		
+		@Override
 		public void startGroup(String id) {
 
 			logger.atDebug().log("startGroup " + id);
@@ -161,6 +170,7 @@ public class TECLParser {
 			teclContextStack.push(teclContext);
 		}
 		
+		@Override
 		public void endGroup() {
 			logger.atDebug().log("endGroup " + teclContext.tecl.getId());
 			teclContextStack.pop(); 
@@ -172,15 +182,17 @@ public class TECLParser {
 		
 		private List<Condition> conditions;
 		
+		@Override
 		public void startConditions() {
 			conditions = new ArrayList<Condition>();	
 		}
 		
+		@Override
 		public void addCondition(String key, String comparator, String value) {
 			conditions.add(new Condition(key, comparator, value));
 		}
 		
-		public List<Condition> useConditions() {
+		private List<Condition> useConditions() {
 			List<Condition> conditions = this.conditions;
 			this.conditions = null;
 			return conditions;
@@ -207,6 +219,7 @@ public class TECLParser {
 			} 
 		}
 			
+		@Override
 		public void startTable() {
 			logger.atDebug().log("startTable");
 			validateOneTablePerGroup();  
@@ -214,17 +227,20 @@ public class TECLParser {
 			tableRowIdx = -2;		
 		}
 		
+		@Override
 		public void terminateTable() {
 			logger.atDebug().log("terminateTable");
 			teclsWithTerminatedTable.add(teclContext.tecl);
 		}	
 		
+		@Override
 		public void startTableRow() {
 			tableColIdx = 0;
 			tableRowIdx++;
 			logger.atDebug().log("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
 		}	
 	
+		@Override
 		public void addTableData(String value) {
 			validateTerminatedTable();
 			logger.atDebug().log("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);

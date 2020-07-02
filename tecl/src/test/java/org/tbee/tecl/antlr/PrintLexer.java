@@ -1,5 +1,7 @@
 package org.tbee.tecl.antlr;
 
+import java.util.List;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -107,6 +109,12 @@ public class PrintLexer implements org.tbee.tecl.antlr.TECLParser.Listener {
 
 	@Override
 	public void addTableData(String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addProperties(String key, List<String> values) {
 		// TODO Auto-generated method stub
 		
 	}
