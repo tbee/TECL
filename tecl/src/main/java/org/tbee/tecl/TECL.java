@@ -17,8 +17,6 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * TODO:
- * - encrypted strings
- * - lists List<String> hosts = tecl.strs("hosts");
  * - slf4j
  * - many type methods for int, dbl, localDate, etc... 
  *
@@ -110,32 +108,37 @@ public class TECL {
 		return properties.count(key);		
 	}
 
+	// RAW: get the raw uninterpreted value
+	public String raw(int idx, String key, String def) {
+		return properties.get(idx, key, null);
+	}
+	
 	// GET: methods that have a convert function to change the String value to whatever is wanted
 	public <R> R get(String key, Function<String, R> convertFunction) {
 		String value = properties.get(0, key, null);
-		return optionallResolveVar(value, null, convertFunction);
+		return optionallyResolveVar(value, null, convertFunction);
 	}
 	public <R> R get(String key, R def, Function<String, R> convertFunction) {
 		String value = properties.get(0, key, null);
-		return optionallResolveVar(value, def, convertFunction);
+		return optionallyResolveVar(value, def, convertFunction);
 	}
 	public <R> R get(int idx, String key, Function<String, R> convertFunction) {
 		String value = properties.get(idx, key, null);
-		return optionallResolveVar(value, null, convertFunction);
+		return optionallyResolveVar(value, null, convertFunction);
 	}
 	public <R> R get(int idx, String key, R def, Function<String, R> convertFunction) {
 		String value = properties.get(idx, key, null);
-		return optionallResolveVar(value, def, convertFunction);
+		return optionallyResolveVar(value, def, convertFunction);
 	}
 	public <R> R get(String indexOfKey, String indexOfValue, String key, Function<String, R> convertFunction) {
 		String value = properties.get(indexOfKey, indexOfValue, key, null);
-		return optionallResolveVar(value, null, convertFunction);
+		return optionallyResolveVar(value, null, convertFunction);
 	}
 	public <R> R get(String indexOfKey, String indexOfValue, String key, R def, Function<String, R> convertFunction) {
 		String value = properties.get(indexOfKey, indexOfValue, key, null);
-		return optionallResolveVar(value, def, convertFunction);
+		return optionallyResolveVar(value, def, convertFunction);
 	}
-	private <R> R optionallResolveVar(String value, R def, Function<String, R> convertFunction) {
+	private <R> R optionallyResolveVar(String value, R def, Function<String, R> convertFunction) {
 		if (value == null) {
 			return def;
 		}
@@ -285,6 +288,16 @@ public class TECL {
 	
 	public TECL grp(int idx, String id) {
 		TECL tecl = groups.get(idx, id, null);
+		
+		// if not found, maybe we have variable
+		if (tecl == null) {
+			String value = properties.get(idx, id, null);
+			if (value != null && value.startsWith("$")) {
+				tecl = var(value);
+			}
+		}
+		
+		// if not found, return an empty group so we don't get NPE's
 		if (tecl == null) {
 			tecl = new TECL("<group '" + id + "' does not exist>");
 			tecl.setParent(this, -1);
@@ -318,7 +331,7 @@ public class TECL {
 	 * - Via an index $groupId.groupId2
 	 */
 	public TECL var(String address) {
-		TokenContext tokenContext = resolve(address + ".<dummy>"); // resolve groups all the way to the last token, so we add one to act as the final property 
+		TokenContext tokenContext = resolve(address + ".<leaf property>"); // resolve groups all the way to the last token, so we add one to act as the leaf property 
 		return tokenContext.tecl;
 	}
 	
@@ -339,12 +352,12 @@ public class TECL {
 			// This means the address started with "$."
 			tecl = this;
 			token = tokens.remove(0);
-			logger.atDebug().log("start at current tecl, token= "  + token);
+			logger.atDebug().log("start at current tecl, token="  + token);
 		}
 		else {
 			tecl = this.getRoot();
 			token = token.substring(1);
-			logger.atDebug().log("start at root, token= "  + token);
+			logger.atDebug().log("start at root, token="  + token);
 		}
 		
 		// Navigate
@@ -367,6 +380,9 @@ public class TECL {
 			}
 			
 			// next token
+			if (tokens.isEmpty()) {
+				throw new IllegalArgumentException("This variable does not end with a property: " + address);
+			}
 			token = tokens.remove(0);
 			logger.atDebug().log("TECL= "  + tecl.getPath());
 			logger.atDebug().log("Next token= "  + token);
@@ -567,5 +583,7 @@ public class TECL {
 		return s.trim();
 	}
 	
-
+	public String toString() {
+		return getPath();
+	}
 }

@@ -159,10 +159,11 @@ public class TECLParser {
 		@Override
 		public void startGroup(String id) {
 
-			logger.atDebug().log("startGroup " + id);
+			logger.atDebug().log("startGroup '" + id + "'");
 			Boolean matchConditions = matchConditions(useConditions(), null /*teclContext*/, id);
 			if (matchConditions == null || matchConditions) {
 				teclContext = new TECLContext(teclContext.tecl.addGroup(id));
+				logger.atDebug().log("new group '" + id + "' added at " + teclContext.tecl.getPath());
 			}
 			else {
 				// We create a TECL so we can continue parsing the file, but it is not added as a group
@@ -257,6 +258,8 @@ public class TECLParser {
 			}
 			tableColIdx++;
 		}
+		
+		@Override
 		public void addTableData(List<String> values) {
 			validateTerminatedTable();
 			logger.atDebug().log("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", values=" + values);
@@ -269,7 +272,9 @@ public class TECLParser {
 				String key = tableKeys.get(tableColIdx);
 				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + values);
 				
-				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, "|" + key + "|");
+				String id = "|" + key + "|";
+				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, id);
+				logger.atDebug().log("new group '" + id + "' added at " + teclContext.tecl.getPath());
 				AtomicInteger idx = new AtomicInteger();
 				values.forEach(value -> {
 					listTECL.setProperty(idx.getAndIncrement(), key, value);

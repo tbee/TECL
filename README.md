@@ -63,9 +63,11 @@ servers {
     | alpha    | A          | 12          |                             |
     | beta     | XYZ        | 24          |                             |
     | "sys 2"  | B          | 6           |                             |
-    # you can have sub blocks, which are id-less groups (id is the column)
+    # lists are allowed in a table
+    | many     | [D,E,F]    |             |                             |
+    # you can have sub groups, which are id-less groups (id is the column)
     | gamma    | C          | 12          | {breaker:true, timeout: 15} |
-    # or you reference to another block
+    # or you reference to another group
     | tango    | D          | 24          | $environment                |
 }
  

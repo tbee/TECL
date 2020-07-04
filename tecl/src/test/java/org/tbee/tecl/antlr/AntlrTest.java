@@ -474,7 +474,7 @@ public class AntlrTest {
 	}
 	
 	@Test
-	public void referenceInTable() {
+	public void referenceKeyInTable() {
 		TECL tecl = parse(""
 				+ "| id  | type        | \n "
 				+ "| id1 | $group1.key | \n"
@@ -487,6 +487,40 @@ public class AntlrTest {
 				+ "}\n"
 				);
 		assertEquals("value2", tecl.str(0, "type"));
+	}
+	
+	@Test
+	public void referenceGrpInTable() {
+		TECL tecl = parse(""
+				+ "| id  | type   | \n "
+				+ "| id1 | $group | \n"
+				+ "\n"
+				+ "group { \n"
+				+ "    key : value \n "
+				+ "}\n"
+				);
+		assertEquals("value", tecl.grp(0, "type").str("key"));
+		assertEquals("value", tecl.grp("group").str("key"));
+	}
+	
+	@Test
+	public void referenceGrpInTableConflict() {
+		TECL tecl = parse(""
+				+ "| id  | type   | \n "
+				+ "| id1 | $group | \n"
+				+ "\n"
+				+ "group { \n"
+				+ "    key : value1 \n "
+				+ "}\n"
+				+ "\n"
+				+ "type { \n"
+				+ "    key : value2 \n "
+				+ "}\n"
+				);
+		assertEquals("$group", tecl.raw(0, "type", null));
+		assertEquals("value1", tecl.var(tecl.raw(0, "type", null)).str("key"));
+		assertEquals("value1", tecl.grp("group").str("key"));
+		assertEquals(1, tecl.countGrp("type"));
 	}
 	
 	@Test
