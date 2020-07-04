@@ -269,7 +269,7 @@ public class TECLParser {
 				String key = tableKeys.get(tableColIdx);
 				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + values);
 				
-				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, key);
+				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, "|" + key + "|");
 				AtomicInteger idx = new AtomicInteger();
 				values.forEach(value -> {
 					listTECL.setProperty(idx.getAndIncrement(), key, value);
