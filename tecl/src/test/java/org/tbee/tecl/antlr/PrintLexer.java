@@ -54,12 +54,6 @@ public class PrintLexer implements org.tbee.tecl.antlr.TECLParser.Listener {
     }
 
 	@Override
-	public void addProperty(String key, String value) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public void setProperty(int idx, String key, String value) {
 		// TODO Auto-generated method stub
 		
@@ -114,7 +108,13 @@ public class PrintLexer implements org.tbee.tecl.antlr.TECLParser.Listener {
 	}
 
 	@Override
-	public void addProperties(String key, List<String> values) {
+	public void setProperty(String key, List<String> values) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addTableData(List<String> value) {
 		// TODO Auto-generated method stub
 		
 	}

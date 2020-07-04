@@ -158,6 +158,15 @@ public class AntlrTest {
 		assertEquals("ccc" , tecl.str(2, "key"));
 	}
 	
+	@Test
+	public void listNotOverwrite() {
+		assertThrows(IllegalStateException.class, () -> {
+			TECL tecl = parse("" 
+					+ "key : [aaa,bbb,ccc] \n"
+					+ "key : [aaa,bbb,ccc] \n"
+					);
+		});
+	}
 
 	// ========================
 	// COMMENTS
@@ -295,6 +304,18 @@ public class AntlrTest {
 					+ "| 10   | 20    | \n"
 					);
 		});
+	}
+
+	@Test
+	public void tableWithList() {
+		TECL tecl = parse(""
+				+ "| type   | \n "
+				+ "| [a,b]  | \n"
+				+ "| int    | \n"				
+				);
+		assertEquals("a", tecl.grp(0, "type").str(0, "type"));
+		assertEquals("b", tecl.grp(0, "type").str(1, "type"));
+		assertEquals("int", tecl.str(1, "type"));
 	}
 
 	// ========================

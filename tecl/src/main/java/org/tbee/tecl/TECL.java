@@ -98,8 +98,8 @@ public class TECL {
 	public void setProperty(int idx, String key, String value, boolean allowOverwrite) {
 		properties.set(idx, key, value, allowOverwrite);
 	}	
-	public int addProperty(String key, String value) {
-		return properties.add(key, value);
+	public void clearProperty(String key) {
+		properties.clear(key);
 	}	
 	
 	public int indexOf(String key, String value) {
@@ -268,6 +268,12 @@ public class TECL {
 		tecl.setParent(this, idx);
 		return tecl;
 	}
+	TECL setGroup(int idx, String id) {
+		TECL tecl = new TECL(id);
+		groups.set(idx, id, tecl, false);
+		tecl.setParent(this, idx);
+		return tecl;
+	}
 
 	public int countGrp(String key) {
 		return groups.count(key);		
@@ -387,6 +393,13 @@ public class TECL {
 	 */
 	private class IndexedValues<T> {
 		private final Map<String, List<T>> keyTovaluesMap = new LinkedHashMap<>();
+		
+		void clear(String key) {
+			List<T> values = keyTovaluesMap.get(key);
+			if (values != null) {
+				values.clear();;
+			}
+		}
 		
 		void set(int idx, String key, T value, boolean allowOverwrite) {
 			

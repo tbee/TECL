@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -129,17 +130,17 @@ public class TECLParser {
 		// PROPERTY
 		
 		@Override
-		public void addProperty(String key, String value) {	
+		public void setProperty(String key, List<String> values) {	
 			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
 			if (matchConditions == null || matchConditions) {
-				teclContext.tecl.addProperty(key, value);
-			}
-		}	
-		@Override
-		public void addProperties(String key, List<String> values) {	
-			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
-			if (matchConditions == null || matchConditions) {
-				values.forEach(value -> teclContext.tecl.addProperty(key, value));
+				boolean allowOverwrite = (matchConditions != null);
+				if (allowOverwrite) {
+					teclContext.tecl.clearProperty(key);
+				}
+				AtomicInteger idx = new AtomicInteger();
+				values.forEach(value -> {
+					teclContext.tecl.setProperty(idx.getAndIncrement(), key, value);
+				});
 			}
 		}	
 	
@@ -253,6 +254,26 @@ public class TECLParser {
 				String key = tableKeys.get(tableColIdx);
 				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
 				teclContext.tecl.setProperty(tableRowIdx, key, value);
+			}
+			tableColIdx++;
+		}
+		public void addTableData(List<String> values) {
+			validateTerminatedTable();
+			logger.atDebug().log("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", values=" + values);
+			
+			if (tableRowIdx < 0) {
+				logger.atDebug().log("addTableRow add header " + values);
+				throw new IllegalArgumentException("Cannot use a list in the table header: " + values);
+			}
+			else {
+				String key = tableKeys.get(tableColIdx);
+				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + values);
+				
+				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, key);
+				AtomicInteger idx = new AtomicInteger();
+				values.forEach(value -> {
+					listTECL.setProperty(idx.getAndIncrement(), key, value);
+				});
 			}
 			tableColIdx++;
 		}

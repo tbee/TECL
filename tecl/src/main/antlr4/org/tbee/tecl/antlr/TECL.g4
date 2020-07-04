@@ -10,8 +10,7 @@ grammar TECL;
 @parser::members
 {
 	static public interface Listener {
-		void addProperty(String key, String value);
-		void addProperties(String key, List<String> values);
+		void setProperty(String key, List<String> values); 
 		void setProperty(int idx, String key, String value);
 		
 		void startGroup(String id);
@@ -23,6 +22,7 @@ grammar TECL;
 		void startTable();
 		void terminateTable();
 		void startTableRow();
+		void addTableData(List<String> value);
 		void addTableData(String value);
 	}
 	
@@ -55,7 +55,7 @@ config
 
 property
  : WORD conditions? ASSIGN value						{ listener.setProperty(0, $WORD.text, $value.text); } 
- | WORD conditions? ASSIGN list							{ listener.addProperties($WORD.text, listValues); } 
+ | WORD conditions? ASSIGN list							{ listener.setProperty($WORD.text, listValues); } 
  | WORD conditions? ASSIGN       						{ listener.setProperty(0, $WORD.text, ""); } 
  ;
 
@@ -87,7 +87,9 @@ table
 row
  :														{ listener.startTableRow(); } 
  PIPE ( 
- 	col_value											{ listener.addTableData($col_value.text); } 
+ 	( list												{ listener.addTableData(listValues); }
+ 	| col_value											{ listener.addTableData($col_value.text); }
+ 	) 
  	PIPE
  )+		
  ;
