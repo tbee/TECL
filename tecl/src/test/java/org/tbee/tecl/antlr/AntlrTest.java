@@ -309,13 +309,15 @@ public class AntlrTest {
 	@Test
 	public void tableWithList() {
 		TECL tecl = parse(""
-				+ "| type   | \n "
-				+ "| [a,b]  | \n"
-				+ "| int    | \n"				
+				+ "| type      | \n "
+				+ "| [a,b]     | \n"
+				+ "| \"[a,b]\" | \n"
+				+ "| int       | \n"				
 				);
 		assertEquals("a", tecl.grp(0, "type").str(0, "type"));
 		assertEquals("b", tecl.grp(0, "type").str(1, "type"));
-		assertEquals("int", tecl.str(1, "type"));
+		assertEquals("[a,b]", tecl.str(1, "type"));
+		assertEquals("int", tecl.str(2, "type"));
 	}
 
 	// ========================
