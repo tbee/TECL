@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * TODO:
- * - slf4j
+ * - encrypt
+ * - anonymous groups in table? Or are we sticking to variables referring groups
  * - many type methods for int, dbl, localDate, etc... 
  *
  */
@@ -365,7 +366,7 @@ public class TECL {
 	 * @return
 	 */
 	public int countGrp(String id) {
-		return groups.count(key);		
+		return groups.count(id);		
 	}
 
 	/**
@@ -388,17 +389,17 @@ public class TECL {
 		TECL tecl = groups.get(idx, id, null);
 		
 		// if not found, maybe we have variable
-		// TBEERNOT: I do not like this crossing over to properties, but it is needed to resolve a variable in a table.
+		// I do not like this crossing over to properties, but it is needed to resolve a variable referring to a group.
 		if (tecl == null) {
 			String value = properties.get(idx, id, null);
-			if (value != null && value.startsWith("$")) {
+			if (value != null && value.trim().startsWith("$")) {
 				tecl = var(value);
 			}
 		}
 		
 		// if not found, return an empty group so we don't get NPE's
 		if (tecl == null) {
-			tecl = new TECL("<group '" + id + "' does not exist>");
+			tecl = new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>");
 			tecl.setParent(this, -1);
 		}
 		return tecl;
