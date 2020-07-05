@@ -1,16 +1,16 @@
 # TECL #
 
-People have complaints about configuration languages all the time; properties are too simple, XML is too verbose, JSON doesn’t allow comments, YAML is only suited for small configuration files, TOML’s tables are a bit weird (IMHO). So how about we throw all the good aspects onto a heap and see what comes out of it? And with only one task in mind: configuration. (Just like JSON is intended for datatransfer, hence it does not support comments.) Therefor I’m introducing TECL, the Totally Encompassing Configuration Language.
+People have complaints about configuration languages all the time; properties are too simple, XML is too verbose, JSON doesn’t allow comments, YAML is only suited for small configuration files, TOML’s tables are a bit weird (IMHO). So how about we throw all the good aspects onto a heap and see what comes out of it? And with only one task in mind: configuration. (Just like JSON is intended for datatransfer, hence it does not support comments.) Therefore I’m introducing TECL, the Totally Encompassing Configuration Language.
 
 The goals are:
 
 - Simple, like properties, but supporting a hierarchy
 - Compact, like JSON, but allowing comments
-- Schema support
 - Formal hierarchy, unlike YAML’s indentation based one
 - Conditions
 - Multi line strings
 - Tables
+- Schema support
 
 ## Example ##
 To get an impression of a TECL configuration file, look at the example below:
@@ -65,9 +65,7 @@ servers {
     | "sys 2"  | B          | 6           |                             |
     # lists are allowed in a table
     | many     | [D,E,F]    |             |                             |
-    # you can have sub groups, which are id-less groups (id is the column)
-    | gamma    | C          | 12          | {breaker:true, timeout: 15} |
-    # or you reference to another group
+    # you can have sub groups, by referencing another group
     | tango    | D          | 24          | $environment                |
 }
  
@@ -81,17 +79,48 @@ environment[env=production] {
 ```
 
 ## Usage ##
-Equally interesting is of course how this configuration can be accessed:
+To understand how to use TECL it is important to grasp the basic underlying storage: *everything are indexed values*.
+
+- When parsing a configuration the only active difference TECL makes is between properties and groups, so TECL has indexed properies and and indexed groups.
+- A group is a new TECL object, so a configuration consists of a tree of indexed TECL objects, with indexed properties as the leafs.
+- A property is always a string, unless the user of TECL tells it to interprete it differenty. In a normal configuration file, like properties, the user would get a string and then pull it through a parser, like Integer.valueOf. With TECL you can simply provide the parse method, or use one of the predefined convenience ones.
+- Upon parsing it is possible to set parameters, which can exluced groups or properties.
+
+And that is all there is to it. So basically there are only two relevant methods.
+
+	TECL grp(int idx, String key)
+	String str(int indx, String key, String defaultValue)
+
+Observable reader may notice that the `grp` call does have a default value parameter.
+This is because groups constitute the tree, so in order to prevent NullPointerExceptions when cascade calling into the tree, if a group is not found an empty TECL object is returned.
+
+All other methods are convenience methods, for example:
+
+`public String str(String key)` 
+Get the value at index 0, assuming null as the default value.
+    
+`Double dbl(String key)`
+Get the string at index 0 for the given key, assuming null as the default, and pull that through Double::valueOf to convert the String to Double.    
+
+`<R> R get(int idx, String key, R defaultValue, Function<String, R> convertFunction)`
+Get the the string value for key at idx, and if found pass that through the given convertFunction, so it will return a type R. This is how custom types are supported.   
+
+`public String str(String indexOfKey, String indexOfValue, String key, String defaultValue)` 
+First do a search for a value on one key, and use that index to fetch the value of another key. Similar to a lookup call in Excel.
+
+
+### Example ###
+
+So the example configuration above can be accessed in the following way:
 
 ```java
 // Conditions are resolved at parse time.
 // So in memory there will be only one version of an id like "environment".
 TECL tecl = TECL.parser()
-.addParameter("env", "production") // to use in conditions
-.parse("..filename..");
+    .addParameter("env", "production") // to use in conditions
+    .parse("..filename..");
  
-// The initial object will point to the toplevel.
-// The method name indicates the return type.
+// The initial object will point to the toplevel TECL, also called root.
 String title = tecl.str("title"); 
 LocalDateTime releaseDateTime = tecl.localDateTime("releaseDateTime");
 List<String> hosts = tecl.strs("hosts");
@@ -135,8 +164,12 @@ int maxSessions = servers.grp("servers").int("name", "gamma", "MaxSessions"); //
 String ip2 = tecl.str("servers[0].ip");
 ```
 
-## Validation ##
-And of course you would want to make sure the TECL file matches an agreed upon format, by using a TECL schema:
+## Validation (not implemented yet) ##
+The user basically determines at runtime how a property is to be interpreted, calling `dbl("key")` will make the value being parsed as a double.
+So it is only at runtime that you know if a value can be parsed as a double. 
+This is quite normal for configuration files, but TECL tries to improve this by supporting a schema.
+In the schema you can specify the type, frequence and other characteristics of properties and groups.
+
 
 ```bash
 version = 1
@@ -167,3 +200,9 @@ servers {
  
 protos = [http, https]
 ```
+
+## Tables ##
+TODO
+
+## Variables ##
+TODO

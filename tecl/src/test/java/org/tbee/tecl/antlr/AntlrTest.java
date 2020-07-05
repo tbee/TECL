@@ -146,9 +146,30 @@ public class AntlrTest {
 		assertEquals("aaa" , tecl.str(0, "key"));
 		assertEquals("bbb" , tecl.str(1, "key"));
 		assertEquals("ccc" , tecl.str(2, "key"));
+		assertEquals("[aaa, bbb, ccc]" , tecl.strs("key").toString());
 	}
 
-	
+	@Test
+	public void integerList() {
+		TECL tecl = parse("key : [1,2,3] \n");
+		assertEquals(1 , tecl.integer(0, "key").intValue());
+		assertEquals(2 , tecl.integer(1, "key").intValue());
+		assertEquals(3 , tecl.integer(2, "key").intValue());
+		assertEquals("[1, 2, 3]" , tecl.integers("key").toString());
+	}
+
+	@Test
+	public void integerListWithVariable() {
+		TECL tecl = parse(""
+				+ "key : [1,$.someInt,3] \n"
+				+ "someInt : 5 \n"
+				);
+		assertEquals(1 , tecl.integer(0, "key").intValue());
+		assertEquals(5 , tecl.integer(1, "key").intValue());
+		assertEquals(3 , tecl.integer(2, "key").intValue());
+		assertEquals("[1, 5, 3]" , tecl.integers("key").toString());
+	}
+
 	@Test
 	public void simpleListQuotedStrings() {
 		String value = " value and more difficult!&# 345 symbols ";
@@ -316,8 +337,8 @@ public class AntlrTest {
 				);
 		assertEquals("a", tecl.grp(0, "|type|").str(0, "type"));
 		assertEquals("b", tecl.grp(0, "|type|").str(1, "type"));
-		assertEquals("[a,b]", tecl.str(1, "type"));
-		assertEquals("int", tecl.str(2, "type"));
+		assertEquals("[a,b]", tecl.str(0, "type"));
+		assertEquals("int", tecl.str(1, "type"));
 	}
 
 	@Test
@@ -445,15 +466,22 @@ public class AntlrTest {
 				+ "    group2 {"
 				+ "        key : value2a \n "
 				+ "    }\n"
+				+ "    \n"
+				+ "    | id  | \n "
+				+ "    | id0 | \n"
+				+ "    | id1 | \n"
+				+ "    | id2 | \n"
 				+ "}\n"
 				);
 		assertEquals("value2", tecl.var("$group1.group2.key", null, (s) -> s));
-		assertEquals("value1", tecl.var("$group1.group2.parent.key", null, (s) -> s));
+		assertEquals("value1", tecl.var("$group1.group2.^.key", null, (s) -> s));
 		assertEquals("value2a", tecl.var("$group1.group2[1].key", null, (s) -> s));
+		assertEquals("id1", tecl.var("$group1.id[1]", null, (s) -> s));
 		
 		// Start half way
 		TECL group2TECL = tecl.grp("group1").grp("group2");
 		assertEquals("value3", group2TECL.var("$.group3.key", null, (s) -> s));
+		assertEquals("id2", group2TECL.var("$.^.id[2]", null, (s) -> s));
 		
 		// access a group
 		assertEquals("value2", tecl.var("$group1.group2").str("key"));
@@ -504,7 +532,7 @@ public class AntlrTest {
 	}
 	
 	@Test
-	public void referenceGrpInTableConflict() {
+	public void referenceGrpInTableOverlap() {
 		TECL tecl = parse(""
 				+ "| id  | type   | \n "
 				+ "| id1 | $group | \n"
@@ -517,17 +545,26 @@ public class AntlrTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		assertEquals("$group", tecl.raw(0, "type", null));
-		assertEquals("value1", tecl.var(tecl.raw(0, "type", null)).str("key"));
+		
+		// The column name 'type' in the table is the same as the group name 'type' 
+		// This normally is no problem, because we have separate sets of properties and groups.
+		// But here the column type is referring through a variable to a group, so property type becomes a group.
+		// And that conflicts with the group 'type'.
+		// The group wins, so in order to access the property as a group, you need to get the raw value and push that through var.
+		// Better is not to do this of course :-)
+		
+		assertEquals("value2", tecl.grp("type").str("key"));
+		String raw = tecl.raw(0, "type", null);
+		assertEquals("$group", raw);
+		assertEquals("value1", tecl.var(raw).str("key"));
 		assertEquals("value1", tecl.grp("group").str("key"));
 		assertEquals(1, tecl.countGrp("type"));
 	}
 	
 	@Test
-	public void referenceToIndexedInTable() {
+	public void referenceToGroups() {
 		TECL tecl = parse(""
-				+ "| id  | type   | \n "
-				+ "| id1 | $group | \n"
+				+ "key : $group \n"
 				+ "\n"
 				+ "group { \n"
 				+ "    key : value1 \n "
@@ -536,9 +573,42 @@ public class AntlrTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		// TBEERNOT, ok, so this is interesting: the index refers to the initial fetch, but the result is a list... How to index that?
-//		assertEquals("value2", tecl.grps(0, "type"));
+		assertEquals("value2", tecl.grps("key").get(1).str("key"));
 	}
+	
+	@Test
+	public void referenceToAList() {
+		TECL tecl = parse(""
+				+ "key : $list \n"
+				+  "list : [aaa,bbb,ccc] \n"
+				);
+		assertEquals("ccc", tecl.str(2, "key"));
+		assertEquals("bbb", tecl.strs("key").get(1));
+		assertEquals("[aaa, bbb, ccc]", tecl.strs("key").toString());
+	}
+	
+	@Test
+	public void referenceToIndexedInTable() {
+		TECL tecl = parse(""
+				+ "| id  | type | \n "
+				+ "| id0 | int  | \n"
+				+ "| id1 | $key | \n"
+				+ "\n"
+				+  "key : [aaa,bbb,ccc] \n"
+				);
+		// A list is an index property
+		// And a table is an indexed property
+		// So we are having a double indexed property here; first to get to the row and then the list
+		
+		String raw = tecl.raw(1, "type", null);
+		assertEquals("$key", raw);
+		assertEquals("[aaa, bbb, ccc]", tecl.vars(raw, (s) -> s).toString());
+		
+// TBEERNOT: this may very well be a common scenario, how to better solve this? 		
+//		assertEquals("ccc", tecl.grp(1, "|type|").str(2, "type"));
+//		assertEquals("bbb", tecl.grp(1, "type").str(1, "type"));
+	}
+	
 
 	// ========================
 	// FILE

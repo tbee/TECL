@@ -189,45 +189,64 @@ public class TECL {
 	 * @return
 	 */
 	public <R> R get(String key, Function<String, R> convertFunction) {
-		String value = properties.get(0, key, null);
-		return convertOptionallyResolveVar(value, null, convertFunction);
+		return get(0, key, null, convertFunction);
 	}
 	public <R> R get(String key, R def, Function<String, R> convertFunction) {
-		String value = properties.get(0, key, null);
-		return convertOptionallyResolveVar(value, def, convertFunction);
+		return get(0, key, def, convertFunction);
 	}
 	public <R> R get(int idx, String key, Function<String, R> convertFunction) {
-		String value = properties.get(idx, key, null);
-		return convertOptionallyResolveVar(value, null, convertFunction);
-	}
-	public <R> R get(int idx, String key, R def, Function<String, R> convertFunction) {
-		String value = properties.get(idx, key, null);
-		return convertOptionallyResolveVar(value, def, convertFunction);
+		return get(idx, key, convertFunction);
 	}
 	public <R> R get(String indexOfKey, String indexOfValue, String key, Function<String, R> convertFunction) {
-		String value = properties.get(indexOfKey, indexOfValue, key, null);
-		return convertOptionallyResolveVar(value, null, convertFunction);
+		int idx = indexOf(indexOfKey, indexOfValue);
+		if (idx < 0) {
+			return null;
+		}
+		return get(idx, key, convertFunction);
 	}
 	public <R> R get(String indexOfKey, String indexOfValue, String key, R def, Function<String, R> convertFunction) {
-		String value = properties.get(indexOfKey, indexOfValue, key, null);
-		return convertOptionallyResolveVar(value, def, convertFunction);
+		int idx = indexOf(indexOfKey, indexOfValue);
+		if (idx < 0) {
+			return null;
+		}
+		return get(idx, key, def, convertFunction);
 	}
-	private <R> R convertOptionallyResolveVar(String value, R def, Function<String, R> convertFunction) {
+	public <R> R get(int idx, String key, R def, Function<String, R> convertFunction) {
 		
-		// if no value found
-		if (value == null) {
+		// Get the values
+		List<String> values = properties.get(key);
+		if (values == null) {
 			return def;
 		}
 		
-		// if variable, resolve it, else make sure it is the correct string (stripping quotes)
+		// Check to see if it is a variable
+		if (values.size() == 1) {
+			String value = values.get(0).trim();
+			if (value.startsWith("$")) {
+				List<R> results = vars(value, convertFunction);
+				if (idx >= results.size()) {
+					return def;
+				}
+				return results.get(idx);
+			}
+		}
+		
+		// Get the value, unless the index is out of bounds
+		if (idx >= values.size()) {
+			return def;
+		}
+		String value = values.get(idx);
+		
+		// If variable, resolve it, else make sure it is the correct string (stripping quotes)
 		if (value.startsWith("$")) {
-			return var(value, def, convertFunction);
+			R result = var(value, def, convertFunction);
+			return result;
 		}
 		else {
 			value = sanatizeString(value);
-		}
+		}		
 		
-		// apply the convert function
+		// Apply the convert function
 		try {
 			return convertFunction.apply(value);
 		}
@@ -236,6 +255,53 @@ public class TECL {
 		}
 	}
 	
+	/**
+	 * Construct a list based on a key.
+	 * If a variable is encountered as one of the value, it will be resolved and the convert function is applied on the resolved value.
+	 * 
+	 * @param <R>
+	 * @param key
+	 * @param convertFunction
+	 * @return
+	 */
+	public <R> List<R> list(String key, Function<String, R> convertFunction) {			
+		
+		// Get the contents
+		List<String> stringValues = properties.get(key);
+		
+		// If there is only one value, it may be a variable to a list
+		if (stringValues.size() == 1) {
+			String stringValue = stringValues.get(0);
+			if (stringValue.startsWith("$")) {
+				List<R> values = vars(stringValue, convertFunction);
+				return values;
+			}
+		}
+		
+		// Convert each value
+		List<R> values = new ArrayList<>();
+		for (String stringValue : stringValues) {
+			
+			// If variable, resolve it, else make sure it is the correct string (stripping quotes)
+			if (stringValue.startsWith("$")) {
+				R value = var(stringValue, null, convertFunction);
+				values.add(value);
+			}
+			else {
+				// Apply the convert function
+				stringValue = sanatizeString(stringValue);
+				try {
+					R value = convertFunction.apply(stringValue);
+					values.add(value);
+				}
+				catch (Exception e) {
+					throw new ParseException(e);
+				}
+			}
+		}		
+		return values;
+	}
+
 	/** Convenience method to return a string */
 	public String str(String key) {
 		return get(0, key, null, (s) -> s);
@@ -254,6 +320,9 @@ public class TECL {
 	}
 	public String str(String indexOfKey, String indexOfValue, String key, String def) {
 		return get(indexOfKey, indexOfValue, key, def, (s) -> s);
+	}
+	public List<String> strs(String key) {
+		return list(key, (s) -> s);
 	}
 	
 	/** Convenience method to return an Integer */
@@ -275,6 +344,10 @@ public class TECL {
 	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
 		return get(indexOfKey, indexOfValue, key, def, Integer::valueOf);
 	}
+	public List<Integer> integers(String key) {
+		return list(key, Integer::valueOf);
+	}
+	
 	
 	/** Convenience method to return a Double */
 	public Double dbl(String key) {
@@ -294,6 +367,9 @@ public class TECL {
 	}
 	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
 		return get(indexOfKey, indexOfValue, key, def, Double::valueOf);
+	}
+	public List<Double> dbls(String key) {
+		return list(key, Double::valueOf);
 	}
 	
 	/** Convenience method to return a LocalDate */
@@ -315,6 +391,9 @@ public class TECL {
 	public LocalDate localDate(String indexOfKey, String indexOfValue, String key, LocalDate def) {
 		return get(indexOfKey, indexOfValue, key, def, LocalDate::parse);
 	}
+	public List<LocalDate> localDates(String key) {
+		return list(key, LocalDate::parse);
+	}
 	
 	/** Convenience method to return a LocalDateTime */
 	public LocalDateTime localDateTime(String key) {
@@ -334,6 +413,9 @@ public class TECL {
 	}
 	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
 		return get(indexOfKey, indexOfValue, key, def, LocalDateTime::parse);
+	}
+	public List<LocalDateTime> localDateTimes(String key) {
+		return list(key, LocalDateTime::parse);
 	}
 	
 	// =====================================
@@ -412,6 +494,16 @@ public class TECL {
 	 */
 	public List<TECL> grps(String id) {
 		List<TECL> tecls = groups.get(id);
+		
+		// if nothing found, maybe we have variable
+		// I do not like this crossing over to properties, but it is needed to resolve a variable referring to a group.
+		if (tecls.isEmpty()) {
+			String value = properties.get(0, id, null);
+			if (value != null && value.trim().startsWith("$")) {
+				tecls = vars(value);
+			}
+		}
+		
 		return tecls;
 	}
 
@@ -425,8 +517,16 @@ public class TECL {
 	 * - Via an index $groupId.groupId2.property[2]
 	 */
 	public <R> R var(String address, R def, Function<String, R> convertFunction) {
-		TokenContext tokenContext = resolve(address);
-		return tokenContext.tecl.get(tokenContext.token, def, convertFunction);
+		TokenContext tokenContext = resolve(address, false);
+		return tokenContext.tecl.get(tokenContext.idx == null ? 0 : tokenContext.idx.intValue(), tokenContext.token, def, convertFunction);
+	}
+	
+	/**
+	 * Use a path notation to access a list
+	 */
+	public <R> List<R> vars(String address, Function<String, R> convertFunction) {
+		TokenContext tokenContext = resolve(address, false);
+		return tokenContext.tecl.list(tokenContext.token,  convertFunction);
 	}
 	
 	/**
@@ -436,11 +536,19 @@ public class TECL {
 	 * - Via an index $groupId.groupId2
 	 */
 	public TECL var(String address) {
-		TokenContext tokenContext = resolve(address + ".<leaf property>"); // resolve groups all the way to the last token, so we add one to act as the leaf property 
+		TokenContext tokenContext = resolve(address, true); // resolve groups all the way to the last token, so we add one to act as the leaf property 
 		return tokenContext.tecl;
 	}
 	
-	private TokenContext resolve(String address) {
+	/**
+	 * Use a path notation to access groups
+	 */
+	public List<TECL> vars(String address) {
+		TokenContext tokenContext = resolve(address, true); // resolve groups all the way to the last token, so we add one to act as the leaf property 
+		return tokenContext.tecls;
+	}
+	
+	private TokenContext resolve(String address, boolean lastTokenIsAGroup) {
 		if (!address.startsWith("$")) {
 			throw new IllegalArgumentException("Variables must start with a $");
 		}
@@ -450,59 +558,67 @@ public class TECL {
 		logger.atDebug().log("var tokenized: "  + tokens);
 		
 		// Determine the starting point
-		String token = tokens.remove(0);
+		String token = tokens.get(0);
 		logger.atDebug().log("first token= "  + token);
 		TECL tecl = null;
 		if ("$".equals(token)) {
 			// This means the address started with "$."
 			tecl = this;
 			token = tokens.remove(0);
-			logger.atDebug().log("start at current tecl, token="  + token);
+			logger.atDebug().log("start at current tecl, tokens =" + tokens);
 		}
 		else {
 			tecl = this.getRoot();
 			token = token.substring(1);
-			logger.atDebug().log("start at root, token="  + token);
+			tokens.set(0, token);
+			logger.atDebug().log("start at root, tokens =" + tokens);
 		}
 		
-		// Navigate
-		do {
+		// Navigate through the tree
+		Integer idx = null;
+		List<TECL> tecls = null;
+		while (!tokens.isEmpty()) { 
+			
 			// separate an index
-			token = token.trim();
-			int idx = 0;
+			token = tokens.remove(0);
+			logger.atDebug().log("token= "  + token);
+			idx = null;
 			if (token.endsWith("]")) {
 				int startIdx = token.indexOf("[");
 				idx = Integer.parseInt(token.substring(startIdx + 1, token.length() - 1));
 				token= token.substring(0, startIdx);				
 			}
 			
-			// navigate
-			if ("parent".equals(token)) {
-				tecl = tecl.parent;
+			// all intermediate tokens are groups, the last token can be property or group
+			boolean lastToken = tokens.isEmpty();
+			if (!lastToken || lastTokenIsAGroup) {
+				if ("^".equals(token)) {
+					tecl = tecl.parent;
+				}
+				else {
+					if (lastToken && idx == null) {
+						tecls = tecl.grps(token);
+					}
+					tecl = tecl.grp(idx == null ? 0 : idx.intValue(), token);				
+				}
+				logger.atDebug().log("TECL= "  + tecl.getPath());
 			}
-			else {
-				tecl = tecl.grp(idx, token);				
-			}
-			
-			// next token
-			if (tokens.isEmpty()) {
-				throw new IllegalArgumentException("This variable does not end with a property: " + address);
-			}
-			token = tokens.remove(0);
-			logger.atDebug().log("TECL= "  + tecl.getPath());
-			logger.atDebug().log("Next token= "  + token);
-		} while (tokens.size() > 0);
+		} 
 		
 		// final token
-		return new TokenContext(tecl, token);
+		return new TokenContext(tecl, tecls, token, idx);
 	}
 	class TokenContext {
 		final TECL tecl;
+		final List<TECL> tecls;
 		final String token;
+		final Integer idx;
 		
-		TokenContext(TECL tecl,String token) {
+		TokenContext(TECL tecl, List<TECL> tecls, String token, Integer idx) {
 			this.tecl = tecl;
+			this.tecls = tecls;
 			this.token = token;
+			this.idx = idx;
 		}
 	}
 	
@@ -621,17 +737,6 @@ public class TECL {
 				return def;
 			}
 			return value;
-		}
-		
-		/*
-		 * Get method using indexOf to determine the index first
-		 */
-		T get(String indexOfKey, T value, String key, T def) {
-			int idx = indexOf(indexOfKey, value);
-			if (idx < 0) {
-				return null;
-			}
-			return get(idx, key, def);
 		}
 		
 		public String toString() {
