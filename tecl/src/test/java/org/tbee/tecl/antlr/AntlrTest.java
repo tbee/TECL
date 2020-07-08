@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map.Entry;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -609,6 +610,45 @@ public class AntlrTest {
 //		assertEquals("bbb", tecl.grp(1, "type").str(1, "type"));
 	}
 	
+	@Test
+	public void envWithOverridingGroup() {
+		String value = System.getenv("USERNAME");
+		TECL tecl = parse(""
+				+ "env { \n"
+				+ "    USERNAME : value \n "
+				+ "}\n"
+				);
+		assertEquals("value", tecl.var("$env.USERNAME", null, (s) -> s));
+	}
+	
+	@Test
+	public void env() {
+		String value = System.getenv("USERNAME");
+		TECL tecl = parse("");
+		assertEquals(value, tecl.var("$env.USERNAME", null, (s) -> s));
+	}
+	
+	@Test
+	public void sysWithOverridingGroup() {
+		System.out.println(System.getProperties());
+		String value = System.getProperty("user.language");
+		TECL tecl = parse(""
+				+ "sys { \n"
+				+ "    user { \n"
+				+ "        language : value \n "
+				+ "    }\n"
+				+ "}\n"
+				);
+		assertEquals("value", tecl.var("$sys.user.language", null, (s) -> s));
+	}
+	
+	@Test
+	public void sys() {
+		String value = System.getProperty("user.language");
+		TECL tecl = parse("");
+		assertEquals(value, tecl.var("$sys.user.language", null, (s) -> s));
+	}
+
 
 	// ========================
 	// FILE

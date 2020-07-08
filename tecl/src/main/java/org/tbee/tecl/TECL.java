@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * TODO:
+ * - import
  * - encrypt
  * - anonymous groups in table? Or are we sticking to variables referring groups
  * - many type methods for int, dbl, localDate, etc... 
@@ -517,6 +518,18 @@ public class TECL {
 	 * - Via an index $groupId.groupId2.property[2]
 	 */
 	public <R> R var(String address, R def, Function<String, R> convertFunction) {
+		
+		// If $env. and there is no group in the root named "env" 
+		if (address.startsWith("$env.") && this.getRoot().groups.get(0, "env", null) == null) {
+			String env = address.substring("$env.".length());
+			return convertFunction.apply(System.getenv(env));
+		}
+		// If $sys. and there is no group in the root named "sys" 
+		if (address.startsWith("$sys.") && this.getRoot().groups.get(0, "sys", null) == null) {
+			String sys = address.substring("$sys.".length());
+			return convertFunction.apply(System.getProperty(sys));
+		}
+
 		TokenContext tokenContext = resolve(address, false);
 		return tokenContext.tecl.get(tokenContext.idx == null ? 0 : tokenContext.idx.intValue(), tokenContext.token, def, convertFunction);
 	}
@@ -552,7 +565,8 @@ public class TECL {
 		if (!address.startsWith("$")) {
 			throw new IllegalArgumentException("Variables must start with a $");
 		}
-	
+		TECL root = this.getRoot();
+		
 		// First split into its parts
 		List<String> tokens = new StringTokenizer(address, ".").getTokenList();
 		logger.atDebug().log("var tokenized: "  + tokens);
@@ -568,7 +582,7 @@ public class TECL {
 			logger.atDebug().log("start at current tecl, tokens =" + tokens);
 		}
 		else {
-			tecl = this.getRoot();
+			tecl = root;
 			token = token.substring(1);
 			tokens.set(0, token);
 			logger.atDebug().log("start at root, tokens =" + tokens);
