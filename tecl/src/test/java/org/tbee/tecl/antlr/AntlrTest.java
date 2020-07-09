@@ -611,42 +611,35 @@ public class AntlrTest {
 	}
 	
 	@Test
-	public void envWithOverridingGroup() {
+	public void envAsValue() {
 		String value = System.getenv("USERNAME");
 		TECL tecl = parse(""
-				+ "env { \n"
-				+ "    USERNAME : value \n "
-				+ "}\n"
+				+ "key : $env@USERNAME\n "
 				);
-		assertEquals("value", tecl.var("$env.USERNAME", null, (s) -> s));
+		assertEquals(value, tecl.str("key"));
 	}
 	
 	@Test
 	public void env() {
 		String value = System.getenv("USERNAME");
 		TECL tecl = parse("");
-		assertEquals(value, tecl.var("$env.USERNAME", null, (s) -> s));
+		assertEquals(value, tecl.var("$env@USERNAME", null, (s) -> s));
 	}
 	
 	@Test
-	public void sysWithOverridingGroup() {
-		System.out.println(System.getProperties());
+	public void sysAsKey() {
 		String value = System.getProperty("user.language");
 		TECL tecl = parse(""
-				+ "sys { \n"
-				+ "    user { \n"
-				+ "        language : value \n "
-				+ "    }\n"
-				+ "}\n"
+				+ "key : $sys@user.language # comment\n"
 				);
-		assertEquals("value", tecl.var("$sys.user.language", null, (s) -> s));
+		assertEquals(value, tecl.str("key"));
 	}
 	
 	@Test
 	public void sys() {
 		String value = System.getProperty("user.language");
 		TECL tecl = parse("");
-		assertEquals(value, tecl.var("$sys.user.language", null, (s) -> s));
+		assertEquals(value, tecl.var("$sys@user.language", null, (s) -> s));
 	}
 
 

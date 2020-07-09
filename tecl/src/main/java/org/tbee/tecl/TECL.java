@@ -3,6 +3,7 @@ package org.tbee.tecl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -518,16 +519,9 @@ public class TECL {
 	 * - Via an index $groupId.groupId2.property[2]
 	 */
 	public <R> R var(String address, R def, Function<String, R> convertFunction) {
-		
-		// If $env. and there is no group in the root named "env" 
-		if (address.startsWith("$env.") && this.getRoot().groups.get(0, "env", null) == null) {
-			String env = address.substring("$env.".length());
-			return convertFunction.apply(System.getenv(env));
-		}
-		// If $sys. and there is no group in the root named "sys" 
-		if (address.startsWith("$sys.") && this.getRoot().groups.get(0, "sys", null) == null) {
-			String sys = address.substring("$sys.".length());
-			return convertFunction.apply(System.getProperty(sys));
+		R value = resolveSpecial(address, convertFunction);
+		if (value != null) {
+			return value;
 		}
 
 		TokenContext tokenContext = resolve(address, false);
@@ -538,6 +532,11 @@ public class TECL {
 	 * Use a path notation to access a list
 	 */
 	public <R> List<R> vars(String address, Function<String, R> convertFunction) {
+		R value = resolveSpecial(address, convertFunction);
+		if (value != null) {
+			return new ArrayList<R>(Arrays.asList(value));
+		}
+		
 		TokenContext tokenContext = resolve(address, false);
 		return tokenContext.tecl.list(tokenContext.token,  convertFunction);
 	}
@@ -559,6 +558,23 @@ public class TECL {
 	public List<TECL> vars(String address) {
 		TokenContext tokenContext = resolve(address, true); // resolve groups all the way to the last token, so we add one to act as the leaf property 
 		return tokenContext.tecls;
+	}
+
+	private <R> R resolveSpecial(String address, Function<String, R> convertFunction) {
+		// If $env. and there is no group in the root named "env" 
+		String envPRefix = "$env@";
+		if (address.startsWith(envPRefix)) {
+			String env = address.substring(envPRefix.length());
+			return convertFunction.apply(System.getenv(env));
+		}
+		// If $sys. and there is no group in the root named "sys" 
+		String sysPrefix = "$sys@";
+		if (address.startsWith(sysPrefix)) {
+			String sys = address.substring(sysPrefix.length());
+			return convertFunction.apply(System.getProperty(sys));
+		}
+
+		return null;
 	}
 	
 	private TokenContext resolve(String address, boolean lastTokenIsAGroup) {
