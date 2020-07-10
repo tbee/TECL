@@ -143,7 +143,7 @@ public class TECLParser {
 		}
 		
 		// parse
-		version = Integer.valueOf(line.substring(versionPrefix.length()).replace("=", "").trim());
+		version = Integer.valueOf(line.substring(versionPrefix.length()).trim());
 		
 		// oyll version 1 supported
 		if (version.intValue() != 1) {

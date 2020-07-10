@@ -16,6 +16,9 @@ The goals are:
 To get an impression of a TECL configuration file, look at the example below:
 
 ```bash
+# you can specify the version of the TECL file (for future use)
+@version 1
+
 # This is the most simple configuration, if you need spaces or new lines you'll need quotes
 title : "TECL rulez"
  

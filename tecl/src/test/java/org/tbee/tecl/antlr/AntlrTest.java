@@ -648,9 +648,9 @@ public class AntlrTest {
 	public void doubleVersion() {
 		assertThrows(IllegalStateException.class, () -> {
 			TECL tecl = parse(""
-					+ "@version = 1\n"
+					+ "@version 1\n"
 					+ "key : value\n"
-					+ "@version = 2\n"
+					+ "@version 2\n"
 					);
 		});
 	}
@@ -658,7 +658,7 @@ public class AntlrTest {
 	@Test
 	public void supportedVersion() {
 		TECL tecl = parse(""
-				+ "@version = 1\n"
+				+ "@version 1\n"
 				);
 	}
 
@@ -666,7 +666,7 @@ public class AntlrTest {
 	public void notSupportedVersion() {
 		assertThrows(IllegalStateException.class, () -> {
 			TECL tecl = parse(""
-					+ "@version = 2\n"
+					+ "@version 2\n"
 					);
 		});
 	}
