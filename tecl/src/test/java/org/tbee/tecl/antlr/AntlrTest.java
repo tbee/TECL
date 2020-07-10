@@ -10,13 +10,11 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map.Entry;
 
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECL;
-import org.tbee.tecl.TECLParser;
 
 public class AntlrTest {
 	final Logger logger = LoggerFactory.getLogger(AntlrTest.class);
@@ -643,6 +641,37 @@ public class AntlrTest {
 	}
 
 
+	// ========================
+	// PREPROCESSING
+
+	@Test
+	public void doubleVersion() {
+		assertThrows(IllegalStateException.class, () -> {
+			TECL tecl = parse(""
+					+ "@version = 1\n"
+					+ "key : value\n"
+					+ "@version = 2\n"
+					);
+		});
+	}
+
+	@Test
+	public void supportedVersion() {
+		TECL tecl = parse(""
+				+ "@version = 1\n"
+				);
+	}
+
+	@Test
+	public void notSupportedVersion() {
+		assertThrows(IllegalStateException.class, () -> {
+			TECL tecl = parse(""
+					+ "@version = 2\n"
+					);
+		});
+	}
+
+	
 	// ========================
 	// FILE
 

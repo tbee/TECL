@@ -1,16 +1,22 @@
 package org.tbee.tecl;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -19,6 +25,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.apache.commons.text.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECLParser.ParserListener.TECLContext;
@@ -45,15 +52,6 @@ public class TECLParser {
 	// PARSE
 	
 	/**
-	 * 
-	 * @param config
-	 * @return
-	 */
-	public TECL parse(String config) {
-		return parse(CharStreams.fromString(config));
-	}
-	
-	/**
 	 * @param file file to parse
 	 * @return
 	 * @throws IOException 
@@ -63,7 +61,7 @@ public class TECLParser {
 		try (
 			FileInputStream fileInputStream = new FileInputStream(file); 
 		){ 
-			return parse(CharStreams.fromStream(fileInputStream, charset));
+			return parse(fileInputStream, charset);
 		}
 	}
 	
@@ -71,20 +69,38 @@ public class TECLParser {
 	 * @param inputStream inputStream to parse
 	 * @return
 	 * @throws IOException 
-	 * @throws FileNotFoundException 
 	 */
 	public TECL parse(InputStream inputStream, java.nio.charset.Charset charset) throws IOException {
-		return parse(CharStreams.fromStream(inputStream, charset));
+		StringBuilder sb = new StringBuilder();
+		try (
+				Reader reader = new BufferedReader(new InputStreamReader(inputStream, charset))
+		) {
+			int c = 0;
+			while ((c = reader.read()) != -1) {
+				sb.append((char)c);
+			}
+		}
+		return parse(sb.toString());
 	}
 
-	/*
-	 * The actual parsing
+	/**
+	 * 
+	 * @param config
+	 * @return
 	 */
-	private TECL parse(CharStream input) {	
+	public TECL parse(String config) {	
 		
-		// init
+		// split into lines
+		List<String> lines = new BufferedReader(new StringReader(config)).lines().collect(Collectors.toList());
+		
+		// preprocess lines
+		lines = preprocess(lines);
+		
+		// rejoin to string
+		config = lines.stream().collect(Collectors.joining("\n"));
 		
 		// Trigger the ANTLR parser
+		CharStream input = CharStreams.fromString(config);
 		ThrowingErrorListener throwingErrorListener = new ThrowingErrorListener();
 		org.tbee.tecl.antlr.TECLLexer lexer = new org.tbee.tecl.antlr.TECLLexer(input);
 		lexer.addErrorListener(throwingErrorListener);
@@ -96,6 +112,50 @@ public class TECLParser {
 		return parserListener.toplevelTECL;
 	}
 	
+	/*
+	 * Process the lines and return a new list 
+	 */
+	private List<String> preprocess(List<String> lines) {
+		List<String> newLines = new ArrayList<String>();
+		
+		for (String line : lines) {
+			
+			// @Version
+			if (line.startsWith(versionPrefix)) {
+				preprocessVersion(line);				
+			}
+			else {
+				newLines.add(line);
+			}
+		}
+		
+		return newLines;
+	}
+
+	/*
+	 * 
+	 */
+	private void preprocessVersion(String line) {
+		
+		// only one allowed
+		if (version != null) {
+			throw new IllegalStateException("Only one @version allowed"); 
+		}
+		
+		// parse
+		version = Integer.valueOf(line.substring(versionPrefix.length()).replace("=", "").trim());
+		
+		// oyll version 1 supported
+		if (version.intValue() != 1) {
+			throw new IllegalStateException("Only version 1 is supported"); 
+		}
+	}
+	private final String versionPrefix = "@version ";
+	private Integer version = null;
+	
+	/*
+	 * 
+	 */
 	private class ThrowingErrorListener extends BaseErrorListener {
 		@Override
 		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) throws ParseCancellationException {
