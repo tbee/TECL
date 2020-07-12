@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
@@ -690,6 +691,29 @@ public class AntlrTest {
 		assertEquals("value1", tecl.str("key1"));
 		assertEquals("TECL rulez", tecl.str("title"));
 		assertEquals("value2", tecl.str("key2"));
+	}
+
+	@Test
+	public void simpleFile() {
+		System.out.println(new File(".").getAbsolutePath());
+		TECL tecl = parse(""
+				+ "key1 : value1\n"
+				+ "@import src/test/resources/org/tbee/tecl/antlr/import2.tecl\n"
+				+ "key2 : value2\n"
+				);
+		assertEquals("import2", tecl.str("import2"));
+	}
+
+	@Test
+	public void nestedImportFile() {
+		System.out.println(new File(".").getAbsolutePath());
+		TECL tecl = parse(""
+				+ "key1 : value1\n"
+				+ "@import src/test/resources/org/tbee/tecl/antlr/import1.tecl\n"
+				+ "key2 : value2\n"
+				);
+		assertEquals("import1", tecl.str("import1"));
+		assertEquals("import2", tecl.str("import2"));
 	}
 
 	

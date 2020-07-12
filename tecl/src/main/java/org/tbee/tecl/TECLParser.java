@@ -89,7 +89,7 @@ public class TECLParser {
 		List<String> lines = new BufferedReader(new StringReader(config)).lines().collect(Collectors.toList());
 		
 		// preprocess lines
-		lines = preprocess(lines);
+		lines = preprocess(lines, new File("."));
 		
 		// rejoin to string
 		config = lines.stream().collect(Collectors.joining("\n"));
@@ -110,7 +110,7 @@ public class TECLParser {
 	/*
 	 * Process the lines and return a new list 
 	 */
-	private List<String> preprocess(List<String> lines) {
+	private List<String> preprocess(List<String> lines, File curDir) {
 		List<String> toProcessLines = new ArrayList<String>(lines);
 		List<String> newLines = new ArrayList<String>();
 		
@@ -123,7 +123,7 @@ public class TECLParser {
 			}
 			// @import
 			else if (line.startsWith(importPrefix)) {
-				List<String> importedLines = preprocessImport(line);
+				List<String> importedLines = preprocessImport(line, curDir);
 				toProcessLines.addAll(0, importedLines);
 			}
 			else {
@@ -157,7 +157,8 @@ public class TECLParser {
 	/*
 	 * 
 	 */
-	private List<String> preprocessImport(String line) {
+	private List<String> preprocessImport(String line, File curDir) {
+		String additionalInfo = "";
 		try {
 			// get URL to import
 			String source = line.substring(importPrefix.length()).trim();
@@ -166,7 +167,10 @@ public class TECLParser {
 				inputStream = new URL(source).openStream();
 			}
 			else {
-				inputStream = new FileInputStream(source);
+				File file = new File(curDir, source);
+				additionalInfo = file.getAbsolutePath();
+				inputStream = new FileInputStream(file);
+				curDir = file.getParentFile();
 			}
 
 			// read
@@ -174,10 +178,11 @@ public class TECLParser {
 			
 			// split into lines
 			List<String> importedLines = new BufferedReader(new StringReader(content)).lines().collect(Collectors.toList());
+			importedLines = preprocess(importedLines, curDir);
 			return importedLines;
 		}
 		catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException(additionalInfo, e);
 		}
 	}
 	private final String importPrefix = "@import ";
