@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -109,13 +111,20 @@ public class TECLParser {
 	 * Process the lines and return a new list 
 	 */
 	private List<String> preprocess(List<String> lines) {
+		List<String> toProcessLines = new ArrayList<String>(lines);
 		List<String> newLines = new ArrayList<String>();
 		
-		for (String line : lines) {
+		while (!toProcessLines.isEmpty()) {
+			String line = toProcessLines.remove(0);
 			
-			// @Version
+			// @version
 			if (line.startsWith(versionPrefix)) {
 				preprocessVersion(line);				
+			}
+			// @import
+			else if (line.startsWith(importPrefix)) {
+				List<String> importedLines = preprocessImport(line);
+				toProcessLines.addAll(0, importedLines);
 			}
 			else {
 				newLines.add(line);
@@ -137,13 +146,41 @@ public class TECLParser {
 		}
 		version = newVersion;
 		
-		// oyll version 1 supported
+		// only version 1 supported
 		if (version.intValue() != 1) {
 			throw new IllegalStateException("Only version 1 is supported"); 
 		}
 	}
 	private final String versionPrefix = "@version ";
 	private Integer version = null;
+
+	/*
+	 * 
+	 */
+	private List<String> preprocessImport(String line) {
+		try {
+			// get URL to import
+			String source = line.substring(importPrefix.length()).trim();
+			InputStream inputStream;
+			if (source.contains(":")) {
+				inputStream = new URL(source).openStream();
+			}
+			else {
+				inputStream = new FileInputStream(source);
+			}
+
+			// read
+			String content = readToString(inputStream, Charset.forName("UTF-8"));
+			
+			// split into lines
+			List<String> importedLines = new BufferedReader(new StringReader(content)).lines().collect(Collectors.toList());
+			return importedLines;
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	private final String importPrefix = "@import ";
 	
 	/*
 	 * 

@@ -680,6 +680,18 @@ public class AntlrTest {
 		});
 	}
 
+	@Test
+	public void simpleURLImport() {
+		TECL tecl = parse(""
+				+ "key1 : value1\n"
+				+ "@import " + this.getClass().getResource("test.tecl") + "\n"
+				+ "key2 : value2\n"
+				);
+		assertEquals("value1", tecl.str("key1"));
+		assertEquals("TECL rulez", tecl.str("title"));
+		assertEquals("value2", tecl.str("key2"));
+	}
+
 	
 	// ========================
 	// FILE
