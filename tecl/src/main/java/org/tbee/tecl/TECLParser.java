@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -71,16 +72,8 @@ public class TECLParser {
 	 * @throws IOException 
 	 */
 	public TECL parse(InputStream inputStream, java.nio.charset.Charset charset) throws IOException {
-		StringBuilder sb = new StringBuilder();
-		try (
-				Reader reader = new BufferedReader(new InputStreamReader(inputStream, charset))
-		) {
-			int c = 0;
-			while ((c = reader.read()) != -1) {
-				sb.append((char)c);
-			}
-		}
-		return parse(sb.toString());
+		String content = readToString(inputStream, charset);
+		return parse(content);
 	}
 
 	/**
@@ -137,13 +130,12 @@ public class TECLParser {
 	 */
 	private void preprocessVersion(String line) {
 		
-		// only one allowed
-		if (version != null) {
-			throw new IllegalStateException("Only one @version allowed"); 
-		}
-		
 		// parse
-		version = Integer.valueOf(line.substring(versionPrefix.length()).trim());
+		Integer newVersion = Integer.valueOf(line.substring(versionPrefix.length()).trim());
+		if (version != null && !version.equals(newVersion)) {
+			throw new IllegalStateException("All files must have the same version (" + version + " != "  + newVersion + ")"); 
+		}
+		version = newVersion;
 		
 		// oyll version 1 supported
 		if (version.intValue() != 1) {
@@ -419,5 +411,18 @@ public class TECLParser {
 		
 		// done
 		return true;				
+	}
+	
+	private String readToString(InputStream inputStream, Charset charset) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		try (
+				Reader reader = new BufferedReader(new InputStreamReader(inputStream, charset))
+		) {
+			int c = 0;
+			while ((c = reader.read()) != -1) {
+				sb.append((char)c);
+			}
+		}
+		return sb.toString();
 	}
 }
