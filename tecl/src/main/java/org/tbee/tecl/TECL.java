@@ -18,9 +18,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * TODO:
- * - import
  * - encrypt
- * - anonymous groups in table? Or are we sticking to variables referring groups
  * - many type methods for int, dbl, localDate, etc... 
  *
  */
@@ -55,24 +53,25 @@ public class TECL {
 	}
 	
 	/**
-	 * Dot separated path from root to here
+	 * Path from root to here
 	 */
 	public String getPath() {
-		String path = (parent == null ? "" : parent.getPath());
-		String idxSuffix = idxInParent == null ? "" : "[" + idxInParent + "]" ;
-		if ("$".equals(path)) {
-			return path + id + idxSuffix;
-		}
-		return (path.isEmpty() ? "" : path + ".") + id + idxSuffix;
+		String path 
+			= (parent == null ? "" : parent.getPath())
+		    + id
+		    + (idxInParent == null ? "" : "[" + idxInParent + "]")
+			+ "/"
+		    ;
+		return path;
 	}
 	
 	private String createFullPathToKey(int idx, String key) {
-		String field = key + "[" + idx + "]";
-		String path = getPath();
-		if ("$".equals(path)) {
-			return path + field;
-		}
-		return path + "." + field;
+		String path 
+		     = getPath()
+		     + key
+		     + "[" + idx + "]"
+		     ;
+		return path;
 	}
 	
 	/**
@@ -93,6 +92,120 @@ public class TECL {
 			tecl = tecl.parent;
 		}
 		return tecl;
+	}
+	
+	
+	// =====================================
+	// xxx
+	
+	public <R> List<R> xxx(String path, R def, Function<String, R> convertFunction) {
+		
+		// First split into its parts
+		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
+		logger.atDebug().log("var tokenized: "  + nodes);
+		
+		// Determine the starting point
+		TECL tecl = null;
+		if (path.startsWith("/")) {
+			tecl = this.getRoot();
+			logger.atDebug().log("start at root, tecl = " + tecl);
+		}
+		else {
+			tecl = this;
+			logger.atDebug().log("start at current tecl, tecl = " + tecl);
+		}
+		
+		// Navigate through the tree
+		// All intermediate tokens must be a single group, the last token can be more complex
+		String node = null;
+		Integer idx = null;
+		int idxEffective = 0;
+		String context = "";
+		while (!nodes.isEmpty()) { 
+			node = nodes.remove(0);
+			logger.atDebug().log("node = "  + node);
+			context = tecl.getPath() + node + ": ";
+			
+			// optionally separate an index
+			idx = null;
+			if (node.endsWith("]")) {
+				int startIdx = node.indexOf("[");
+				idx = Integer.parseInt(node.substring(startIdx + 1, node.length() - 1));
+				node = node.substring(0, startIdx);				
+			}
+			idxEffective = (idx == null ? 0 : idx);
+			
+			// Is this the last token? 
+			// If so, break out, because that is much more complex
+			boolean lastToken = nodes.isEmpty();
+			if (lastToken) {
+				break;
+			}
+			
+			// Not the last token, so this either is a group or a variable resolving to a group
+			List<String> properties = tecl.properties.get(node);
+			if (properties != null && properties.size() == 1 && properties.get(0).startsWith("$")) {
+				logger.atDebug().log(context + "Found variable: " + properties.get(0));
+				String var = properties.get(0).substring(1);
+				tecl = xxx(var, new TECL(""), null).get(idxEffective);
+				logger.atDebug().log(context + "Resolved variable, TECL= " + tecl.getPath());
+			}
+			else {
+				tecl = tecl.groups.get(idxEffective, node, null); 
+				logger.atDebug().log(context + "Assumed group, TECL= " + tecl.getPath());
+			}
+		}
+		
+		// For the last token options are:
+		// - variable?
+		// - groups.get(token) -> list<TECL>
+		// - groups.get(idx, token) -> TECL
+		// - properties.get(token) -> list<R>
+		// - properties.get(idx, token) -> R
+		List<String> properties = tecl.properties.get(node);
+		logger.atDebug().log(context + "Properties = " + properties);
+		List<TECL> tecls = tecl.groups.get(node); 
+		logger.atDebug().log(context + "Groups = " + tecls);
+		List<R> results = null;
+		// convertFunction says its a property
+		if (convertFunction != null) {
+			logger.atDebug().log(context + "There is a convert function, so the last token must be a property: " + properties);
+			
+			// Convert to end value
+			results = new ArrayList<R>();
+			for (String property : properties) {
+				if (property.startsWith("$")) {
+					String var = property.substring(1);
+					List<R> varResult = xxx(var, null, convertFunction);
+					results.addAll(varResult);
+				}
+				else {
+					R result = convertFunction.apply(property);
+					results.add(result);
+				}
+			};
+		}
+		else {
+			logger.atDebug().log(context + "There no convert function, so the last token must be a group: " + tecls);
+			if (tecls.isEmpty() && properties.size() == 1 && properties.get(0).startsWith("$")) {
+				logger.atDebug().log(context + "We have no groups, but we do a single property which is a variable: " + properties);					
+				String var = properties.get(0).substring(1);
+				results = xxx(var, null, null);
+			}
+			else {
+				results = (List<R>) tecls;
+			}
+		}
+		
+		// Do we have an index?
+		// TODO: we can optimize this by doing this in the if/else
+		if (idx != null) {
+			logger.atDebug().log(context + "Limit to idx: " + idx);
+			R result = results.get(idx);
+			results = new ArrayList<R>();
+			results.add(result);
+		}
+		return results;
 	}
 	
 	
@@ -475,6 +588,16 @@ public class TECL {
 		// if not found, maybe we have variable
 		// I do not like this crossing over to properties, but it is needed to resolve a variable referring to a group.
 		if (tecl == null) {
+			if (id.startsWith("|") && id.endsWith("|")) {
+				String actualId = id.substring(1, id.length() - 1);
+				String value = properties.get(idx, actualId, null);
+				if (value != null && value.trim().startsWith("$")) {
+					
+					List<TECL> vars = vars(value);
+				}
+			}
+			
+			
 			String value = properties.get(idx, id, null);
 			if (value != null && value.trim().startsWith("$")) {
 				tecl = var(value);
@@ -584,7 +707,7 @@ public class TECL {
 		TECL root = this.getRoot();
 		
 		// First split into its parts
-		List<String> tokens = new StringTokenizer(address, ".").getTokenList();
+		List<String> tokens = new StringTokenizer(address, "/").getTokenList();
 		logger.atDebug().log("var tokenized: "  + tokens);
 		
 		// Determine the starting point
@@ -592,7 +715,7 @@ public class TECL {
 		logger.atDebug().log("first token= "  + token);
 		TECL tecl = null;
 		if ("$".equals(token)) {
-			// This means the address started with "$."
+			// This means the address started with "$/"
 			tecl = this;
 			token = tokens.remove(0);
 			logger.atDebug().log("start at current tecl, tokens =" + tokens);
@@ -622,7 +745,7 @@ public class TECL {
 			// all intermediate tokens are groups, the last token can be property or group
 			boolean lastToken = tokens.isEmpty();
 			if (!lastToken || lastTokenIsAGroup) {
-				if ("^".equals(token)) {
+				if ("..".equals(token)) {
 					tecl = tecl.parent;
 				}
 				else {

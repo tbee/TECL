@@ -207,7 +207,7 @@ public class TECLParser {
 			teclContextStack.push(teclContext);
 		}
 		// This is the toplevel
-		private final TECL toplevelTECL = new TECL("$");	
+		private final TECL toplevelTECL = new TECL("");	
 		
 		// This is the active TECL within the group
 		private final Stack<TECLContext> teclContextStack = new Stack<>();
