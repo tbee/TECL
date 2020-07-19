@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -125,6 +127,18 @@ public class AntlrTest {
 	public void doubleProperty() {
 		TECL tecl = parse("key : 123.4 \n");
 		assertEquals(Double.valueOf(123.4), tecl.dbl("key"));
+	}
+	
+	@Test
+	public void bdProperty() {
+		TECL tecl = parse("key : 123.4 \n");
+		assertEquals(BigDecimal.valueOf(123.4), tecl.bd("key"));
+	}
+	
+	@Test
+	public void biProperty() {
+		TECL tecl = parse("key : 1234567890 \n");
+		assertEquals(new BigInteger("1234567890"), tecl.bi("key"));
 	}
 	
 	@Test

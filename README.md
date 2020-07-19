@@ -30,8 +30,7 @@ description : "So,
 I'm curious 
 where this will end."
  
-# Shorcut string; no quotes are needed in a simple property style assignment
-# Or if a string is just one word. These strings are trimmed.
+# Shorcut string; no quotes are needed if the value is just one word.
 protocol : http
  
 # Conditions allow for overriding, best match wins (most conditions)

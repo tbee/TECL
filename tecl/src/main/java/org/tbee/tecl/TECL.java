@@ -1,5 +1,7 @@
 package org.tbee.tecl;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -462,8 +464,49 @@ public class TECL {
 	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
 		return get(indexOfKey, indexOfValue, key, asList(def), Integer::valueOf).get(0);
 	}
-	
-	
+
+	/** Convenience method to return a BigInteger */
+	public BigInteger bi(String key) {
+		return bi(0, key, null);
+	}
+	public BigInteger bi(String key, BigInteger def) {
+		return bi(0, key, def);
+	}
+	public BigInteger bi(int idx, String key) {
+		return bi(idx, key, null);
+	}
+	public BigInteger bi(int idx, String key, BigInteger def) {
+		return get(key + "[" + idx + "]", asList(def), (s) -> new BigInteger(s)).get(0);
+	}
+	public List<BigInteger> bis(String key) {
+		return get(key, Collections.emptyList(), (s) -> new BigInteger(s));
+	}
+	public BigInteger bi(String indexOfKey, String indexOfValue, String key, BigInteger def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), (s) -> new BigInteger(s)).get(0);
+	}
+
+
+	/** Convenience method to return a BigDecimal */
+	public BigDecimal bd(String key) {
+		return bd(0, key, null);
+	}
+	public BigDecimal bd(String key, BigDecimal def) {
+		return bd(0, key, def);
+	}
+	public BigDecimal bd(int idx, String key) {
+		return bd(idx, key, null);
+	}
+	public BigDecimal bd(int idx, String key, BigDecimal def) {
+		return get(key + "[" + idx + "]", asList(def), (s) -> new BigDecimal(s)).get(0);
+	}
+	public List<BigDecimal> bds(String key) {
+		return get(key, Collections.emptyList(), (s) -> new BigDecimal(s));
+	}
+	public BigDecimal bd(String indexOfKey, String indexOfValue, String key, BigDecimal def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), (s) -> new BigDecimal(s)).get(0);
+	}
+
+		
 	/** Convenience method to return a Double */
 	public Double dbl(String key) {
 		return dbl(0, key, null);
@@ -483,7 +526,6 @@ public class TECL {
 	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
 		return get(indexOfKey, indexOfValue, key, asList(def), Double::valueOf).get(0);
 	}
-
 	/** Convenience method to return a LocalDate */
 	public LocalDate localDate(String key) {
 		return localDate(0, key, null);
