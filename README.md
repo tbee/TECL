@@ -48,6 +48,7 @@ database {
     # indenting is allowed and encouraged, but has no semantic meaning
     url : jdbc://...
     user : "admin"
+    timeout: 10
  
     # Strings support default encryption with a external key file, like maven
     password : "FGFGGHDRG#$BRTHT%G%GFGHFH%twercgfg"
@@ -82,35 +83,37 @@ environment[env=production] {
 ```
 
 ## Usage ##
-To understand how to use TECL it is important to grasp the basic underlying storage: *everything are indexed values*.
+The configuration hierarchy is accessed using a single 'get' method:  
 
-- When parsing a configuration the only active difference TECL makes is between properties and groups, so TECL has indexed properies and and indexed groups.
-- A group is a new TECL object, so a configuration consists of a tree of indexed TECL objects, with indexed properties as the leafs.
-- A property is always a string, unless the user of TECL tells it to interprete it differenty. In a normal configuration file, like properties, the user would get a string and then pull it through a parser, like Integer.valueOf. With TECL you can simply provide the parse method, or use one of the predefined convenience ones.
-- Upon parsing it is possible to set parameters, which can exluced groups or properties.
+	List<R> get(String path, List<R> defaultValue, Function<String, R> convertFunction)
 
-And that is all there is to it. So basically there are only two relevant methods.
+If you provide a convertFunction get returns properties, if the convert function is null get returns groups.
+The path in the get method travels the hierarchy, so if I want to get the url of the database in the example below: 
 
-	TECL grp(int idx, String key)
-	String str(int indx, String key, String defaultValue)
+	get("/database/url", null, (s) -> s)
+	
+Properties are stored as strings, so the convertFunction in this case keeps the string as-is (input is string, output is the same string).
+An integer would need a other convert function:
 
-Observable reader may notice that the `grp` call does have a default value parameter.
-This is because groups constitute the tree, so in order to prevent NullPointerExceptions when cascade calling into the tree, if a group is not found an empty TECL object is returned.
+	get("/database/timeout", null, Integer::valueOf)
 
-All other methods are convenience methods, for example:
+Not complex necessarily, but also not user friendly, so TECL offers convenience methods to make this easier: 
 
-`public String str(String key)` 
-Get the value at index 0, assuming null as the default value.
-    
-`Double dbl(String key)`
-Get the string at index 0 for the given key, assuming null as the default, and pull that through Double::valueOf to convert the String to Double.    
+	str("/database/url")
+	integer("/database/timepout")
 
-`<R> R get(int idx, String key, R defaultValue, Function<String, R> convertFunction)`
-Get the the string value for key at idx, and if found pass that through the given convertFunction, so it will return a type R. This is how custom types are supported.   
+And if you want to access a group:
 
-`public String str(String indexOfKey, String indexOfValue, String key, String defaultValue)` 
-First do a search for a value on one key, and use that index to fetch the value of another key. Similar to a lookup call in Excel.
+	get("/database", null, null)
+	grp("/database")
 
+There is one noticeable difference between these two calls though: 'grp' will never return null. 
+If a group does not exist, it will create a empty group and return that, this is to prevent null point exceptions. 
+All attempts to get a value from these groups will return null, but that only can happen at the leaf nodes. 
+So the call below does not result in a null pointer exception, because there are missing groups, but simply returns null for 'key' not existing.
+
+	str("/the/groups/in/the/path/do/not/exist/key")
+	
 
 ### Example ###
 
@@ -139,32 +142,29 @@ TECL databaseTECL = tecl.grp("database");
 String url = databaseTECL.str("url");
 String password = databaseTECL.decrypt("password");
  
-// Or directly using method chaining
-String url2 = tecl.grp("database").str("url");
+// Or directly using a path chaining
+String url2 = tecl.str("database/url");
  
-// Or dot notation?
-String url3 = tecl.str("database.url");
+// The path starts at the current node, or root if it starts with a slash
+String url3 = tecl.str("/database/url");
  
 // And you can move back up
-String title2 = databaseTECL.parent().str("title");
+String title2 = databaseTECL.str("../title");
  
 // In case a group was not defined, get ALWAYS returns an empty TECL.
 // This will prevent null pointers in call chains.
 // Only a leaf (value) method will return a null if undefined.
 // So in the case below, field will be null, but no NPE will be thrown.
-String field = tecl.grp("notThere").grp("alsoNotThere").str("field");
+String field = tecl.str("/notThere/alsoNotThere/field");
  
 // Tables use indexes and lists
 // Index is the first parameter in order not to confuse with defaults
-String ip = tecl.grp("servers").str(0, "ip");
-int timeout = tecl.grp("servers").grp(3, "settings").int("timeout");
-String datasource = tecl.grp("servers").grp(4, "settings").str("datasource");
+String ip = tecl.str(0, "/servers/ip");
+int timeout = tecl.int("/servers/settings[3]/timeout");
+String datasource = tecl.str("/servers/settings[4]/datasource");
  
 // You can also index by using one key to search of
 int maxSessions = servers.grp("servers").int("name", "gamma", "MaxSessions"); // returns 12
- 
-// Or use a dot notation with array style index?
-String ip2 = tecl.str("servers[0].ip");
 ```
 
 ## Validation (not implemented yet) ##

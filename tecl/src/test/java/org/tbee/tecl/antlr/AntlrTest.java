@@ -245,7 +245,11 @@ public class AntlrTest {
 	@Test
 	public void notExistingGroup() {
 		TECL tecl = parse("");
+		assertNull(tecl.get("groupId", null, null));
+		assertNull(tecl.get("group1/group2", null, null));
 		assertTrue(tecl.grp("groupId").getId().contains("not exist"));
+		assertTrue(tecl.grp("group1/group2").getId().contains("not exist"));
+		assertNull(tecl.str("group1/group2/key"));
 	}
 	
 	@Test
@@ -296,8 +300,28 @@ public class AntlrTest {
 		assertEquals("[id1]", tecl.get("id[0]", null, (s) -> s).toString());
 		assertEquals("[int]", tecl.get("type[1]", null, (s) -> s).toString());
 		assertEquals("[aaa, bbb, ccc]", tecl.get("type[3]", null, (s) -> s).toString());
+		assertEquals("id1", tecl.str("id"));
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
+	}
+	
+	@Test
+	public void tableInGroup() {
+		TECL tecl = parse(""
+				+ "group { \n "
+				+ "    | id  | type          | \n "
+				+ "    | id1 | string        | \n"
+				+ "    | id2 | int           | \n"				
+				+ "    | id3 | date          | \n"				
+				+ "    | id3 | [aaa,bbb,ccc] | \n"
+				+ "}\n"
+				);
+		assertEquals("[id1]", tecl.get("/group/id[0]", null, (s) -> s).toString());
+		assertEquals("[int]", tecl.get("/group/type[1]", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("/group/type[3]", null, (s) -> s).toString());
+		assertEquals("id1", tecl.str("/group/id"));
+		assertEquals("id1", tecl.str(0, "/group/id"));
+		assertEquals("int", tecl.str(1, "/group/type"));
 	}
 	
 	
@@ -583,22 +607,6 @@ public class AntlrTest {
 	}
 	
 	@Test
-	public void referenceToGroups() {
-		TECL tecl = parse(""
-				+ "key : $group \n"
-				+ "\n"
-				+ "group { \n"
-				+ "    key : value1 \n "
-				+ "}\n"
-				+ "group {"
-				+ "    key : value2 \n "
-				+ "}\n"
-				);
-		assertEquals("[value2]", tecl.get("/key[1]/key", null, (s) -> s).toString());
-		assertEquals("value2", tecl.grps("key").get(1).str("key"));
-	}
-	
-	@Test
 	public void referenceToAList() {
 		TECL tecl = parse(""
 				+ "key : $list \n"
@@ -746,10 +754,16 @@ public class AntlrTest {
 
 	@Test
 	public void testFile() throws IOException {
-		TECL tecl = TECL.parser().parse(this.getClass().getResourceAsStream("test.tecl"), Charset.forName("UTF-8"));
+		TECL tecl = TECL.parser()
+				.addParameter("env", "production")
+				.parse(this.getClass().getResourceAsStream("test.tecl"), Charset.forName("UTF-8"));
 		assertEquals("TECL rulez", tecl.str("title"));
 		assertEquals("escaped\"quote", tecl.str("escaped"));
 		assertEquals(LocalDateTime.of(2020, 9, 12, 12, 34, 56), tecl.localDateTime("releaseDateTime"));
+		assertEquals("prd", tecl.str("/servers/settings[4]/datasource"));
+		
+		assertEquals(3, tecl.grp("/servers").indexOf("name", "gamma"));
+		assertEquals(1, tecl.grp("/group1/group2/group3").indexOf("id", "id1"));
 	}
 	
 	// ========================

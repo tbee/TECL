@@ -166,10 +166,10 @@ public class TECL {
 			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
 			// if it is a variable
 			List<String> properties = tecl.properties.get(node);
-			if (properties != null && properties.size() == 1 && properties.get(0).startsWith("$")) {
-				logger.atDebug().log(context + "Found variable: " + properties.get(0));
-				String var = properties.get(0).substring(1);
-				tecl = grp(idx, var);
+			if (properties != null && properties.size() > idx && properties.get(idx).startsWith("$")) {
+				logger.atDebug().log(context + "Found variable: " + properties.get(idx));
+				String var = properties.get(idx).substring(1);
+				tecl = get(var, emptyGroup(idx), null).get(0);
 				logger.atDebug().log(context + "Resolved variable: " + var + " -> TECL= " + tecl.getPath());
 			}
 			else {
@@ -177,7 +177,7 @@ public class TECL {
 					tecl = tecl.getParent();
 				}
 				else {
-					tecl = tecl.groups.get(idx, node, null);
+					tecl = tecl.grp(idx, node);
 				}
 				logger.atDebug().log(context + "Assumed group, TECL= " + tecl.getPath());
 			}
@@ -538,7 +538,12 @@ public class TECL {
 	 * @return
 	 */
 	public TECL grp(int idx, String key) {
-		return get(key + "[" + idx + "]", asList(new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>")), null).get(0);
+		return get(key + "[" + idx + "]", emptyGroup(idx), null).get(0);
+	}
+
+
+	private List<TECL> emptyGroup(int idx) {
+		return asList(new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>"));
 	}
 	
 	/**

@@ -47,9 +47,9 @@ servers {
     | beta     | XYZ        | 24          |                             |
     | "sys 2"  | B          | 6           |                             |
     # you can have sub blocks, which are id-less groups (id is the column)
-    | gamma    | C          | 12          | {breaker:true, timeout: 15} |
+    | gamma    | C          | 12          |                             |
     # or you reference to another block
-    | tango    | D          | 24          | $environment                |
+    | tango    | D          | 24          | $/environment               |
 }
  
 # environments can be easily done using conditions
@@ -57,5 +57,22 @@ environment[env=development] {
     datasource : tst
 }
 environment[env=production] {
-    datesource : prd
+    datasource : prd
+}
+
+group1 { 
+    key : value1 
+    group2 {
+        key : value2 
+        group3 { 
+            key : value3 
+		    | id  | val  | 
+		    | id0 | val0 |
+		    | id1 | val1 |
+		    | id2 | val2 |
+        }
+    }
+    group2 {
+        key : value2a 
+    }
 }
