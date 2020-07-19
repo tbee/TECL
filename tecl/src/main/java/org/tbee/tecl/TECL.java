@@ -99,41 +99,57 @@ public class TECL {
 	// xxx
 	
 	public <R> List<R> xxx(String path, R def, Function<String, R> convertFunction) {
+		String context = this.getPath() + " get: " + path + ": ";
 		
-		// First split into its parts
-		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
-		logger.atDebug().log("var tokenized: "  + nodes);
+		// If $env. and there is no group in the root named "env" 
+		String envPRefix = "env@";
+		if (path.startsWith(envPRefix)) {
+			String env = path.substring(envPRefix.length());
+			return Arrays.asList(convertFunction.apply(System.getenv(env)));
+		}
+		// If $sys. and there is no group in the root named "sys" 
+		String sysPrefix = "sys@";
+		if (path.startsWith(sysPrefix)) {
+			String sys = path.substring(sysPrefix.length());
+			return Arrays.asList(convertFunction.apply(System.getProperty(sys)));
+		}
 		
 		// Determine the starting point
 		TECL tecl = null;
 		if (path.startsWith("/")) {
 			tecl = this.getRoot();
-			logger.atDebug().log("start at root, tecl = " + tecl);
+			logger.atDebug().log(context + "start at root, tecl = " + tecl);
 		}
 		else {
 			tecl = this;
-			logger.atDebug().log("start at current tecl, tecl = " + tecl);
+			logger.atDebug().log(context + "start at current, tecl = " + tecl);
 		}
+		context = tecl.getPath() + " get: " + path + ": ";
+		
+		// First split into its parts
+		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
+		logger.atDebug().log(context + "var tokenized: "  + nodes);
 		
 		// Navigate through the tree
 		// All intermediate tokens must be a single group, the last token can be more complex
 		String node = null;
-		Integer idx = null;
-		int idxEffective = 0;
-		String context = "";
+		List<Integer> idxs = new ArrayList<Integer>();
 		while (!nodes.isEmpty()) { 
 			node = nodes.remove(0);
-			logger.atDebug().log("node = "  + node);
+			logger.atDebug().log(context + "node = "  + node);
 			context = tecl.getPath() + node + ": ";
 			
 			// optionally separate an index
-			idx = null;
-			if (node.endsWith("]")) {
+			idxs.clear();
+			while (node.contains("[")) {
 				int startIdx = node.indexOf("[");
-				idx = Integer.parseInt(node.substring(startIdx + 1, node.length() - 1));
-				node = node.substring(0, startIdx);				
+				int endIdx = node.indexOf("]");
+				Integer idx = Integer.parseInt(node.substring(startIdx + 1,endIdx));
+				idxs.add(idx);
+				String remainingIdx = node.substring(endIdx + 1);
+				node = node.substring(0, startIdx) + remainingIdx;				
 			}
-			idxEffective = (idx == null ? 0 : idx);
+			logger.atDebug().log(context + "idxs = "  + idxs);
 			
 			// Is this the last token? 
 			// If so, break out, because that is much more complex
@@ -143,15 +159,16 @@ public class TECL {
 			}
 			
 			// Not the last token, so this either is a group or a variable resolving to a group
+			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
 			List<String> properties = tecl.properties.get(node);
 			if (properties != null && properties.size() == 1 && properties.get(0).startsWith("$")) {
 				logger.atDebug().log(context + "Found variable: " + properties.get(0));
 				String var = properties.get(0).substring(1);
-				tecl = xxx(var, new TECL(""), null).get(idxEffective);
+				tecl = xxx(var, new TECL(""), null).get(idx);
 				logger.atDebug().log(context + "Resolved variable, TECL= " + tecl.getPath());
 			}
 			else {
-				tecl = tecl.groups.get(idxEffective, node, null); 
+				tecl = tecl.groups.get(idx, node, null); 
 				logger.atDebug().log(context + "Assumed group, TECL= " + tecl.getPath());
 			}
 		}
@@ -164,12 +181,23 @@ public class TECL {
 		// - properties.get(idx, token) -> R
 		List<String> properties = tecl.properties.get(node);
 		logger.atDebug().log(context + "Properties = " + properties);
+		List<TECL> lists = tecl.groups.get("|" + node + "|"); 
+		logger.atDebug().log(context + "Lists = " + lists);
 		List<TECL> tecls = tecl.groups.get(node); 
 		logger.atDebug().log(context + "Groups = " + tecls);
+		Integer idx = (idxs.isEmpty() ? null : idxs.get(0));
 		List<R> results = null;
 		// convertFunction says its a property
 		if (convertFunction != null) {
 			logger.atDebug().log(context + "There is a convert function, so the last token must be a property: " + properties);
+			
+			// is it a list
+			if (idx != null && lists.size() > idx && lists.get(idx) != null) {
+				properties = lists.get(idx).properties.get(node);
+			}
+			else {
+				properties = optionallApplyIndex(context, properties, idx);
+			}
 			
 			// Convert to end value
 			results = new ArrayList<R>();
@@ -187,25 +215,34 @@ public class TECL {
 		}
 		else {
 			logger.atDebug().log(context + "There no convert function, so the last token must be a group: " + tecls);
+			
 			if (tecls.isEmpty() && properties.size() == 1 && properties.get(0).startsWith("$")) {
 				logger.atDebug().log(context + "We have no groups, but we do a single property which is a variable: " + properties);					
 				String var = properties.get(0).substring(1);
 				results = xxx(var, null, null);
 			}
 			else {
+				tecls = optionallApplyIndex(context, tecls, idx);
 				results = (List<R>) tecls;
 			}
 		}
+
+		// secondary index (for lists)
+		Integer idx1 = (idxs.size() <= 1 ? null : idxs.get(1));
+		results = optionallApplyIndex(context, results, idx1);
 		
-		// Do we have an index?
-		// TODO: we can optimize this by doing this in the if/else
+		// done
+		return results;
+	}
+	
+	private <R> List<R> optionallApplyIndex(String context, List<R> list, Integer idx) {
 		if (idx != null) {
 			logger.atDebug().log(context + "Limit to idx: " + idx);
-			R result = results.get(idx);
-			results = new ArrayList<R>();
-			results.add(result);
+			R result = list.get(idx);
+			list = new ArrayList<R>();
+			list.add(result);
 		}
-		return results;
+		return list;
 	}
 	
 	
@@ -872,8 +909,7 @@ public class TECL {
 			if (values == null) {
 				return Collections.emptyList();
 			}
-			values = new ArrayList<T>(values);
-			values.remove(null);
+			values = new ArrayList<T>(values); // End users are not allowed to modify the list
 			return values;
 		}
 

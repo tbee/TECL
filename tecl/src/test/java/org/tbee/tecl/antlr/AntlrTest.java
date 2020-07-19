@@ -285,13 +285,15 @@ public class AntlrTest {
 	@Test
 	public void table() {
 		TECL tecl = parse(""
-				+ "| id  | type   | \n "
-				+ "| id1 | string | \n"
-				+ "| id2 | int    | \n"				
-				+ "| id3 | date   | \n"				
+				+ "| id  | type          | \n "
+				+ "| id1 | string        | \n"
+				+ "| id2 | int           | \n"				
+				+ "| id3 | date          | \n"				
+				+ "| id3 | [aaa,bbb,ccc] | \n"				
 				);
 		assertEquals("[id1]", tecl.xxx("id[0]", null, (s) -> s).toString());
 		assertEquals("[int]", tecl.xxx("type[1]", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.xxx("type[3]", null, (s) -> s).toString());
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
 		assertEquals("int", tecl.str("id", "id2", "type"));
@@ -348,8 +350,8 @@ public class AntlrTest {
 				);
 		assertEquals("a", tecl.grp(0, "|type|").str(0, "type"));
 		assertEquals("b", tecl.grp(0, "|type|").str(1, "type"));
-		assertEquals("[a,b]", tecl.str(0, "type"));
-		assertEquals("int", tecl.str(1, "type"));
+		assertEquals("[a,b]", tecl.str(1, "type"));
+		assertEquals("int", tecl.str(2, "type"));
 	}
 
 	@Test
@@ -610,23 +612,21 @@ public class AntlrTest {
 	@Test
 	public void referenceToIndexedInTable() {
 		TECL tecl = parse(""
-				+ "| id  | type | \n "
-				+ "| id0 | int  | \n"
-				+ "| id1 | $key | \n"
+				+ "| id  | type  | \n "
+				+ "| id0 | int   | \n"
+				+ "| id1 | $list | \n"
 				+ "\n"
-				+  "key : [aaa,bbb,ccc] \n"
+				+  "list : [aaa,bbb,ccc] \n"
 				);
 		// A list is an index property
 		// And a table is an indexed property
-		// So we are having a double indexed property here; first to get to the row and then the list
-		
+		// So we are having a double indexed property here; first to get to the row and then inside the list		
+		assertEquals("[aaa, bbb, ccc]", tecl.xxx("/type[1]", null, (s) -> s).toString());
+		assertEquals("[ccc]", tecl.xxx("/type[1][2]", null, (s) -> s).toString());
+
 		String raw = tecl.raw(1, "type", null);
-		assertEquals("$key", raw);
+		assertEquals("$list", raw);
 		assertEquals("[aaa, bbb, ccc]", tecl.vars(raw, (s) -> s).toString());
-		
-// TBEERNOT: this may very well be a common scenario, how to better solve this? 		
-//		assertEquals("ccc", tecl.grp(1, "|type|").str(2, "type"));
-//		assertEquals("bbb", tecl.grp(1, "type").str(1, "type"));
 	}
 	
 	@Test
@@ -635,6 +635,7 @@ public class AntlrTest {
 		TECL tecl = parse(""
 				+ "key : $env@USERNAME\n "
 				);
+		assertEquals("[" + value + "]", tecl.xxx("key", null, (s) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 	
@@ -651,6 +652,7 @@ public class AntlrTest {
 		TECL tecl = parse(""
 				+ "key : $sys@user.language # comment\n"
 				);
+		assertEquals("[" + value + "]", tecl.xxx("key", null, (s) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 	
