@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class TECL {
+	private final static String ENV_PREFIX = "env@";
+	private final static String SYS_PREFIX = "sys@";
+
 	final Logger logger = LoggerFactory.getLogger(TECL.class);
 	
 	// =====================================
@@ -96,22 +99,29 @@ public class TECL {
 	
 	
 	// =====================================
-	// xxx
+	// get
 	
-	public <R> List<R> xxx(String path, R def, Function<String, R> convertFunction) {
-		String context = this.getPath() + " get: " + path + ": ";
+	/**
+	 * Get a value using a directory-style path, like /group1/group2[4]/value
+	 * 
+	 * This is the main way to access values in TECL, all convenience method use this method
+	 * 
+	 * @param <R>
+	 * @param path the path the access
+	 * @param def the value to return if nothing is found
+	 * @param convertFunction the conversion function to convert properties to their end type, if you access groups this should be null
+	 * @return a list of found values
+	 */
+	@SuppressWarnings("unchecked")
+	public <R> List<R> get(String path, List<R> def, Function<String, R> convertFunction) {
+		String context = this.getPath() + " -> " + path + ": ";
 		
-		// If $env. and there is no group in the root named "env" 
-		String envPRefix = "env@";
-		if (path.startsWith(envPRefix)) {
-			String env = path.substring(envPRefix.length());
-			return Arrays.asList(convertFunction.apply(System.getenv(env)));
+		// Specials 
+		if (path.startsWith(ENV_PREFIX)) {
+			return getEnv(path, convertFunction, context);
 		}
-		// If $sys. and there is no group in the root named "sys" 
-		String sysPrefix = "sys@";
-		if (path.startsWith(sysPrefix)) {
-			String sys = path.substring(sysPrefix.length());
-			return Arrays.asList(convertFunction.apply(System.getProperty(sys)));
+		if (path.startsWith(SYS_PREFIX)) {
+			return getSys(path, convertFunction, context);
 		}
 		
 		// Determine the starting point
@@ -124,7 +134,7 @@ public class TECL {
 			tecl = this;
 			logger.atDebug().log(context + "start at current, tecl = " + tecl);
 		}
-		context = tecl.getPath() + " get: " + path + ": ";
+		context = tecl.getPath() + " -> " + path + ": ";
 		
 		// First split into its parts
 		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
@@ -135,21 +145,15 @@ public class TECL {
 		String node = null;
 		List<Integer> idxs = new ArrayList<Integer>();
 		while (!nodes.isEmpty()) { 
+			
+			// Get current token
 			node = nodes.remove(0);
 			logger.atDebug().log(context + "node = "  + node);
 			context = tecl.getPath() + node + ": ";
 			
-			// optionally separate an index
-			idxs.clear();
-			while (node.contains("[")) {
-				int startIdx = node.indexOf("[");
-				int endIdx = node.indexOf("]");
-				Integer idx = Integer.parseInt(node.substring(startIdx + 1,endIdx));
-				idxs.add(idx);
-				String remainingIdx = node.substring(endIdx + 1);
-				node = node.substring(0, startIdx) + remainingIdx;				
-			}
-			logger.atDebug().log(context + "idxs = "  + idxs);
+			// extract the indexes from the node
+			node = extractIdxs(node, idxs);
+			logger.atDebug().log(context + "node = "  + node + ", idxs = "  + idxs);
 			
 			// Is this the last token? 
 			// If so, break out, because that is much more complex
@@ -160,87 +164,155 @@ public class TECL {
 			
 			// Not the last token, so this either is a group or a variable resolving to a group
 			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
+			// if it is a variable
 			List<String> properties = tecl.properties.get(node);
 			if (properties != null && properties.size() == 1 && properties.get(0).startsWith("$")) {
 				logger.atDebug().log(context + "Found variable: " + properties.get(0));
 				String var = properties.get(0).substring(1);
-				tecl = xxx(var, new TECL(""), null).get(idx);
-				logger.atDebug().log(context + "Resolved variable, TECL= " + tecl.getPath());
+				tecl = grp(idx, var);
+				logger.atDebug().log(context + "Resolved variable: " + var + " -> TECL= " + tecl.getPath());
 			}
 			else {
-				tecl = tecl.groups.get(idx, node, null); 
+				if ("..".equals(node)) {
+					tecl = tecl.getParent();
+				}
+				else {
+					tecl = tecl.groups.get(idx, node, null);
+				}
 				logger.atDebug().log(context + "Assumed group, TECL= " + tecl.getPath());
 			}
 		}
 		
-		// For the last token options are:
-		// - variable?
-		// - groups.get(token) -> list<TECL>
-		// - groups.get(idx, token) -> TECL
-		// - properties.get(token) -> list<R>
-		// - properties.get(idx, token) -> R
+		// This is the last node, it may be a property, group, list or variable
+		// First get all relevant info
+		// Properties
 		List<String> properties = tecl.properties.get(node);
 		logger.atDebug().log(context + "Properties = " + properties);
-		List<TECL> lists = tecl.groups.get("|" + node + "|"); 
-		logger.atDebug().log(context + "Lists = " + lists);
-		List<TECL> tecls = tecl.groups.get(node); 
-		logger.atDebug().log(context + "Groups = " + tecls);
+		// Group
+		List<TECL> groups = tecl.groups.get(node); 
+		logger.atDebug().log(context + "Groups = " + groups);
+		// List
+		List<TECL> list = tecl.groups.get("|" + node + "|"); 
+		logger.atDebug().log(context + "Lists = " + list);
+		
+		// Construct the results
 		Integer idx = (idxs.isEmpty() ? null : idxs.get(0));
 		List<R> results = null;
-		// convertFunction says its a property
-		if (convertFunction != null) {
-			logger.atDebug().log(context + "There is a convert function, so the last token must be a property: " + properties);
+		// If there is no convertFunction, then it the result are groups
+		if (convertFunction == null) {
+			logger.atDebug().log(context + "There no convert function, so the last token must be groups.");
 			
-			// is it a list
-			if (idx != null && lists.size() > idx && lists.get(idx) != null) {
-				properties = lists.get(idx).properties.get(node);
-			}
-			else {
-				properties = optionallApplyIndex(context, properties, idx);
-			}
-			
-			// Convert to end value
-			results = new ArrayList<R>();
-			for (String property : properties) {
-				if (property.startsWith("$")) {
-					String var = property.substring(1);
-					List<R> varResult = xxx(var, null, convertFunction);
-					results.addAll(varResult);
-				}
-				else {
-					R result = convertFunction.apply(property);
-					results.add(result);
-				}
-			};
-		}
-		else {
-			logger.atDebug().log(context + "There no convert function, so the last token must be a group: " + tecls);
-			
-			if (tecls.isEmpty() && properties.size() == 1 && properties.get(0).startsWith("$")) {
+			// If we have a variable overlapping the groups
+			if (groups.isEmpty() && properties.size() == 1 && properties.get(0).startsWith("$")) {
+				
+				// Resolve the variable
 				logger.atDebug().log(context + "We have no groups, but we do a single property which is a variable: " + properties);					
 				String var = properties.get(0).substring(1);
-				results = xxx(var, null, null);
+				results = get(var, null, null);
 			}
 			else {
-				tecls = optionallApplyIndex(context, tecls, idx);
-				results = (List<R>) tecls;
+				// The result are the groups
+				groups = optionallyApplyIndex(context, groups, idx);
+				results = (List<R>) groups;
 			}
 		}
+		// A convertFunction says it is from the properties
+		else {
+			logger.atDebug().log(context + "There is a convert function, so the last token must be properties.");
+			
+			// If there is a variable
+			if (properties.size() == 1 && properties.get(0).startsWith("$")) {
+				logger.atDebug().log(context + "We have a single property which is a variable, going to resolve that: " + properties);					
+				String var = properties.get(0).substring(1);
+				results = get(var, null, convertFunction);
+				results = optionallyApplyIndex(context, results, idx);
+			}
+			// No variable, so we're processing the properties
+			else {
+				
+				// If we have a list overlapping the properties, replace the properties with those in the list
+				if (idx != null && list.size() > idx && list.get(idx) != null) {
+					properties = list.get(idx).properties.get(node);
+					logger.atDebug().log(context + "There is an overlapping list, replaced properties with its contents. Properties = " + properties);
+				}
+				
+				// Apply the index
+				properties = optionallyApplyIndex(context, properties, idx);
+			
+				// Convert to end value
+				results = new ArrayList<R>();
+				for (String property : properties) {
+					
+					// But each property can be a variable again
+					if (property.startsWith("$")) {
+						
+						// Resolve variable
+						logger.atDebug().log(context + "Property is a variable: " + property);
+						String var = property.substring(1);
+						List<R> varResult = get(var, null, convertFunction);
+						results.addAll(varResult);
+					}
+					else {
+						
+						// Convert property to end type
+						property = sanatizeString(property);
+						R result = convertFunction.apply(property);
+						logger.atDebug().log(context + "Property converted: " + property + " -> "  + result);
+						results.add(result);
+					}
+				};
+			}
+		}	
+		logger.atDebug().log(context + "Results: " + results);
 
 		// secondary index (for lists)
 		Integer idx1 = (idxs.size() <= 1 ? null : idxs.get(1));
-		results = optionallApplyIndex(context, results, idx1);
+		results = optionallyApplyIndex(context, results, idx1);
 		
 		// done
-		return results;
+		return results.isEmpty() ? def : results;
+	}
+
+
+	private String extractIdxs(String node, List<Integer> idxs) {
+		idxs.clear();
+		while (node.contains("[")) {
+			int startIdx = node.indexOf("[");
+			int endIdx = node.indexOf("]");
+			String idxString = node.substring(startIdx + 1,endIdx);
+			Integer idx = idxString.trim().isEmpty() ? null : Integer.parseInt(idxString);
+			idxs.add(idx);
+			String remainingIdx = node.substring(endIdx + 1);
+			node = node.substring(0, startIdx) + remainingIdx;				
+		}
+		return node;
+	}
+
+
+	private <R> List<R> getSys(String path, Function<String, R> convertFunction, String context) {
+		String sys = path.substring(SYS_PREFIX.length());
+		R result = convertFunction.apply(System.getProperty(sys));
+		logger.atDebug().log(context + "sys path, result = " + result);
+		return Arrays.asList(result);
+	}
+
+
+	private <R> List<R> getEnv(String path, Function<String, R> convertFunction, String context) {
+		String env = path.substring(ENV_PREFIX.length());
+		R result = convertFunction.apply(System.getenv(env));
+		logger.atDebug().log(context + "env path, result = " + result);
+		return Arrays.asList(result);
 	}
 	
-	private <R> List<R> optionallApplyIndex(String context, List<R> list, Integer idx) {
-		if (idx != null) {
-			logger.atDebug().log(context + "Limit to idx: " + idx);
+	/*
+	 * 
+	 */
+	private <R> List<R> optionallyApplyIndex(String context, List<R> list, Integer idx) {
+		if (idx != null && list.size() > idx) {
 			R result = list.get(idx);
 			list = new ArrayList<R>();
 			list.add(result);
+			logger.atDebug().log(context + "Limit to idx = " + idx + ", result: " + list);
 		}
 		return list;
 	}
@@ -330,244 +402,90 @@ public class TECL {
 		return properties.get(idx, key, null);
 	}
 	
-	/**
-	 * Get a property; a convert function needs to be provided to convert the String to the required type.
-	 * Usually a property is accessed through one of the convenience methods like str, integer, localDate, etc.
-	 * If a variable is encountered, it will be resolved and the convert function is applied on the resolved value.
-	 * 
-	 * @param <R>
-	 * @param key
-	 * @param convertFunction
-	 * @return
-	 */
-	public <R> R get(String key, Function<String, R> convertFunction) {
-		return get(0, key, null, convertFunction);
-	}
-	public <R> R get(String key, R def, Function<String, R> convertFunction) {
-		return get(0, key, def, convertFunction);
-	}
-	public <R> R get(int idx, String key, Function<String, R> convertFunction) {
-		return get(idx, key, convertFunction);
-	}
-	public <R> R get(String indexOfKey, String indexOfValue, String key, Function<String, R> convertFunction) {
-		int idx = indexOf(indexOfKey, indexOfValue);
-		if (idx < 0) {
-			return null;
-		}
-		return get(idx, key, convertFunction);
-	}
-	public <R> R get(String indexOfKey, String indexOfValue, String key, R def, Function<String, R> convertFunction) {
-		int idx = indexOf(indexOfKey, indexOfValue);
-		if (idx < 0) {
-			return null;
-		}
-		return get(idx, key, def, convertFunction);
-	}
-	public <R> R get(int idx, String key, R def, Function<String, R> convertFunction) {
-		
-		// Get the values
-		List<String> values = properties.get(key);
-		if (values == null) {
-			return def;
-		}
-		
-		// Check to see if it is a variable
-		if (values.size() == 1) {
-			String value = values.get(0).trim();
-			if (value.startsWith("$")) {
-				List<R> results = vars(value, convertFunction);
-				if (idx >= results.size()) {
-					return def;
-				}
-				return results.get(idx);
-			}
-		}
-		
-		// Get the value, unless the index is out of bounds
-		if (idx >= values.size()) {
-			return def;
-		}
-		String value = values.get(idx);
-		
-		// If variable, resolve it, else make sure it is the correct string (stripping quotes)
-		if (value.startsWith("$")) {
-			R result = var(value, def, convertFunction);
-			return result;
-		}
-		else {
-			value = sanatizeString(value);
-		}		
-		
-		// Apply the convert function
-		try {
-			return convertFunction.apply(value);
-		}
-		catch (Exception e) {
-			throw new ParseException(e);
-		}
-	}
-	
-	/**
-	 * Construct a list based on a key.
-	 * If a variable is encountered as one of the value, it will be resolved and the convert function is applied on the resolved value.
-	 * 
-	 * @param <R>
-	 * @param key
-	 * @param convertFunction
-	 * @return
-	 */
-	public <R> List<R> list(String key, Function<String, R> convertFunction) {			
-		
-		// Get the contents
-		List<String> stringValues = properties.get(key);
-		
-		// If there is only one value, it may be a variable to a list
-		if (stringValues.size() == 1) {
-			String stringValue = stringValues.get(0);
-			if (stringValue.startsWith("$")) {
-				List<R> values = vars(stringValue, convertFunction);
-				return values;
-			}
-		}
-		
-		// Convert each value
-		List<R> values = new ArrayList<>();
-		for (String stringValue : stringValues) {
-			
-			// If variable, resolve it, else make sure it is the correct string (stripping quotes)
-			if (stringValue.startsWith("$")) {
-				R value = var(stringValue, null, convertFunction);
-				values.add(value);
-			}
-			else {
-				// Apply the convert function
-				stringValue = sanatizeString(stringValue);
-				try {
-					R value = convertFunction.apply(stringValue);
-					values.add(value);
-				}
-				catch (Exception e) {
-					throw new ParseException(e);
-				}
-			}
-		}		
-		return values;
-	}
-
 	/** Convenience method to return a string */
 	public String str(String key) {
-		return get(0, key, null, (s) -> s);
+		return str(0, key, null);
 	}
 	public String str(String key, String def) {
-		return get(0, key, def, (s) -> s);
+		return str(0, key, def);
 	}
 	public String str(int idx, String key) {
-		return get(idx, key, null, (s) -> s);
+		return str(idx, key, null);
 	}
 	public String str(int idx, String key, String def) {
-		return get(idx, key, def, (s) -> s);
-	}
-	public String str(String indexOfKey, String indexOfValue, String key) {
-		return get(indexOfKey, indexOfValue, key, null, (s) -> s);
-	}
-	public String str(String indexOfKey, String indexOfValue, String key, String def) {
-		return get(indexOfKey, indexOfValue, key, def, (s) -> s);
+		return get(key + "[" + idx + "]", asList(def), (s) -> s).get(0);
 	}
 	public List<String> strs(String key) {
-		return list(key, (s) -> s);
+		return get(key, Collections.emptyList(), (s) -> s);
 	}
 	
 	/** Convenience method to return an Integer */
 	public Integer integer(String key) {
-		return get(0, key, null, Integer::valueOf);
+		return integer(0, key, null);
 	}
 	public Integer integer(String key, Integer def) {
-		return get(0, key, def, Integer::valueOf);
+		return integer(0, key, def);
 	}
 	public Integer integer(int idx, String key) {
-		return get(idx, key, null, Integer::valueOf);
+		return integer(idx, key, null);
 	}
 	public Integer integer(int idx, String key, Integer def) {
-		return get(idx, key, def, Integer::valueOf);
-	}
-	public Integer integer(String indexOfKey, String indexOfValue, String key) {
-		return get(indexOfKey, indexOfValue, key, null, Integer::valueOf);
-	}
-	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
-		return get(indexOfKey, indexOfValue, key, def, Integer::valueOf);
+		return get(key + "[" + idx + "]", asList(def), Integer::valueOf).get(0);
 	}
 	public List<Integer> integers(String key) {
-		return list(key, Integer::valueOf);
+		return get(key, Collections.emptyList(), Integer::valueOf);
 	}
 	
 	
 	/** Convenience method to return a Double */
 	public Double dbl(String key) {
-		return get(0, key, null, Double::valueOf);
+		return dbl(0, key, null);
 	}
 	public Double dbl(String key, Double def) {
-		return get(0, key, def, Double::valueOf);
+		return dbl(0, key, def);
 	}
 	public Double dbl(int idx, String key) {
-		return get(idx, key, null, Double::valueOf);
+		return dbl(idx, key, null);
 	}
 	public Double dbl(int idx, String key, Double def) {
-		return get(idx, key, def, Double::valueOf);
-	}
-	public Double dbl(String indexOfKey, String indexOfValue, String key) {
-		return get(indexOfKey, indexOfValue, key, null, Double::valueOf);
-	}
-	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
-		return get(indexOfKey, indexOfValue, key, def, Double::valueOf);
+		return get(key + "[" + idx + "]", asList(def), Double::valueOf).get(0);
 	}
 	public List<Double> dbls(String key) {
-		return list(key, Double::valueOf);
+		return get(key, Collections.emptyList(), Double::valueOf);
 	}
 	
 	/** Convenience method to return a LocalDate */
 	public LocalDate localDate(String key) {
-		return get(0, key, null, LocalDate::parse);
+		return localDate(0, key, null);
 	}
 	public LocalDate localDate(String key, LocalDate def) {
-		return get(0, key, def, LocalDate::parse);
+		return localDate(0, key, def);
 	}
 	public LocalDate localDate(int idx, String key) {
-		return get(idx, key, null, LocalDate::parse);
+		return localDate(idx, key, null);
 	}
 	public LocalDate localDate(int idx, String key, LocalDate def) {
-		return get(idx, key, def, LocalDate::parse);
-	}
-	public LocalDate localDate(String indexOfKey, String indexOfValue, String key) {
-		return get(indexOfKey, indexOfValue, key, null, LocalDate::parse);
-	}
-	public LocalDate localDate(String indexOfKey, String indexOfValue, String key, LocalDate def) {
-		return get(indexOfKey, indexOfValue, key, def, LocalDate::parse);
+		return get(key + "[" + idx + "]", asList(def), LocalDate::parse).get(0);
 	}
 	public List<LocalDate> localDates(String key) {
-		return list(key, LocalDate::parse);
+		return get(key, Collections.emptyList(), LocalDate::parse);
 	}
 	
 	/** Convenience method to return a LocalDateTime */
 	public LocalDateTime localDateTime(String key) {
-		return get(0, key, null, LocalDateTime::parse);
+		return localDateTime(0, key, null);
 	}
 	public LocalDateTime localDateTime(String key, LocalDateTime def) {
-		return get(0, key, def, LocalDateTime::parse);
+		return localDateTime(0, key, def);
 	}
 	public LocalDateTime localDateTime(int idx, String key) {
-		return get(idx, key, null, LocalDateTime::parse);
+		return localDateTime(idx, key, null);
 	}
 	public LocalDateTime localDateTime(int idx, String key, LocalDateTime def) {
-		return get(idx, key, def, LocalDateTime::parse);
-	}
-	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key) {
-		return get(indexOfKey, indexOfValue, key, null, LocalDateTime::parse);
-	}
-	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
-		return get(indexOfKey, indexOfValue, key, def, LocalDateTime::parse);
+		return get(key + "[" + idx + "]", asList(def), LocalDateTime::parse).get(0);
 	}
 	public List<LocalDateTime> localDateTimes(String key) {
-		return list(key, LocalDateTime::parse);
+		return get(key, Collections.emptyList(), LocalDateTime::parse);
 	}
 	
 	// =====================================
@@ -619,34 +537,8 @@ public class TECL {
 	 * @param id
 	 * @return
 	 */
-	public TECL grp(int idx, String id) {
-		TECL tecl = groups.get(idx, id, null);
-		
-		// if not found, maybe we have variable
-		// I do not like this crossing over to properties, but it is needed to resolve a variable referring to a group.
-		if (tecl == null) {
-			if (id.startsWith("|") && id.endsWith("|")) {
-				String actualId = id.substring(1, id.length() - 1);
-				String value = properties.get(idx, actualId, null);
-				if (value != null && value.trim().startsWith("$")) {
-					
-					List<TECL> vars = vars(value);
-				}
-			}
-			
-			
-			String value = properties.get(idx, id, null);
-			if (value != null && value.trim().startsWith("$")) {
-				tecl = var(value);
-			}
-		}
-		
-		// if not found, return an empty group so we don't get NPE's
-		if (tecl == null) {
-			tecl = new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>");
-			tecl.setParent(this, -1);
-		}
-		return tecl;
+	public TECL grp(int idx, String key) {
+		return get(key + "[" + idx + "]", asList(new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>")), null).get(0);
 	}
 	
 	/**
@@ -654,164 +546,10 @@ public class TECL {
 	 * @param id
 	 * @return
 	 */
-	public List<TECL> grps(String id) {
-		List<TECL> tecls = groups.get(id);
-		
-		// if nothing found, maybe we have variable
-		// I do not like this crossing over to properties, but it is needed to resolve a variable referring to a group.
-		if (tecls.isEmpty()) {
-			String value = properties.get(0, id, null);
-			if (value != null && value.trim().startsWith("$")) {
-				tecls = vars(value);
-			}
-		}
-		
-		return tecls;
+	public List<TECL> grps(String key) {
+		return get(key, Collections.emptyList(), null);
 	}
 
-	// =====================================
-	// REFERENCE
-	
-	/**
-	 * Use a path notation to access a property
-	 * - Start at the root: $groupId.groupId2.property
-	 * - Starting at the current node: $.property
-	 * - Via an index $groupId.groupId2.property[2]
-	 */
-	public <R> R var(String address, R def, Function<String, R> convertFunction) {
-		R value = resolveSpecial(address, convertFunction);
-		if (value != null) {
-			return value;
-		}
-
-		TokenContext tokenContext = resolve(address, false);
-		return tokenContext.tecl.get(tokenContext.idx == null ? 0 : tokenContext.idx.intValue(), tokenContext.token, def, convertFunction);
-	}
-	
-	/**
-	 * Use a path notation to access a list
-	 */
-	public <R> List<R> vars(String address, Function<String, R> convertFunction) {
-		R value = resolveSpecial(address, convertFunction);
-		if (value != null) {
-			return new ArrayList<R>(Arrays.asList(value));
-		}
-		
-		TokenContext tokenContext = resolve(address, false);
-		return tokenContext.tecl.list(tokenContext.token,  convertFunction);
-	}
-	
-	/**
-	 * Use a path notation to access a group
-	 * - Start at the root: $groupId.groupId2
-	 * - Starting at the current node: $.groupID
-	 * - Via an index $groupId.groupId2
-	 */
-	public TECL var(String address) {
-		TokenContext tokenContext = resolve(address, true); // resolve groups all the way to the last token, so we add one to act as the leaf property 
-		return tokenContext.tecl;
-	}
-	
-	/**
-	 * Use a path notation to access groups
-	 */
-	public List<TECL> vars(String address) {
-		TokenContext tokenContext = resolve(address, true); // resolve groups all the way to the last token, so we add one to act as the leaf property 
-		return tokenContext.tecls;
-	}
-
-	private <R> R resolveSpecial(String address, Function<String, R> convertFunction) {
-		// If $env. and there is no group in the root named "env" 
-		String envPRefix = "$env@";
-		if (address.startsWith(envPRefix)) {
-			String env = address.substring(envPRefix.length());
-			return convertFunction.apply(System.getenv(env));
-		}
-		// If $sys. and there is no group in the root named "sys" 
-		String sysPrefix = "$sys@";
-		if (address.startsWith(sysPrefix)) {
-			String sys = address.substring(sysPrefix.length());
-			return convertFunction.apply(System.getProperty(sys));
-		}
-
-		return null;
-	}
-	
-	private TokenContext resolve(String address, boolean lastTokenIsAGroup) {
-		if (!address.startsWith("$")) {
-			throw new IllegalArgumentException("Variables must start with a $");
-		}
-		TECL root = this.getRoot();
-		
-		// First split into its parts
-		List<String> tokens = new StringTokenizer(address, "/").getTokenList();
-		logger.atDebug().log("var tokenized: "  + tokens);
-		
-		// Determine the starting point
-		String token = tokens.get(0);
-		logger.atDebug().log("first token= "  + token);
-		TECL tecl = null;
-		if ("$".equals(token)) {
-			// This means the address started with "$/"
-			tecl = this;
-			token = tokens.remove(0);
-			logger.atDebug().log("start at current tecl, tokens =" + tokens);
-		}
-		else {
-			tecl = root;
-			token = token.substring(1);
-			tokens.set(0, token);
-			logger.atDebug().log("start at root, tokens =" + tokens);
-		}
-		
-		// Navigate through the tree
-		Integer idx = null;
-		List<TECL> tecls = null;
-		while (!tokens.isEmpty()) { 
-			
-			// separate an index
-			token = tokens.remove(0);
-			logger.atDebug().log("token= "  + token);
-			idx = null;
-			if (token.endsWith("]")) {
-				int startIdx = token.indexOf("[");
-				idx = Integer.parseInt(token.substring(startIdx + 1, token.length() - 1));
-				token= token.substring(0, startIdx);				
-			}
-			
-			// all intermediate tokens are groups, the last token can be property or group
-			boolean lastToken = tokens.isEmpty();
-			if (!lastToken || lastTokenIsAGroup) {
-				if ("..".equals(token)) {
-					tecl = tecl.parent;
-				}
-				else {
-					if (lastToken && idx == null) {
-						tecls = tecl.grps(token);
-					}
-					tecl = tecl.grp(idx == null ? 0 : idx.intValue(), token);				
-				}
-				logger.atDebug().log("TECL= "  + tecl.getPath());
-			}
-		} 
-		
-		// final token
-		return new TokenContext(tecl, tecls, token, idx);
-	}
-	class TokenContext {
-		final TECL tecl;
-		final List<TECL> tecls;
-		final String token;
-		final Integer idx;
-		
-		TokenContext(TECL tecl, List<TECL> tecls, String token, Integer idx) {
-			this.tecl = tecl;
-			this.tecls = tecls;
-			this.token = token;
-			this.idx = idx;
-		}
-	}
-	
 	// =====================================
 	// SUPPORT
 	
@@ -832,7 +570,7 @@ public class TECL {
 		void clear(int idx, String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values != null) {
-				values.clear();;
+				values.clear();
 			}
 			
 			// Check if the value can be cleared
@@ -991,6 +729,15 @@ public class TECL {
 
 		// done
 		return s.trim();
+	}
+
+	/*
+	 * 
+	 */
+	private <R> List<R> asList(R value) {
+		List<R> values = new ArrayList<R>();
+		values.add(value);
+		return values;
 	}
 	
 	public String toString() {

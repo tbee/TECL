@@ -33,7 +33,7 @@ public class AntlrTest {
 	public void simpleProperty() {
 		String value = "value0$^*%";
 		TECL tecl = parse("key : " + value + " \n");
-		assertEquals("[" + value + "]", tecl.xxx("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 
@@ -63,6 +63,7 @@ public class AntlrTest {
 	public void propertyWithQuotedString() {
 		String value = " value and more difficult!&# 345 symbols ";
 		TECL tecl = parse("key : \"" + value + "\" \n");
+		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 
@@ -116,7 +117,7 @@ public class AntlrTest {
 	@Test
 	public void integerProperty() {
 		TECL tecl = parse("key : 123 \n");
-		assertEquals(Integer.valueOf(123), tecl.xxx("key", null, Integer::parseInt).get(0));
+		assertEquals(Integer.valueOf(123), tecl.get("key", null, Integer::parseInt).get(0));
 		assertEquals(Integer.valueOf(123), tecl.integer("key"));
 	}
 	
@@ -145,7 +146,7 @@ public class AntlrTest {
 	@Test
 	public void simpleList() {
 		TECL tecl = parse("key : [aaa,bbb,ccc] \n");
-		assertEquals("[aaa, bbb, ccc]", tecl.xxx("key", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("key", null, (s) -> s).toString());
 		assertEquals("aaa" , tecl.str(0, "key"));
 		assertEquals("bbb" , tecl.str(1, "key"));
 		assertEquals("ccc" , tecl.str(2, "key"));
@@ -155,7 +156,7 @@ public class AntlrTest {
 	@Test
 	public void integerList() {
 		TECL tecl = parse("key : [1,2,3] \n");
-		assertEquals("[1, 2, 3]", tecl.xxx("key", null, Integer::parseInt).toString());
+		assertEquals("[1, 2, 3]", tecl.get("key", null, Integer::parseInt).toString());
 		assertEquals(1 , tecl.integer(0, "key").intValue());
 		assertEquals(2 , tecl.integer(1, "key").intValue());
 		assertEquals(3 , tecl.integer(2, "key").intValue());
@@ -178,6 +179,7 @@ public class AntlrTest {
 	public void simpleListQuotedStrings() {
 		String value = " value and more difficult!&# 345 symbols ";
 		TECL tecl = parse("key : [\"aa a\",\""  + value + "\",ccc] \n");
+		assertEquals("[aa a]" , tecl.get("key[0]", null, (s) -> s).toString());
 		assertEquals("aa a" , tecl.str(0, "key"));
 		assertEquals(value , tecl.str(1, "key"));
 		assertEquals("ccc" , tecl.str(2, "key"));
@@ -225,7 +227,7 @@ public class AntlrTest {
 	@Test
 	public void emptyGroup() {
 		TECL tecl = parse("groupId { }");
-		assertEquals("[/groupId[0]/]", tecl.xxx("groupId", null, null).toString());
+		assertEquals("[/groupId[0]/]", tecl.get("groupId", null, null).toString());
 		assertEquals("groupId", tecl.grp("groupId").getId());
 	}
 	
@@ -235,7 +237,7 @@ public class AntlrTest {
 				+ "groupId { \n" 
 				+ "    key : value\n"
 				+ "}\n");
-		assertEquals("[value]", tecl.xxx("groupId/key", null, (s) -> s).toString());
+		assertEquals("[value]", tecl.get("groupId/key", null, (s) -> s).toString());
 		assertEquals("groupId", tecl.grp("groupId").getId());
 		assertEquals("value", tecl.grp("groupId").str("key"));
 	}
@@ -256,8 +258,8 @@ public class AntlrTest {
 				+ "    key : value2\n"
 				+ "}\n"
 				);
-		assertEquals("[/groupId[0]/]", tecl.xxx("groupId[0]", null, null).toString());
-		assertEquals("[/groupId[0]/, /groupId[1]/]", tecl.xxx("groupId", null, null).toString());
+		assertEquals("[/groupId[0]/]", tecl.get("groupId[0]", null, null).toString());
+		assertEquals("[/groupId[0]/, /groupId[1]/]", tecl.get("groupId", null, null).toString());
 		assertEquals("value1", tecl.grp(0, "groupId").str("key"));
 		assertEquals("value2", tecl.grp(1, "groupId").str("key"));
 		assertEquals(2, tecl.grps("groupId").size());
@@ -273,7 +275,7 @@ public class AntlrTest {
 				+ "    }\n"
 				+ "}\n"
 				);
-		assertEquals("[/groupId1[0]/groupId2[0]/groupId3[0]/]", tecl.xxx("/groupId1/groupId2/groupId3", null, null).toString());
+		assertEquals("[/groupId1[0]/groupId2[0]/groupId3[0]/]", tecl.get("/groupId1/groupId2/groupId3", null, null).toString());
 		assertEquals("groupId1", tecl.grp("groupId1").getId());
 		assertEquals("groupId2", tecl.grp("groupId1").grp("groupId2").getId());
 		assertEquals("groupId3", tecl.grp("groupId1").grp("groupId2").grp("groupId3").getId());
@@ -291,12 +293,11 @@ public class AntlrTest {
 				+ "| id3 | date          | \n"				
 				+ "| id3 | [aaa,bbb,ccc] | \n"				
 				);
-		assertEquals("[id1]", tecl.xxx("id[0]", null, (s) -> s).toString());
-		assertEquals("[int]", tecl.xxx("type[1]", null, (s) -> s).toString());
-		assertEquals("[aaa, bbb, ccc]", tecl.xxx("type[3]", null, (s) -> s).toString());
+		assertEquals("[id1]", tecl.get("id[0]", null, (s) -> s).toString());
+		assertEquals("[int]", tecl.get("type[1]", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("type[3]", null, (s) -> s).toString());
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
-		assertEquals("int", tecl.str("id", "id2", "type"));
 	}
 	
 	
@@ -378,14 +379,14 @@ public class AntlrTest {
 	@Test
 	public void conditionedPropertyWithMatchingCondition() {
 		TECL tecl = parse("key[sys=A] : value\n");
-		assertEquals("[value]", tecl.xxx("key", null, (s) -> s).toString());
+		assertEquals("[value]", tecl.get("key", null, (s) -> s).toString());
 		assertEquals("value", tecl.str("key"));
 	}
 
 	@Test
 	public void conditionedPropertyWithNotMatchingCondition() {
 		TECL tecl = parse("key[sys=other] : value\n");
-		assertEquals("[]", tecl.xxx("key", null, (s) -> s).toString());
+		assertNull(tecl.get("key", null, (s) -> s));
 		assertEquals(null, tecl.str("key"));
 	}
 
@@ -462,10 +463,10 @@ public class AntlrTest {
 
 	
 	// ========================
-	// VAR
+	// GET
 	
 	@Test
-	public void var() {
+	public void get() {
 		TECL tecl = parse(""
 				+ "group1 { \n"
 				+ "    key : value1 \n "
@@ -488,33 +489,33 @@ public class AntlrTest {
 				+ "    | id2 | \n"
 				+ "}\n"
 				);
-		assertEquals("value2", tecl.var("$group1/group2/key", null, (s) -> s));
-		assertEquals("value1", tecl.var("$group1/group2/../key", null, (s) -> s));
-		assertEquals("value2a", tecl.var("$group1/group2[1]/key", null, (s) -> s));
-		assertEquals("id1", tecl.var("$group1/id[1]", null, (s) -> s));
+		assertEquals("value2", tecl.get("group1/group2/key", null, (s) -> s).get(0));
+		assertEquals("value1", tecl.get("group1/group2/../key", null, (s) -> s).get(0));
+		assertEquals("value2a", tecl.get("group1/group2[1]/key", null, (s) -> s).get(0));
+		assertEquals("id1", tecl.get("group1/id[1]", null, (s) -> s).get(0));
 		
 		// Start half way
 		TECL group2TECL = tecl.grp("group1").grp("group2");
-		assertEquals("value3", group2TECL.var("$/group3/key", null, (s) -> s));
-		assertEquals("id2", group2TECL.var("$/../id[2]", null, (s) -> s));
+		assertEquals("value3", group2TECL.get("group3/key", null, (s) -> s).get(0));
+		assertEquals("id2", group2TECL.get("../id[2]", null, (s) -> s).get(0));
 		
 		// access a group
-		assertEquals("value2", tecl.var("$group1/group2").str("key"));
+		assertEquals("[/group1[0]/group2[0]/, /group1[0]/group2[1]/]", tecl.get("group1/group2", null,null).toString());
 	}
 	
 	@Test
 	public void reference() {
 		TECL tecl = parse(""
 				+ "group1 { \n"
-				+ "    key : $group2/key \n "
+				+ "    key : $/group2/key \n "
 				+ "}\n"
 				+ "group2 {"
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		assertEquals("[value2]", tecl.xxx("/group1/key", null, (s) -> s).toString());
+		assertEquals("[value2]", tecl.get("/group1/key", null, (s) -> s).toString());
+		assertEquals("[value2]", tecl.get("group1/key", null, (s) -> s).toString());
 		assertEquals("value2", tecl.grp("group1").str("key"));
-		assertEquals("value2", tecl.var("$group1/key", null, (s) -> s));
 	}
 	
 	@Test
@@ -530,7 +531,7 @@ public class AntlrTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		assertEquals("[value2]", tecl.xxx("/type[0]", null, (s) -> s).toString());
+		assertEquals("[value2]", tecl.get("/type[0]", null, (s) -> s).toString());
 		assertEquals("value2", tecl.str(0, "type"));
 	}
 	
@@ -544,8 +545,8 @@ public class AntlrTest {
 				+ "    key : value \n "
 				+ "}\n"
 				);
-		assertEquals("[/group[0]/]", tecl.xxx("/type[0]", null, null).toString());
-		assertEquals("[value]", tecl.xxx("/type[0]/key", null, (s) -> s).toString());
+		assertEquals("[/group[0]/]", tecl.get("/type[0]", null, null).toString());
+		assertEquals("[value]", tecl.get("/type[0]/key", null, (s) -> s).toString());
 		assertEquals("value", tecl.grp(0, "type").str("key"));
 		assertEquals("value", tecl.grp("group").str("key"));
 	}
@@ -576,7 +577,7 @@ public class AntlrTest {
 		assertEquals("value2", tecl.grp("type").str("key"));
 		String raw = tecl.raw(0, "type", null);
 		assertEquals("$group", raw);
-		assertEquals("value1", tecl.var(raw).str("key"));
+		assertEquals("value1", tecl.grp(raw.substring(1)).str("key"));
 		assertEquals("value1", tecl.grp("group").str("key"));
 		assertEquals(1, tecl.countGrp("type"));
 	}
@@ -593,7 +594,7 @@ public class AntlrTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		assertEquals("[value2]", tecl.xxx("/key[1]/key", null, (s) -> s).toString());
+		assertEquals("[value2]", tecl.get("/key[1]/key", null, (s) -> s).toString());
 		assertEquals("value2", tecl.grps("key").get(1).str("key"));
 	}
 	
@@ -603,7 +604,8 @@ public class AntlrTest {
 				+ "key : $list \n"
 				+  "list : [aaa,bbb,ccc] \n"
 				);
-		assertEquals("[aaa, bbb, ccc]", tecl.xxx("/key", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("/key", null, (s) -> s).toString());
+		assertEquals("[ccc]", tecl.get("/key[2]", null, (s) -> s).toString());
 		assertEquals("ccc", tecl.str(2, "key"));
 		assertEquals("bbb", tecl.strs("key").get(1));
 		assertEquals("[aaa, bbb, ccc]", tecl.strs("key").toString());
@@ -621,12 +623,12 @@ public class AntlrTest {
 		// A list is an index property
 		// And a table is an indexed property
 		// So we are having a double indexed property here; first to get to the row and then inside the list		
-		assertEquals("[aaa, bbb, ccc]", tecl.xxx("/type[1]", null, (s) -> s).toString());
-		assertEquals("[ccc]", tecl.xxx("/type[1][2]", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("/type[1]", null, (s) -> s).toString());
+		assertEquals("[ccc]", tecl.get("/type[1][2]", null, (s) -> s).toString());
 
 		String raw = tecl.raw(1, "type", null);
 		assertEquals("$list", raw);
-		assertEquals("[aaa, bbb, ccc]", tecl.vars(raw, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.strs(raw.substring(1)).toString());
 	}
 	
 	@Test
@@ -635,7 +637,7 @@ public class AntlrTest {
 		TECL tecl = parse(""
 				+ "key : $env@USERNAME\n "
 				);
-		assertEquals("[" + value + "]", tecl.xxx("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 	
@@ -643,7 +645,7 @@ public class AntlrTest {
 	public void env() {
 		String value = System.getenv("USERNAME");
 		TECL tecl = parse("");
-		assertEquals(value, tecl.var("$env@USERNAME", null, (s) -> s));
+		assertEquals(value, tecl.get("env@USERNAME", null, (s) -> s).get(0));
 	}
 	
 	@Test
@@ -652,7 +654,7 @@ public class AntlrTest {
 		TECL tecl = parse(""
 				+ "key : $sys@user.language # comment\n"
 				);
-		assertEquals("[" + value + "]", tecl.xxx("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 	
@@ -660,7 +662,7 @@ public class AntlrTest {
 	public void sys() {
 		String value = System.getProperty("user.language");
 		TECL tecl = parse("");
-		assertEquals(value, tecl.var("$sys@user.language", null, (s) -> s));
+		assertEquals(value, tecl.get("sys@user.language", null, (s) -> s).get(0));
 	}
 
 
