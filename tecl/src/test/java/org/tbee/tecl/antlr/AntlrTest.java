@@ -490,7 +490,7 @@ public class AntlrTest {
 	// indexOf
 	
 	@Test
-	public void indexOft() {
+	public void indexOf() {
 		TECL tecl = parse(""
 				+ "group1 { \n"
 				+ "    key : value1 \n "
@@ -498,17 +498,20 @@ public class AntlrTest {
 				+ "        key : value2 \n "
 				+ "        group3 { \n"
 				+ "            key : value3 \n "
-				+ "            | id  | \n "
-				+ "            | id0 | \n"
-				+ "            | id1 | \n"
-				+ "            | id2 | \n"
+				+ "            | id  | val  | \n "
+				+ "            | id0 | val0 | \n"
+				+ "            | id1 | val1 | \n"
+				+ "            | id2 | val2 | \n"
 				+ "        }\n"
 				+ "    }\n"
 				+ "}\n"
 				);
 		
 		assertEquals(1, tecl.grp("/group1/group2/group3").indexOf("id", "id1"));
+		assertEquals(1, tecl.strs("/group1/group2/group3/id").indexOf("id1"));
 		assertEquals(-1, tecl.grp("/group1/notExist/group3").indexOf("id", "id1"));
+		assertEquals("val1", tecl.str("/group1/group2/group3/id", "id1", "/group1/group2/group3/val", null));
+		assertEquals("val1", tecl.grp("/group1/group2/group3").str("id", "id1", "val", null));
 	}
 	
 	// ========================
@@ -788,6 +791,8 @@ public class AntlrTest {
 		assertEquals("prd", tecl.str("/servers/settings[4]/datasource"));
 		
 		assertEquals(3, tecl.grp("/servers").indexOf("name", "gamma"));
+		assertEquals(Integer.valueOf(12), tecl.integer("/servers/name", "gamma", "/servers/maxSessions", null));
+		assertEquals(Integer.valueOf(12), tecl.grp("/servers").integer("name", "gamma", "maxSessions", null));
 	}
 	
 	// ========================

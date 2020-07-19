@@ -102,6 +102,27 @@ public class TECL {
 	// get
 	
 	/**
+	 * Lookup function:  
+	 * - First search for the occurence of indexOfValue in indexOfPath.
+	 * - Using that index get the value for path.
+	 * 
+	 * @param <R>
+	 * @param indexOfPath
+	 * @param indexOfValue
+	 * @param path
+	 * @param def
+	 * @param convertFunction
+	 * @return
+	 */
+	public <R> List<R> get(String indexOfPath, String indexOfValue, String path, List<R> def, Function<String, R> convertFunction) {
+		int idx = strs(indexOfPath).indexOf(indexOfValue);
+		if (idx < 0) {
+			return def;
+		}
+		return get(path + "[" + idx + "]", def, convertFunction);
+	}
+
+	/**
 	 * Get a value using a directory-style path, like /group1/group2[4]/value
 	 * 
 	 * This is the main way to access values in TECL, all convenience method use this method
@@ -418,6 +439,9 @@ public class TECL {
 	public List<String> strs(String key) {
 		return get(key, Collections.emptyList(), (s) -> s);
 	}
+	public String str(String indexOfKey, String indexOfValue, String key, String def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), (s) -> s).get(0);
+	}
 	
 	/** Convenience method to return an Integer */
 	public Integer integer(String key) {
@@ -434,6 +458,9 @@ public class TECL {
 	}
 	public List<Integer> integers(String key) {
 		return get(key, Collections.emptyList(), Integer::valueOf);
+	}
+	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), Integer::valueOf).get(0);
 	}
 	
 	
@@ -453,7 +480,10 @@ public class TECL {
 	public List<Double> dbls(String key) {
 		return get(key, Collections.emptyList(), Double::valueOf);
 	}
-	
+	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), Double::valueOf).get(0);
+	}
+
 	/** Convenience method to return a LocalDate */
 	public LocalDate localDate(String key) {
 		return localDate(0, key, null);
@@ -470,7 +500,10 @@ public class TECL {
 	public List<LocalDate> localDates(String key) {
 		return get(key, Collections.emptyList(), LocalDate::parse);
 	}
-	
+	public LocalDate localDate(String indexOfKey, String indexOfValue, String key, LocalDate def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), LocalDate::parse).get(0);
+	}
+
 	/** Convenience method to return a LocalDateTime */
 	public LocalDateTime localDateTime(String key) {
 		return localDateTime(0, key, null);
@@ -486,6 +519,9 @@ public class TECL {
 	}
 	public List<LocalDateTime> localDateTimes(String key) {
 		return get(key, Collections.emptyList(), LocalDateTime::parse);
+	}
+	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
+		return get(indexOfKey, indexOfValue, key, asList(def), LocalDateTime::parse).get(0);
 	}
 	
 	// =====================================

@@ -132,7 +132,7 @@ LocalDateTime releaseDateTime = tecl.localDateTime("releaseDateTime");
 List<String> hosts = tecl.strs("hosts");
  
 // You can specify defaults in value methods
-String port = tecl.int("port", 80);
+String port = tecl.integer("port", 80);
  
 // The grp method takes it one level / group deeper.
 // You simply get a new TECL object for inside that group.
@@ -160,11 +160,14 @@ String field = tecl.str("/notThere/alsoNotThere/field");
 // Tables use indexes and lists
 // Index is the first parameter in order not to confuse with defaults
 String ip = tecl.str(0, "/servers/ip");
-int timeout = tecl.int("/servers/settings[3]/timeout");
-String datasource = tecl.str("/servers/settings[4]/datasource");
+// But indexes can also be written in the path
+String ip2 = tecl.str("/servers/ip[0]");
+int timeout = tecl.integer("/servers/settings[3]/timeout");
  
-// You can also index by using one key to search of
-int maxSessions = servers.grp("servers").int("name", "gamma", "MaxSessions"); // returns 12
+// Practical for tables is a lookup function: search for the row where name=gamma and get the value for maxSessions
+int maxSessions = tecl.integer("/servers/name", "gamma", "/server/maxSessions"); // returns 12
+// For readability it is better to first scope on the group
+int maxSessions2 = tecl.grp("/servers").integer("name", "gamma", "maxSessions"); // returns 12
 ```
 
 ## Validation (not implemented yet) ##
