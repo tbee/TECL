@@ -487,6 +487,31 @@ public class AntlrTest {
 
 	
 	// ========================
+	// indexOf
+	
+	@Test
+	public void indexOft() {
+		TECL tecl = parse(""
+				+ "group1 { \n"
+				+ "    key : value1 \n "
+				+ "    group2 {"
+				+ "        key : value2 \n "
+				+ "        group3 { \n"
+				+ "            key : value3 \n "
+				+ "            | id  | \n "
+				+ "            | id0 | \n"
+				+ "            | id1 | \n"
+				+ "            | id2 | \n"
+				+ "        }\n"
+				+ "    }\n"
+				+ "}\n"
+				);
+		
+		assertEquals(1, tecl.grp("/group1/group2/group3").indexOf("id", "id1"));
+		assertEquals(-1, tecl.grp("/group1/notExist/group3").indexOf("id", "id1"));
+	}
+	
+	// ========================
 	// GET
 	
 	@Test
@@ -763,7 +788,6 @@ public class AntlrTest {
 		assertEquals("prd", tecl.str("/servers/settings[4]/datasource"));
 		
 		assertEquals(3, tecl.grp("/servers").indexOf("name", "gamma"));
-		assertEquals(1, tecl.grp("/group1/group2/group3").indexOf("id", "id1"));
 	}
 	
 	// ========================
