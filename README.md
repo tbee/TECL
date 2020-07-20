@@ -86,37 +86,46 @@ The configuration hierarchy is accessed using a single 'get' method:
 
 	List<R> get(String path, List<R> defaultValue, Function<String, R> convertFunction)
 
-If you provide a convertFunction get returns properties, if the convert function is null get returns groups.
-The path in the get method travels the hierarchy, so if I want to get the url of the database in the example below: 
-
-	get("/database/url", null, (s) -> s)
-	
-Properties are stored as strings, so the convertFunction in this case keeps the string as-is (input is string, output is the same string).
-An integer would need a other convert function:
-
-	get("/database/timeout", null, Integer::valueOf)
-
-Not complex necessarily, but also not user friendly, so TECL offers convenience methods to make this easier: 
+This allows you to specify your own converter functions, but is not very user friendly.
+Usually one of the many the convenience methods are used:
 
 	str("/database/url")
 	integer("/database/timepout")
-
-And if you want to access a group:
-
-	get("/database", null, null)
 	grp("/database")
 
-There is one noticeable difference between these two calls though: 'grp' will never return null. 
-If a group does not exist, it will create a empty group and return that, this is to prevent null point exceptions. 
-All attempts to get a value from these groups will return null, but that only can happen at the leaf nodes. 
-So the call below does not result in a null pointer exception, because there are missing groups, but simply returns null for 'key' not existing.
+But in case no matching convenience method is present, the get method is the way to go.
+The path in the methods travels the hierarchy.
+If no value is found, the default is returned. Per default this is null, but can be set as the last parameter:
+
+	integer("/database/timepout", 1000)
+
+Every property can have multiple values, to get to those indexes are used as the first parameter: 
+
+	str(1, "/hosts")
+	str("/hosts[1]")
+
+Tables are nothing more than indexed properties:
+
+    integer(4, "/servers/maxSessions")
+    integer("/servers/maxSessions[4]")
+    
+And the same principle is used for groups:
+
+    grp(1, "/environment")
+    grp("/environment[1]")
+    
+There is one noticeable difference between properties and groups: a 'grp' call will never return null, even if the group is not present. 
+If a group does not exist, TECL will create an empty group and return that, to prevent null point exceptions. 
+Nulls can only be returned at the leaf or value nodes. 
+
+So the call below does not result in a null pointer exception because there are missing groups, but simply returns null for the fact that 'key' does not exist in the last group:
 
 	str("/the/groups/in/the/path/do/not/exist/key")
 	
 
 ### Example ###
 
-So the example configuration above can be accessed in the following way:
+The example configuration above can be accessed in the following way:
 
 ```java
 // Conditions are resolved at parse time.
