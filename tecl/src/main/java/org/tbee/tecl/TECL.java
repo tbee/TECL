@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * TODO:
- * - encrypt
  * - many type methods for int, dbl, localDate, etc... 
  *
  */
@@ -127,7 +126,7 @@ public class TECL {
 	/**
 	 * Get a value using a directory-style path, like /group1/group2[4]/value
 	 * 
-	 * This is the main way to access values in TECL, all convenience method use this method
+	 * This is the main way to access values in TECL, all convenience methods use this method
 	 * 
 	 * @param <R>
 	 * @param path the path the access
@@ -235,7 +234,7 @@ public class TECL {
 			}
 			else {
 				// The result are the groups
-				groups = optionallyApplyIndex(context, groups, idx);
+				groups = optionallyApplyIdx(context, groups, idx);
 				results = (List<R>) groups;
 			}
 		}
@@ -248,7 +247,7 @@ public class TECL {
 				logger.atDebug().log(context + "We have a single property which is a variable, going to resolve that: " + properties);					
 				String var = properties.get(0).substring(1);
 				results = get(var, null, convertFunction);
-				results = optionallyApplyIndex(context, results, idx);
+				results = optionallyApplyIdx(context, results, idx);
 			}
 			// No variable, so we're processing the properties
 			else {
@@ -260,7 +259,7 @@ public class TECL {
 				}
 				
 				// Apply the index
-				properties = optionallyApplyIndex(context, properties, idx);
+				properties = optionallyApplyIdx(context, properties, idx);
 			
 				// Convert to end value
 				results = new ArrayList<R>();
@@ -290,13 +289,35 @@ public class TECL {
 
 		// secondary index (for lists)
 		Integer idx1 = (idxs.size() <= 1 ? null : idxs.get(1));
-		results = optionallyApplyIndex(context, results, idx1);
+		results = optionallyApplyIdx(context, results, idx1);
 		
 		// done
 		return results.isEmpty() ? def : results;
 	}
 
+	/*
+	 * 
+	 */
+	private <R> List<R> getSys(String path, Function<String, R> convertFunction, String context) {
+		String sys = path.substring(SYS_PREFIX.length());
+		R result = convertFunction.apply(System.getProperty(sys));
+		logger.atDebug().log(context + "sys path, result = " + result);
+		return Arrays.asList(result);
+	}
 
+	/*
+	 * 
+	 */
+	private <R> List<R> getEnv(String path, Function<String, R> convertFunction, String context) {
+		String env = path.substring(ENV_PREFIX.length());
+		R result = convertFunction.apply(System.getenv(env));
+		logger.atDebug().log(context + "env path, result = " + result);
+		return Arrays.asList(result);
+	}
+
+	/*
+	 * 
+	 */
 	private String extractIdxs(String node, List<Integer> idxs) {
 		idxs.clear();
 		while (node.contains("[")) {
@@ -310,27 +331,11 @@ public class TECL {
 		}
 		return node;
 	}
-
-
-	private <R> List<R> getSys(String path, Function<String, R> convertFunction, String context) {
-		String sys = path.substring(SYS_PREFIX.length());
-		R result = convertFunction.apply(System.getProperty(sys));
-		logger.atDebug().log(context + "sys path, result = " + result);
-		return Arrays.asList(result);
-	}
-
-
-	private <R> List<R> getEnv(String path, Function<String, R> convertFunction, String context) {
-		String env = path.substring(ENV_PREFIX.length());
-		R result = convertFunction.apply(System.getenv(env));
-		logger.atDebug().log(context + "env path, result = " + result);
-		return Arrays.asList(result);
-	}
 	
 	/*
 	 * 
 	 */
-	private <R> List<R> optionallyApplyIndex(String context, List<R> list, Integer idx) {
+	private <R> List<R> optionallyApplyIdx(String context, List<R> list, Integer idx) {
 		if (idx != null && list.size() > idx) {
 			R result = list.get(idx);
 			list = new ArrayList<R>();
@@ -564,6 +569,48 @@ public class TECL {
 	}
 	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
 		return get(indexOfKey, indexOfValue, key, asList(def), LocalDateTime::parse).get(0);
+	}
+	
+	// =====================================
+	// decrypt
+
+	// Storage
+	private String decryptKeyBase64 = null;
+	void setDecryptKeyBase64(String decryptKeyBase64) {
+		this.decryptKeyBase64 = decryptKeyBase64;
+	}
+	
+	/** Methods for decrypting */
+	public String decrypt(String key) {
+		return decrypt(0, key, null);
+	}
+	public String decrypt(String key, String def) {
+		return decrypt(0, key, def);
+	}
+	public String decrypt(int idx, String key) {
+		return decrypt(idx, key, null);
+	}
+	public String decrypt(int idx, String key, String def) {
+		String str = str(idx, key, def);
+		return decryptOnly(str);
+	}	
+	public String decrypt(String indexOfKey, String indexOfValue, String key, String def) {
+		String str = str(indexOfKey, indexOfValue, key, def);
+		return decryptOnly(str);
+	}
+
+	/**
+	 * Provide a value to decrypt directly
+	 * 
+	 * @param encryptedBase64
+	 * @return
+	 */
+	public String decryptOnly(String encryptedBase64) {
+		if (decryptKeyBase64 == null) {
+			throw new IllegalStateException("No decrypt key set. \n1) Generate a key pair using the EncrpytionHelper class (has a main, just start it). \n2) Encrypt the value with the public key using the EncryptionHelper and store in the TECL file. \n3) provide the private key to the parser.");
+		}
+		String decoded = EncryptionHelper.me.decode(encryptedBase64, decryptKeyBase64);
+		return decoded;
 	}
 	
 	// =====================================

@@ -1,5 +1,4 @@
-package org.tbee.tecl.antlr;
-
+package org.tbee.tecl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -17,10 +16,10 @@ import java.time.LocalDateTime;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tbee.tecl.TECL;
+import org.tbee.tecl.antlr.PrintLexer;
 
-public class AntlrTest {
-	final Logger logger = LoggerFactory.getLogger(AntlrTest.class);
+public class TECLTest {
+	final Logger logger = LoggerFactory.getLogger(TECLTest.class);
 
 	@Test
 	public void emptyFile() {
@@ -717,6 +716,41 @@ public class AntlrTest {
 
 
 	// ========================
+	// decrypt
+	
+	@Test
+	public void decryptWithoutConfig() {
+		assertThrows(IllegalStateException.class, () -> {
+			TECL tecl = parse("key : value \n");
+			tecl.decrypt("key");
+		});
+	}
+	
+	@Test
+	public void decrypt() {
+		TECL tecl = TECL.parser()
+			.decryptKey("MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC050zupuKRKdYQCKrl33REjzQgZYegP4IEU7gqlkN7bnZbXVWTkTjDOG3DUTVWXyCXzR9ovkXIchmU94m3LjmBayse4Cz+PNankjb/wlb9IyRqsD6yA/uLO1lmy5W0iI+/+QxYgdwiYkzwuTU17AzKTs1r5oKl/fnojqJ73iwFQVfItDDFGbOKc4WBUih5SE8n2fp/UbkDO4MY//Skp72W0O4nwRKsXAP/Bi9D8O/4+wVSGQD2EqRWblL9PLpgMMz+xUqxjuQbGRELBQLcw3zAVUcUlvudB+PA5eNorJB+9MjFeBFklmoaFbE93GQ6hnTIj7JntM+HqJVZ8n/4Zg2lAgMBAAECggEAUl4+mStDXfU+km5f4eqsdcr+YQHZjw1blbzIzhs8/qZ9HXyRym8E+V5oG9aOApWtsXCkLHz2KR5Kp5lOCynw5Qx2xcgstFXfJs1cXXePRBMMMcetxEAr+Gk9e6CWuWy0hyROir4WDVHU1oZ9w9+Gs1bOEaMTOaE6eLj5Io02Xe1t9WThCfiQnduhuqnSidfUqabD1rqG6pyZ96fUfxLK2dDj4RTZFZuW4oThdrPAEW+jwCJR/Ky3sV6AAQYN0PrsCX2xTNjG9Yir+KoyyxEQFmHts7FeTFyUaDH67NdO0bG8eng20uo+TtbRzSCF+s0j8gLStdCA8BNaTBz5eVtEwQKBgQDp0mFb+CBHcvW0lBTg6kQc2lnk/aQ3hneDY5m/8ku7gpeZ8ayviEnYPtj7IaZbJ8KOYWuE2vc2nkMyj51psxsaaPBcfjmW2wO8r33ckOxmvV63oG070lxpVfvQ/ftoc8qYi8sjZfDgQa99AWliSdfyhsD0gW7jcr2cVqjJCnNalwKBgQDGD/fE40QkHA2sf1Pzy5lHkO/W713pfY8cxbfpaoHO6HkKNVGFOvRG8gpN1ymUXGkDFw9WOrB2G+hEQjHJi+3HaWlb7CStWcFPZ43qIPr0Li83R/i6dTKKb80VCPCcOu2rha4nadd+GY5q1XrxO+BYz2hNIWguPRmN0CmvDRENIwKBgQCQOkX1verjR6UJuyHZzocvKPy0RERMP7RupjxLawCN7DLpMWqsZ6vtKG8dEReVOMRIoQz6STqeRSb8BBw7+8+nDb3dv7p0NCps8+7146r+gKbxK5LViJ+aFgCbXF78ghgg2nH2JsZa/glqWTmQ+C2tGrPg3gnxYHBXBBle0QRwhwKBgHO5WLd9Yo8GpSaortC/oSujj78x1NlcN4ZEMBT92iKeyjogtST3MUtSmJqqoOzCocjgbGGhoQEhhTB8zMJKNABTou/GphdzXfObOdwWsQqDAat3LekkGQeyE027D3r5I20Yio0U1ogjPodFfLP+nDLH3NVUM57wrEGj4vcY12GpAoGBAMqrn8nynHZ7m2zzKhA6qAkpekJZ9kl1Zs/Ba+wFPEPt+1Sg7vYbuedtZI0NqeAxD3i7lYVu+WqRhPlMV0pXQGKlbT4awCAmhohd56Le1VuyeqUUts2Gygi/tbaiJy7hX0q9WxYj1SkCe8YwTYZnmQEmNn4H6kaNCTA6dzSY+wBT")
+			.parse("key : ACsM4Dn8e9Ck9Z7Q9BUpcmILcIR5eJYgqGNr22cQcOvHTRNRQHylDuXqHLaSku8MKLz/itNixBbOhZWNTJ1Mzn3WA6Hv4dLOo/719AxVzli6ru6+BZymesDzdpJIG1PxA+YZW7hefyxwpwo/DzLc8GtG60lpd9rQbgUNeKaJBWFtBfPjYb2YZpoiBIqYSsvMnHv0reePVcLw+XvOl6V1o0mxlS5sc8TrsBYwje4AfuvBaBDj2Gj5Jkx2s8CdOqNMW04B+GReTcEaJRgPdDGh09ZskhaYXuOQIh1CX5/5SEpnQq2fjEvGzUdybFjGjtNksduk8gap0m0idBeCGHJ/kw== \n");
+		assertEquals("This is the text to encrypt", tecl.decrypt("key"));
+	}
+	
+	@Test
+	public void decryptInputStream() throws IOException {
+		TECL tecl = TECL.parser()
+			.decryptKey(this.getClass().getResourceAsStream("privateKey.txt"))
+			.parse("key : ACsM4Dn8e9Ck9Z7Q9BUpcmILcIR5eJYgqGNr22cQcOvHTRNRQHylDuXqHLaSku8MKLz/itNixBbOhZWNTJ1Mzn3WA6Hv4dLOo/719AxVzli6ru6+BZymesDzdpJIG1PxA+YZW7hefyxwpwo/DzLc8GtG60lpd9rQbgUNeKaJBWFtBfPjYb2YZpoiBIqYSsvMnHv0reePVcLw+XvOl6V1o0mxlS5sc8TrsBYwje4AfuvBaBDj2Gj5Jkx2s8CdOqNMW04B+GReTcEaJRgPdDGh09ZskhaYXuOQIh1CX5/5SEpnQq2fjEvGzUdybFjGjtNksduk8gap0m0idBeCGHJ/kw== \n");
+		assertEquals("This is the text to encrypt", tecl.decrypt("key"));
+	}
+	
+	@Test
+	public void decryptURL() throws IOException {
+		TECL tecl = TECL.parser()
+			.decryptKey(this.getClass().getResource("privateKey.txt"))
+			.parse("key : ACsM4Dn8e9Ck9Z7Q9BUpcmILcIR5eJYgqGNr22cQcOvHTRNRQHylDuXqHLaSku8MKLz/itNixBbOhZWNTJ1Mzn3WA6Hv4dLOo/719AxVzli6ru6+BZymesDzdpJIG1PxA+YZW7hefyxwpwo/DzLc8GtG60lpd9rQbgUNeKaJBWFtBfPjYb2YZpoiBIqYSsvMnHv0reePVcLw+XvOl6V1o0mxlS5sc8TrsBYwje4AfuvBaBDj2Gj5Jkx2s8CdOqNMW04B+GReTcEaJRgPdDGh09ZskhaYXuOQIh1CX5/5SEpnQq2fjEvGzUdybFjGjtNksduk8gap0m0idBeCGHJ/kw== \n");
+		assertEquals("This is the text to encrypt", tecl.decrypt("key"));
+	}
+
+	// ========================
 	// PREPROCESSING
 
 	@Test
@@ -772,7 +806,7 @@ public class AntlrTest {
 		System.out.println(new File(".").getAbsolutePath());
 		TECL tecl = parse(""
 				+ "key1 : value1\n"
-				+ "@import src/test/resources/org/tbee/tecl/antlr/import2.tecl\n"
+				+ "@import src/test/resources/org/tbee/tecl/import2.tecl\n"
 				+ "key2 : value2\n"
 				);
 		assertEquals("import2", tecl.str("import2"));
@@ -783,7 +817,7 @@ public class AntlrTest {
 		System.out.println(new File(".").getAbsolutePath());
 		TECL tecl = parse(""
 				+ "key1 : value1\n"
-				+ "@import src/test/resources/org/tbee/tecl/antlr/import1.tecl\n"
+				+ "@import src/test/resources/org/tbee/tecl/import1.tecl\n"
 				+ "key2 : value2\n"
 				);
 		assertEquals("import1", tecl.str("import1"));
@@ -819,4 +853,3 @@ public class AntlrTest {
 				.parse(s);
 	}
 }
-

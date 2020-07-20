@@ -52,6 +52,60 @@ public class TECLParser {
 	
 	
 	// ======================================
+	// Decrypt
+	
+	private String decryptKeyBase64 = null;
+	
+	/** 
+	 * Specify the decode key directly 
+	 * @param keyInBase64
+	 * @return 
+	 */
+	public TECLParser decryptKey(String keyInBase64) {
+		this.decryptKeyBase64 = keyInBase64;
+		return this;
+	}
+	
+	/**
+	 * 
+	 * @param inputStream The key in base64 on disk
+	 * @return 
+	 * @throws IOException 
+	 */
+	public TECLParser decryptKey(InputStream inputStream) throws IOException {
+		String keyBase64 = new String(inputStream.readAllBytes());
+		return decryptKey(keyBase64);
+	}
+	
+	/**
+	 * 
+	 * @param file A file containing the decrypt key in base64 notation
+	 * @return 
+	 * @throws IOException 
+	 */
+	public TECLParser decryptKey(File file) throws IOException {
+		try (
+			FileInputStream fileInputStream = new FileInputStream(file);
+		) {
+			return decryptKey(fileInputStream);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param url A url containing the decrypt key in base64 notation
+	 * @return 
+	 * @throws IOException 
+	 */
+	public TECLParser decryptKey(URL url) throws IOException {
+		try (
+			InputStream inputStream = url.openStream(); 
+		) {
+			return decryptKey(inputStream);
+		}
+	}
+	
+	// ======================================
 	// PARSE
 	
 	/**
@@ -103,7 +157,12 @@ public class TECLParser {
         org.tbee.tecl.antlr.TECLParser parser = new org.tbee.tecl.antlr.TECLParser(tokens);
         parser.addErrorListener(throwingErrorListener);
         ParserListener parserListener = new ParserListener();
-		parser.parse(parserListener); 
+		parser.parse(parserListener);
+		
+		// set encrypt key
+		parserListener.toplevelTECL.setDecryptKeyBase64(decryptKeyBase64);
+		
+		// Done
 		return parserListener.toplevelTECL;
 	}
 	
