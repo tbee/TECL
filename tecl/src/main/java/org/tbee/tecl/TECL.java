@@ -606,6 +606,7 @@ public class TECL {
 	 * @return
 	 */
 	public String decryptOnly(String encryptedBase64) {
+		String decryptKeyBase64 = getRoot().decryptKeyBase64;
 		if (decryptKeyBase64 == null) {
 			throw new IllegalStateException("No decrypt key set. \n1) Generate a key pair using the EncrpytionHelper class (has a main, just start it). \n2) Encrypt the value with the public key using the EncryptionHelper and store in the TECL file. \n3) provide the private key to the parser.");
 		}
