@@ -9,7 +9,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 import javax.crypto.Cipher;
 
@@ -24,43 +26,35 @@ public class EncryptionHelper {
 	 */
 	static public void main(String[] args) throws NoSuchAlgorithmException {
 		
-		// Usage
-		if (args.length != 1 && args.length != 2) {
-			System.out.println("Usage: <to-encrypt> <key-in-base64> ");
-			System.out.println("Or: <size> returns a key pair generated with the size (recommended: 2048)");
-			System.exit(1);
+		if (args.length == 2 && "keypair".equals(args[0])) {
+			int keySize = Integer.parseInt(args[1]);
+			me.generateKeyPair(keySize);
+			System.exit(0);
 		}
-		
-		// Key pair
-		if (args.length == 1) {
-			me.generateKeyPair(args);
+		if (args.length == 3 && "encrypt".contentEquals(args[0])) {
+			System.out.print(me.encode(args[1], args[2]));
 			System.exit(0);
 		}
 		
-		// Encode
-		System.out.print(me.encode(args[0], args[1]));
+		System.out.println("Usage: ");
+		System.out.println("  encrypt <text-to-encrypt> <key-in-base64> ");
+		System.out.println("  keypair <size> // returns a key pair generated (recommended: 2048)");
+		System.exit(1);
 	}
 
-	private void generateKeyPair(String[] args) throws NoSuchAlgorithmException {
+	List<String> generateKeyPair(int keySize) throws NoSuchAlgorithmException {
 		
 		// Generate pair
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-		keyPairGenerator.initialize(Integer.parseInt(args[0]));
+		keyPairGenerator.initialize(keySize);
 		KeyPair keyPair = keyPairGenerator.generateKeyPair();
 		String publicBase64 = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
 		String privateBase64 = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
 		
-		// Test it
-		String decoded = "Some text " + System.currentTimeMillis();
-		String encoded = encode(decoded, publicBase64);
-		if (encoded.equals(decoded)) throw new IllegalArgumentException("Encode did not encode");
-		String decodedAgain = decode(encoded, privateBase64);
-		if (!decodedAgain.equals(decoded)) throw new IllegalArgumentException("Encode-decode did not return the same result.");
-		
+		// Done
 		System.out.println("Public key base64 encoded: " + publicBase64);
 		System.out.println("Private key base64 encoded: " + privateBase64);
-		System.out.println("Use the public key to encode with, and use the private key to decode with.");
-		
+		return Arrays.asList(publicBase64, privateBase64);
 	}
 	
 	/**

@@ -10,8 +10,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -717,6 +719,24 @@ public class TECLTest {
 
 	// ========================
 	// decrypt
+	
+	@Test
+	public void encrypt() throws NoSuchAlgorithmException {
+		
+		// Keypair
+		List<String> keyPair = EncryptionHelper.me.generateKeyPair(2048);
+		String publicBase64 = keyPair.get(0);
+		String privateBase64 = keyPair.get(1);
+		
+		// Encode
+		String decoded = "Some text " + System.currentTimeMillis();
+		String encoded = EncryptionHelper.me.encode(decoded, publicBase64);
+		assertTrue(!encoded.equals(decoded));
+		
+		// Decode
+		String decodedAgain = EncryptionHelper.me.decode(encoded, privateBase64);
+		assertEquals(decodedAgain, decoded);
+	}
 	
 	@Test
 	public void decryptWithoutConfig() {
