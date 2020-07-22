@@ -98,6 +98,40 @@ public class TECLSchemaTest {
 			);
 	}	
 
+	@Test
+	public void groupOk() {
+		parse(""
+			+ "groupId { \n"
+			+ "    key : 1 \n"
+			+ "}\n"
+			, ""
+			+ "| id      | type  | subtype | \n" 
+			+ "| groupId | group | myGroup |\n"
+			+ "myGroup { \n"
+			+ "    | id  | type    | \n" 
+			+ "    | key | Integer |\n"
+			+ "} \n"
+			);
+	}	
+
+	@Test
+	public void groupFail() {
+		assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "groupId { \n"
+				+ "    key : stringValue \n"
+				+ "}\n"
+				, ""
+				+ "| id      | type  | subtype | \n" 
+				+ "| groupId | group | myGroup |\n"
+				+ "myGroup { \n"
+				+ "    | id  | type    | \n" 
+				+ "    | key | Integer |\n"
+				+ "} \n"
+				);
+		});
+	}	
+
 //	@Test
 //	public void emptyFile() {
 //		assertThrows(ValidationException.class, () -> {

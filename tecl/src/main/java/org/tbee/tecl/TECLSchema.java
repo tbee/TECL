@@ -50,53 +50,75 @@ public class TECLSchema {
 	private void validate(TECL tecl, TECL schemaTECL) {
 		
 		// scan all properties in the schema
-		int numberOfProperties = schemaTECL.count("id");
-		for (int propertyIdx = 0; propertyIdx < numberOfProperties; propertyIdx++) {
+		int schemaNumberOfProperties = schemaTECL.count("id");
+		for (int schemaPropertyIdx = 0; schemaPropertyIdx < schemaNumberOfProperties; schemaPropertyIdx++) {
 			
 			// get data
-			String id = schemaTECL.str(propertyIdx, "id");
-			
-			// type
-			String type = schemaTECL.str(propertyIdx, "type");
-			if (type != null) {
-				validateType(tecl, propertyIdx, id, type);
-			}
+			String schemaId = schemaTECL.str(schemaPropertyIdx, "id");
 			
 			// min&maxValues
-			int cntValues = tecl.count(id);
-			int minValues = schemaTECL.integer(propertyIdx, "minValues", 0);
-			if (cntValues < minValues) {
-				throw new ValidationException("'" + id + "' should occur at least " + minValues + " times at " + tecl.createFullPathToKey(minValues, id));
+			int cntValues = tecl.count(schemaId);
+			int schemaMinValues = schemaTECL.integer(schemaPropertyIdx, "minValues", 0);
+			if (cntValues < schemaMinValues) {
+				throw new ValidationException("'" + schemaId + "' should occur at least " + schemaMinValues + " times at " + tecl.createFullPathToKey(schemaMinValues, schemaId));
 			}
-			int maxValues = schemaTECL.integer(propertyIdx, "maxValues", Integer.MAX_VALUE);
-			if (cntValues > maxValues) {
-				throw new ValidationException("'" + id + "' should occur at most " + maxValues + " times at " + tecl.createFullPathToKey(maxValues, id));
+			int schemaMaxValues = schemaTECL.integer(schemaPropertyIdx, "maxValues", Integer.MAX_VALUE);
+			if (cntValues > schemaMaxValues) {
+				throw new ValidationException("'" + schemaId + "' should occur at most " + schemaMaxValues + " times at " + tecl.createFullPathToKey(schemaMaxValues, schemaId));
 			}
+			
+			// type
+			String schemaType = schemaTECL.str(schemaPropertyIdx, "type");
+			String schemaSubtype = schemaTECL.str(schemaPropertyIdx, "subtype");
+			if (schemaType != null) {
+				if ("group".contentEquals(schemaType)) {
+					validateGroup(tecl, schemaPropertyIdx, schemaId, schemaSubtype);
+				}
+				else {
+					validatePropertyType(tecl, schemaPropertyIdx, schemaId, schemaType);
+				}
+			}
+		}
+	}
+
+	private void validateGroup(TECL tecl, int schemaPropertyIdx, String schemaGroupId, String schemaGroupName) {
+		
+		// get schema for group
+		TECL groupSchemaTECL = schemaTECL.grp(schemaGroupName);
+		if (groupSchemaTECL == null) {
+			throw new ValidationException("Group '" + schemaGroupName + "' is not defined in schema " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaGroupId));			
+		}
+		
+		// Scan the groups
+		List<TECL> groups = tecl.grps(schemaGroupId);
+		for (TECL group : groups) {
+			validate(group, groupSchemaTECL);
 		}
 	}
 
 	/*
 	 * 
 	 */
-	private void validateType(TECL tecl, int idx, String id, String type) {
-		
+	private void validatePropertyType(TECL tecl, int schemaPropertyIdx, String schemaPropertyId, String schemaType) {
+
 		// Determine the class for the type
-		Class<?> typeClass = typeToClass.get(type);
+		Class<?> typeClass = typeToClass.get(schemaType);
 		if (typeClass == null) {
-			throw new ValidationException("Unknown type '" + type + "' for " + schemaTECL.createFullPathToKey(idx, id));
+			throw new ValidationException("Unknown type '" + schemaType + "' for " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
 		}
 		
 		// Determine the converter function for the class
 		BiFunction<String, ?, ?> convertFunction = tecl.convertFunction(typeClass);
 
 		// process all values for the specified id
-		List<String> values = tecl.strs(id);
-		for (String value : values) {
+		int valuesCnt = tecl.count(schemaPropertyId);
+		for (int valueIdx = 0; valueIdx < valuesCnt; valueIdx++) {
+			String value = tecl.str(valueIdx, schemaPropertyId);
 			try {
 				convertFunction.apply(value, null);
 			}
 			catch (Exception e) {
-				throw new ValidationException("Error validating value for " + schemaTECL.createFullPathToKey(idx, id), e);
+				throw new ValidationException("Error validating value for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId), e);
 			}
 		}
 	}

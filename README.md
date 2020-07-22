@@ -189,13 +189,12 @@ In the schema you can specify the type, frequence and other characteristics of p
 @version = 1
  
 | id              | type          | subtype  | minValues | maxValues |
-| title           | string        |          | 1         |           |
-| description     | string        |          |           |           |
-| releaseDateTime | localDateTime |          |           |           |
-| hosts           | list          | string   | 1         | 5         |
-| database        | database      |          |           |           |
-| servers         | table         | servers  |           | 10        |
-| protocol        | protos        |          |           |           |
+| title           | String        |          | 1         |           |
+| description     | String        |          |           |           |
+| releaseDateTime | LocalDateTime |          |           |           |
+| hosts           | list          | String   | 1         | 5         |
+| database        | group         | database |           |           |
+| servers         | group         | servers  |           | 10        |
 | protocols       | list          | protos   |           |           |
  
 database {
@@ -206,14 +205,17 @@ database {
 }
  
 servers {
-    | id          | type   | min | max |
-    | id          | string |     |     |
-    | datacenter  | string |     |     |
-    | maxSessions | int    | 0   | 50  |
+    | id          | type    | min | max |
+    | name        | String  |     |     |
+    | datacenter  | String  |     |     |
+    | maxSessions | Integer | 0   | 50  |
 }
  
 protos = [http, https]
 ```
 
 ## Variables ##
+TODO
+
+## Custom convert functions and types ##
 TODO
