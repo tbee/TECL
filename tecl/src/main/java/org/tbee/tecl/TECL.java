@@ -361,7 +361,7 @@ public class TECL {
 	// =====================================
 	// properties
 	
-	private final IndexedValues<String> properties = new IndexedValues<>();
+	final IndexedValues<String> properties = new IndexedValues<>();
 	
 	/**
 	 * Set a property value. This is identical to setting an indexed property with index 0.
@@ -644,7 +644,7 @@ public class TECL {
 	// =====================================
 	// groups
 	
-	private final IndexedValues<TECL> groups = new IndexedValues<>();
+	final IndexedValues<TECL> groups = new IndexedValues<>();
 
 	/**
 	 * Add a group.
@@ -714,7 +714,7 @@ public class TECL {
 	/*
 	 * Implements an indexed store
 	 */
-	private class IndexedValues<T> {
+	class IndexedValues<T> {
 		private final Map<String, List<T>> keyTovaluesMap = new LinkedHashMap<>();
 		
 		/*
@@ -837,6 +837,13 @@ public class TECL {
 				return def;
 			}
 			return value;
+		}
+		
+		/*
+		 * Get all keys
+		 */
+		List<String> getKeys() {
+			return new ArrayList<String>(keyTovaluesMap.keySet());
 		}
 		
 		/*

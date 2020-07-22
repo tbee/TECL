@@ -1,5 +1,6 @@
 package org.tbee.tecl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ public class TECLSchema {
 	 * 
 	 */
 	private void validate(TECL tecl, TECL schemaTECL) {
+		List<String> processedKeys = new ArrayList<String>();
 		
 		// scan all properties in the schema
 		int schemaNumberOfProperties = schemaTECL.count("id");
@@ -55,6 +57,7 @@ public class TECLSchema {
 			
 			// get data
 			String schemaId = schemaTECL.str(schemaPropertyIdx, "id");
+			processedKeys.add(schemaId);
 			
 			// min&maxValues
 			int cntValues = tecl.count(schemaId);
@@ -78,6 +81,15 @@ public class TECLSchema {
 					validatePropertyType(tecl, schemaPropertyIdx, schemaId, schemaType);
 				}
 			}
+		}
+		
+		// Check for undefined keys
+		List<String> undefinedPropertyKeys = tecl.properties.getKeys();
+		undefinedPropertyKeys.addAll(tecl.groups.getKeys());
+		undefinedPropertyKeys.removeAll(processedKeys);
+		if (!undefinedPropertyKeys.isEmpty()) {
+			String propertyKey = undefinedPropertyKeys.get(0);
+			throw new ValidationException("'" + propertyKey + "' is not defined in the schema at " + tecl.createFullPathToKey(0, propertyKey));
 		}
 	}
 

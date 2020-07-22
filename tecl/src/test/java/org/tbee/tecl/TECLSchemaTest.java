@@ -132,7 +132,31 @@ public class TECLSchemaTest {
 		});
 	}	
 
-//	@Test
+	@Test
+	public void undefinedKey() {
+		assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : abc \n"
+				, ""
+				);
+		});
+	}
+
+	@Test
+	public void undefinedGroup() {
+		assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "groupId { \n"
+				+ "    key : 1 \n"
+				+ "}\n"
+				, ""
+				+ "| id      | type  | subtype | \n" 
+				);
+		});
+	}
+	
+
+	//	@Test
 //	public void emptyFile() {
 //		assertThrows(ValidationException.class, () -> {
 //			TECL tecl = parse(""
