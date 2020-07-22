@@ -12,6 +12,7 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -35,6 +37,13 @@ import org.tbee.tecl.TECLParser.ParserListener.TECLContext;
 
 public class TECLParser {
 	final Logger logger = LoggerFactory.getLogger(TECLParser.class);
+	
+	private final TECL toplevelTECL;	
+
+	public TECLParser() {
+		toplevelTECL = new TECL("");	
+		toplevelTECL.populateConvertFunctions();
+	}
 	
 	// ======================================
 	// PARAMETERS
@@ -54,15 +63,13 @@ public class TECLParser {
 	// ======================================
 	// Decrypt
 	
-	private String decryptKeyBase64 = null;
-	
 	/** 
 	 * Specify the decode key directly 
 	 * @param keyInBase64
 	 * @return 
 	 */
 	public TECLParser decryptKey(String keyInBase64) {
-		this.decryptKeyBase64 = keyInBase64;
+		toplevelTECL.setDecryptKeyBase64(keyInBase64);
 		return this;
 	}
 	
@@ -138,7 +145,7 @@ public class TECLParser {
 	 * @return
 	 */
 	public TECL parse(String config) {	
-		
+
 		// split into lines
 		List<String> lines = new BufferedReader(new StringReader(config)).lines().collect(Collectors.toList());
 		
@@ -156,14 +163,16 @@ public class TECLParser {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         org.tbee.tecl.antlr.TECLParser parser = new org.tbee.tecl.antlr.TECLParser(tokens);
         parser.addErrorListener(throwingErrorListener);
-        ParserListener parserListener = new ParserListener();
+        ParserListener parserListener = new ParserListener(toplevelTECL);
 		parser.parse(parserListener);
 		
-		// set encrypt key
-		parserListener.toplevelTECL.setDecryptKeyBase64(decryptKeyBase64);
+		// validate
+		if (teclSchema != null) {
+			teclSchema.validate(parserListener.toplevelTECL);
+		}
 		
 		// Done
-		return parserListener.toplevelTECL;
+		return toplevelTECL;
 	}
 	
 	/*
@@ -261,16 +270,17 @@ public class TECLParser {
 	
 	class ParserListener implements org.tbee.tecl.antlr.TECLParser.Listener { 
 	
-		public ParserListener() {
+		public ParserListener(TECL toplevelTECL) {
+			this.toplevelTECL = toplevelTECL;
+			teclContext = new TECLContext(toplevelTECL);
 			logger.atDebug().log("startGroup $");
 			teclContextStack.push(teclContext);
 		}
-		// This is the toplevel
-		private final TECL toplevelTECL = new TECL("");	
+		private final TECL toplevelTECL;	
 		
 		// This is the active TECL within the group
 		private final Stack<TECLContext> teclContextStack = new Stack<>();
-		private TECLContext teclContext = new TECLContext(toplevelTECL);
+		private TECLContext teclContext;
 		class TECLContext {			
 			TECLContext(TECL tecl) {
 				this.tecl = tecl;
@@ -438,6 +448,25 @@ public class TECLParser {
 	}
 	
 	
+	// ======================================
+	// SCHEMA
+
+	private TECLSchema teclSchema = null;
+	
+	public TECLParser schema(String tesd) {		
+		this.teclSchema = new TECLSchema(tesd);
+		return this;
+	}
+
+		
+	// ======================================
+	// ConvertFunction
+	
+	public <R> TECLParser addConvertFunction(Class<R> clazz, BiFunction<String, R, R> convertFunction) {
+		toplevelTECL.addConvertFunction(clazz, convertFunction);
+		return this;
+	}
+
 	// ======================================
 	// SUPPORT
 	

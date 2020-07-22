@@ -36,7 +36,7 @@ public class TECLTest {
 	public void simpleProperty() {
 		String value = "value0$^*%";
 		TECL tecl = parse("key : " + value + " \n");
-		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s,d) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 
@@ -66,7 +66,7 @@ public class TECLTest {
 	public void propertyWithQuotedString() {
 		String value = " value and more difficult!&# 345 symbols ";
 		TECL tecl = parse("key : \"" + value + "\" \n");
-		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s,d) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 
@@ -91,6 +91,12 @@ public class TECLTest {
 	public void stringPropertyDefault() {
 		TECL tecl = parse("key : abc \n");
 		assertEquals("default", tecl.str("otherKey", "default"));
+	}
+	
+	@Test
+	public void stringPropertyDefaultNotPresent() {
+		TECL tecl = parse("key : \n");
+		assertEquals("", tecl.str("key", "default"));
 	}
 	
 	@Test
@@ -120,8 +126,44 @@ public class TECLTest {
 	@Test
 	public void integerProperty() {
 		TECL tecl = parse("key : 123 \n");
-		assertEquals(Integer.valueOf(123), tecl.get("key", null, Integer::parseInt).get(0));
+		assertEquals(Integer.valueOf(123), tecl.get("key", null, (s, d) -> Integer.parseInt(s)).get(0));
 		assertEquals(Integer.valueOf(123), tecl.integer("key"));
+	}
+
+	@Test
+	public void integerPropertyDefault() {
+		TECL tecl = parse("key : 1 \n");
+		assertEquals(0, tecl.integer("otherKey", 0).intValue());
+	}
+	
+	@Test
+	public void integerPropertyDefaultNotPresent() {
+		TECL tecl = parse("key : \n");
+		assertEquals(0, tecl.integer("key", 0).intValue());
+	}
+	
+	@Test
+	public void integerPropertyDefaultNotUsed() {
+		TECL tecl = parse("key : 1 \n");
+		assertEquals(1, tecl.integer("key", 0).intValue());
+	}
+	
+	@Test
+	public void integerPropertyIdx0() {
+		TECL tecl = parse("key : 1 \n");
+		assertEquals(1, tecl.integer(0, "key").intValue());
+	}
+	
+	@Test
+	public void integerPropertyIdx0Default() {
+		TECL tecl = parse("key : 1 \n");
+		assertEquals(0, tecl.integer(0, "otherKey", 0).intValue());
+	}
+	
+	@Test
+	public void integerPropertyIdx0DefaultNotUsed() {
+		TECL tecl = parse("key : 1 \n");
+		assertEquals(1, tecl.integer(0, "key", 0).intValue());
 	}
 	
 	@Test
@@ -149,7 +191,7 @@ public class TECLTest {
 	}
 	
 	@Test
-	public void localDateTmeProperty() {
+	public void localDateTimeProperty() {
 		TECL tecl = parse("key : \"2020-06-20T12:34:56\" \n");
 		assertEquals(LocalDateTime.of(2020, 06, 20, 12, 34, 56), tecl.localDateTime("key"));
 	}
@@ -161,7 +203,7 @@ public class TECLTest {
 	@Test
 	public void simpleList() {
 		TECL tecl = parse("key : [aaa,bbb,ccc] \n");
-		assertEquals("[aaa, bbb, ccc]", tecl.get("key", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("key", null, (s,d) -> s).toString());
 		assertEquals("aaa" , tecl.str(0, "key"));
 		assertEquals("bbb" , tecl.str(1, "key"));
 		assertEquals("ccc" , tecl.str(2, "key"));
@@ -171,7 +213,7 @@ public class TECLTest {
 	@Test
 	public void integerList() {
 		TECL tecl = parse("key : [1,2,3] \n");
-		assertEquals("[1, 2, 3]", tecl.get("key", null, Integer::parseInt).toString());
+		assertEquals("[1, 2, 3]", tecl.get("key", null, (s,d) -> Integer.parseInt(s)).toString());
 		assertEquals(1 , tecl.integer(0, "key").intValue());
 		assertEquals(2 , tecl.integer(1, "key").intValue());
 		assertEquals(3 , tecl.integer(2, "key").intValue());
@@ -194,7 +236,7 @@ public class TECLTest {
 	public void simpleListQuotedStrings() {
 		String value = " value and more difficult!&# 345 symbols ";
 		TECL tecl = parse("key : [\"aa a\",\""  + value + "\",ccc] \n");
-		assertEquals("[aa a]" , tecl.get("key[0]", null, (s) -> s).toString());
+		assertEquals("[aa a]" , tecl.get("key[0]", null, (s,d) -> s).toString());
 		assertEquals("aa a" , tecl.str(0, "key"));
 		assertEquals(value , tecl.str(1, "key"));
 		assertEquals("ccc" , tecl.str(2, "key"));
@@ -252,7 +294,7 @@ public class TECLTest {
 				+ "groupId { \n" 
 				+ "    key : value\n"
 				+ "}\n");
-		assertEquals("[value]", tecl.get("groupId/key", null, (s) -> s).toString());
+		assertEquals("[value]", tecl.get("groupId/key", null, (s,d) -> s).toString());
 		assertEquals("groupId", tecl.grp("groupId").getId());
 		assertEquals("value", tecl.grp("groupId").str("key"));
 	}
@@ -312,9 +354,9 @@ public class TECLTest {
 				+ "| id3 | date          | \n"				
 				+ "| id3 | [aaa,bbb,ccc] | \n"				
 				);
-		assertEquals("[id1]", tecl.get("id[0]", null, (s) -> s).toString());
-		assertEquals("[int]", tecl.get("type[1]", null, (s) -> s).toString());
-		assertEquals("[aaa, bbb, ccc]", tecl.get("type[3]", null, (s) -> s).toString());
+		assertEquals("[id1]", tecl.get("id[0]", null, (s,d) -> s).toString());
+		assertEquals("[int]", tecl.get("type[1]", null, (s,d) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("type[3]", null, (s,d) -> s).toString());
 		assertEquals("id1", tecl.str("id"));
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
@@ -331,9 +373,9 @@ public class TECLTest {
 				+ "    | id3 | [aaa,bbb,ccc] | \n"
 				+ "}\n"
 				);
-		assertEquals("[id1]", tecl.get("/group/id[0]", null, (s) -> s).toString());
-		assertEquals("[int]", tecl.get("/group/type[1]", null, (s) -> s).toString());
-		assertEquals("[aaa, bbb, ccc]", tecl.get("/group/type[3]", null, (s) -> s).toString());
+		assertEquals("[id1]", tecl.get("/group/id[0]", null, (s,d) -> s).toString());
+		assertEquals("[int]", tecl.get("/group/type[1]", null, (s,d) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("/group/type[3]", null, (s,d) -> s).toString());
 		assertEquals("id1", tecl.str("/group/id"));
 		assertEquals("id1", tecl.str(0, "/group/id"));
 		assertEquals("int", tecl.str(1, "/group/type"));
@@ -418,14 +460,14 @@ public class TECLTest {
 	@Test
 	public void conditionedPropertyWithMatchingCondition() {
 		TECL tecl = parse("key[sys=A] : value\n");
-		assertEquals("[value]", tecl.get("key", null, (s) -> s).toString());
+		assertEquals("[value]", tecl.get("key", null, (s,d) -> s).toString());
 		assertEquals("value", tecl.str("key"));
 	}
 
 	@Test
 	public void conditionedPropertyWithNotMatchingCondition() {
 		TECL tecl = parse("key[sys=other] : value\n");
-		assertNull(tecl.get("key", null, (s) -> s));
+		assertNull(tecl.get("key", null, (s,d) -> s));
 		assertEquals(null, tecl.str("key"));
 	}
 
@@ -556,15 +598,15 @@ public class TECLTest {
 				+ "    | id2 | \n"
 				+ "}\n"
 				);
-		assertEquals("value2", tecl.get("group1/group2/key", null, (s) -> s).get(0));
-		assertEquals("value1", tecl.get("group1/group2/../key", null, (s) -> s).get(0));
-		assertEquals("value2a", tecl.get("group1/group2[1]/key", null, (s) -> s).get(0));
-		assertEquals("id1", tecl.get("group1/id[1]", null, (s) -> s).get(0));
+		assertEquals("value2", tecl.get("group1/group2/key", null, (s,d) -> s).get(0));
+		assertEquals("value1", tecl.get("group1/group2/../key", null, (s,d) -> s).get(0));
+		assertEquals("value2a", tecl.get("group1/group2[1]/key", null, (s,d) -> s).get(0));
+		assertEquals("id1", tecl.get("group1/id[1]", null, (s,d) -> s).get(0));
 		
 		// Start half way
 		TECL group2TECL = tecl.grp("group1").grp("group2");
-		assertEquals("value3", group2TECL.get("group3/key", null, (s) -> s).get(0));
-		assertEquals("id2", group2TECL.get("../id[2]", null, (s) -> s).get(0));
+		assertEquals("value3", group2TECL.get("group3/key", null, (s,d) -> s).get(0));
+		assertEquals("id2", group2TECL.get("../id[2]", null, (s,d) -> s).get(0));
 		
 		// access a group
 		assertEquals("[/group1[0]/group2[0]/, /group1[0]/group2[1]/]", tecl.get("group1/group2", null,null).toString());
@@ -580,8 +622,8 @@ public class TECLTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		assertEquals("[value2]", tecl.get("/group1/key", null, (s) -> s).toString());
-		assertEquals("[value2]", tecl.get("group1/key", null, (s) -> s).toString());
+		assertEquals("[value2]", tecl.get("/group1/key", null, (s,d) -> s).toString());
+		assertEquals("[value2]", tecl.get("group1/key", null, (s,d) -> s).toString());
 		assertEquals("value2", tecl.grp("group1").str("key"));
 	}
 	
@@ -598,7 +640,7 @@ public class TECLTest {
 				+ "    key : value2 \n "
 				+ "}\n"
 				);
-		assertEquals("[value2]", tecl.get("/type[0]", null, (s) -> s).toString());
+		assertEquals("[value2]", tecl.get("/type[0]", null, (s,d) -> s).toString());
 		assertEquals("value2", tecl.str(0, "type"));
 	}
 	
@@ -613,7 +655,7 @@ public class TECLTest {
 				+ "}\n"
 				);
 		assertEquals("[/group[0]/]", tecl.get("/type[0]", null, null).toString());
-		assertEquals("[value]", tecl.get("/type[0]/key", null, (s) -> s).toString());
+		assertEquals("[value]", tecl.get("/type[0]/key", null, (s,d) -> s).toString());
 		assertEquals("value", tecl.grp(0, "type").str("key"));
 		assertEquals("value", tecl.grp("group").str("key"));
 	}
@@ -655,8 +697,8 @@ public class TECLTest {
 				+ "key : $list \n"
 				+  "list : [aaa,bbb,ccc] \n"
 				);
-		assertEquals("[aaa, bbb, ccc]", tecl.get("/key", null, (s) -> s).toString());
-		assertEquals("[ccc]", tecl.get("/key[2]", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("/key", null, (s,d) -> s).toString());
+		assertEquals("[ccc]", tecl.get("/key[2]", null, (s,d) -> s).toString());
 		assertEquals("ccc", tecl.str(2, "key"));
 		assertEquals("bbb", tecl.strs("key").get(1));
 		assertEquals("[aaa, bbb, ccc]", tecl.strs("key").toString());
@@ -674,8 +716,8 @@ public class TECLTest {
 		// A list is an index property
 		// And a table is an indexed property
 		// So we are having a double indexed property here; first to get to the row and then inside the list		
-		assertEquals("[aaa, bbb, ccc]", tecl.get("/type[1]", null, (s) -> s).toString());
-		assertEquals("[ccc]", tecl.get("/type[1][2]", null, (s) -> s).toString());
+		assertEquals("[aaa, bbb, ccc]", tecl.get("/type[1]", null, (s,d) -> s).toString());
+		assertEquals("[ccc]", tecl.get("/type[1][2]", null, (s,d) -> s).toString());
 
 		String raw = tecl.raw(1, "type", null);
 		assertEquals("$list", raw);
@@ -688,7 +730,7 @@ public class TECLTest {
 		TECL tecl = parse(""
 				+ "key : $env@USERNAME\n "
 				);
-		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s,d) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 	
@@ -696,7 +738,7 @@ public class TECLTest {
 	public void env() {
 		String value = System.getenv("USERNAME");
 		TECL tecl = parse("");
-		assertEquals(value, tecl.get("env@USERNAME", null, (s) -> s).get(0));
+		assertEquals(value, tecl.get("env@USERNAME", null, (s,d) -> s).get(0));
 	}
 	
 	@Test
@@ -705,7 +747,7 @@ public class TECLTest {
 		TECL tecl = parse(""
 				+ "key : $sys@user.language # comment\n"
 				);
-		assertEquals("[" + value + "]", tecl.get("key", null, (s) -> s).toString());
+		assertEquals("[" + value + "]", tecl.get("key", null, (s,d) -> s).toString());
 		assertEquals(value, tecl.str("key"));
 	}
 	
@@ -713,7 +755,7 @@ public class TECLTest {
 	public void sys() {
 		String value = System.getProperty("user.language");
 		TECL tecl = parse("");
-		assertEquals(value, tecl.get("sys@user.language", null, (s) -> s).get(0));
+		assertEquals(value, tecl.get("sys@user.language", null, (s,d) -> s).get(0));
 	}
 
 

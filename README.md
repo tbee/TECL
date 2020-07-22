@@ -186,7 +186,7 @@ In the schema you can specify the type, frequence and other characteristics of p
 
 
 ```bash
-version = 1
+@version = 1
  
 | id              | type          | subtype  | minValues | maxValues |
 | title           | string        |          | 1         |           |
@@ -214,9 +214,6 @@ servers {
  
 protos = [http, https]
 ```
-
-## Tables ##
-TODO
 
 ## Variables ##
 TODO

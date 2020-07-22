@@ -7,10 +7,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.text.StringTokenizer;
@@ -28,6 +29,17 @@ public class TECL {
 	private final static String SYS_PREFIX = "sys@";
 
 	final Logger logger = LoggerFactory.getLogger(TECL.class);
+	
+	static Map<Class<?>, BiFunction<String, ?, ?>> buildinConvertFunctions = new HashMap<>();
+	static {
+		buildinConvertFunctions.put(String.class, (s, d) -> s);
+		buildinConvertFunctions.put(Integer.class, (s, d) -> s.isBlank() ? d : Integer.valueOf(s));
+		buildinConvertFunctions.put(BigInteger.class, (s, d) -> s.isBlank() ? d : new BigInteger(s));
+		buildinConvertFunctions.put(BigDecimal.class, (s, d) -> s.isBlank() ? d : new BigDecimal(s));
+		buildinConvertFunctions.put(Double.class, (s, d) -> s.isBlank() ? d : Double.valueOf(s));
+		buildinConvertFunctions.put(LocalDate.class, (s, d) -> s.isBlank() ? d : LocalDate.parse(s));
+		buildinConvertFunctions.put(LocalDateTime.class, (s, d) -> s.isBlank() ? d : LocalDateTime.parse(s));
+	}
 	
 	// =====================================
 	// parser
@@ -69,7 +81,7 @@ public class TECL {
 		return path;
 	}
 	
-	private String createFullPathToKey(int idx, String key) {
+	String createFullPathToKey(int idx, String key) {
 		String path 
 		     = getPath()
 		     + key
@@ -115,7 +127,7 @@ public class TECL {
 	 * @param convertFunction
 	 * @return
 	 */
-	public <R> List<R> get(String indexOfPath, String indexOfValue, String path, List<R> def, Function<String, R> convertFunction) {
+	public <R> List<R> get(String indexOfPath, String indexOfValue, String path, List<R> def, BiFunction<String, R, R> convertFunction) {
 		int idx = strs(indexOfPath).indexOf(indexOfValue);
 		if (idx < 0) {
 			return def;
@@ -135,7 +147,7 @@ public class TECL {
 	 * @return a list of found values
 	 */
 	@SuppressWarnings("unchecked")
-	public <R> List<R> get(String path, List<R> def, Function<String, R> convertFunction) {
+	public <R> List<R> get(String path, List<R> def, BiFunction<String, R, R> convertFunction) {
 		String context = this.getPath() + " -> " + path + ": ";
 		
 		// Specials 
@@ -278,7 +290,7 @@ public class TECL {
 						
 						// Convert property to end type
 						property = sanatizeString(property);
-						R result = convertFunction.apply(property);
+						R result = convertFunction.apply(property, def == null || def.isEmpty() ? null : def.get(0));
 						logger.atDebug().log(context + "Property converted: " + property + " -> "  + result);
 						results.add(result);
 					}
@@ -298,9 +310,9 @@ public class TECL {
 	/*
 	 * 
 	 */
-	private <R> List<R> getSys(String path, Function<String, R> convertFunction, String context) {
+	private <R> List<R> getSys(String path, BiFunction<String, R, R> convertFunction, String context) {
 		String sys = path.substring(SYS_PREFIX.length());
-		R result = convertFunction.apply(System.getProperty(sys));
+		R result = convertFunction.apply(System.getProperty(sys), null);
 		logger.atDebug().log(context + "sys path, result = " + result);
 		return Arrays.asList(result);
 	}
@@ -308,9 +320,9 @@ public class TECL {
 	/*
 	 * 
 	 */
-	private <R> List<R> getEnv(String path, Function<String, R> convertFunction, String context) {
+	private <R> List<R> getEnv(String path, BiFunction<String, R, R> convertFunction, String context) {
 		String env = path.substring(ENV_PREFIX.length());
-		R result = convertFunction.apply(System.getenv(env));
+		R result = convertFunction.apply(System.getenv(env), null);
 		logger.atDebug().log(context + "env path, result = " + result);
 		return Arrays.asList(result);
 	}
@@ -430,6 +442,21 @@ public class TECL {
 		return properties.get(idx, key, null);
 	}
 	
+	/**
+	 * Add a custom convert function to the tecl
+	 */
+	<R> void addConvertFunction(Class<R> clazz, BiFunction<String, R, R> convertFunction) {
+		convertFunctions.put(clazz, convertFunction);
+	}
+	@SuppressWarnings("unchecked")
+	<R> BiFunction<String, R, R> convertFunction(Class<R> clazz) {
+		return (BiFunction<String, R, R>)getRoot().convertFunctions.get(clazz);
+	}
+	public void populateConvertFunctions() {
+		convertFunctions = new HashMap<>(buildinConvertFunctions);
+	}
+	Map<Class<?>, BiFunction<String, ?, ?>> convertFunctions = null;
+	
 	/** Convenience method to return a string */
 	public String str(String key) {
 		return str(0, key, null);
@@ -441,13 +468,13 @@ public class TECL {
 		return str(idx, key, null);
 	}
 	public String str(int idx, String key, String def) {
-		return get(key + "[" + idx + "]", asList(def), (s) -> s).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(String.class)).get(0);
 	}
 	public List<String> strs(String key) {
-		return get(key, Collections.emptyList(), (s) -> s);
+		return get(key, Collections.emptyList(), convertFunction(String.class));
 	}
 	public String str(String indexOfKey, String indexOfValue, String key, String def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), (s) -> s).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(String.class)).get(0);
 	}
 	
 	/** Convenience method to return an Integer */
@@ -461,13 +488,13 @@ public class TECL {
 		return integer(idx, key, null);
 	}
 	public Integer integer(int idx, String key, Integer def) {
-		return get(key + "[" + idx + "]", asList(def), Integer::valueOf).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(Integer.class)).get(0);
 	}
 	public List<Integer> integers(String key) {
-		return get(key, Collections.emptyList(), Integer::valueOf);
+		return get(key, Collections.emptyList(), convertFunction(Integer.class));
 	}
 	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), Integer::valueOf).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(Integer.class)).get(0);
 	}
 
 	/** Convenience method to return a BigInteger */
@@ -481,13 +508,13 @@ public class TECL {
 		return bi(idx, key, null);
 	}
 	public BigInteger bi(int idx, String key, BigInteger def) {
-		return get(key + "[" + idx + "]", asList(def), (s) -> new BigInteger(s)).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(BigInteger.class)).get(0);
 	}
 	public List<BigInteger> bis(String key) {
-		return get(key, Collections.emptyList(), (s) -> new BigInteger(s));
+		return get(key, Collections.emptyList(), convertFunction(BigInteger.class));
 	}
 	public BigInteger bi(String indexOfKey, String indexOfValue, String key, BigInteger def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), (s) -> new BigInteger(s)).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(BigInteger.class)).get(0);
 	}
 
 
@@ -502,13 +529,13 @@ public class TECL {
 		return bd(idx, key, null);
 	}
 	public BigDecimal bd(int idx, String key, BigDecimal def) {
-		return get(key + "[" + idx + "]", asList(def), (s) -> new BigDecimal(s)).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(BigDecimal.class)).get(0);
 	}
 	public List<BigDecimal> bds(String key) {
-		return get(key, Collections.emptyList(), (s) -> new BigDecimal(s));
+		return get(key, Collections.emptyList(), convertFunction(BigDecimal.class));
 	}
 	public BigDecimal bd(String indexOfKey, String indexOfValue, String key, BigDecimal def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), (s) -> new BigDecimal(s)).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(BigDecimal.class)).get(0);
 	}
 
 		
@@ -523,13 +550,13 @@ public class TECL {
 		return dbl(idx, key, null);
 	}
 	public Double dbl(int idx, String key, Double def) {
-		return get(key + "[" + idx + "]", asList(def), Double::valueOf).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(Double.class)).get(0);
 	}
 	public List<Double> dbls(String key) {
-		return get(key, Collections.emptyList(), Double::valueOf);
+		return get(key, Collections.emptyList(), convertFunction(Double.class));
 	}
 	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), Double::valueOf).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(Double.class)).get(0);
 	}
 	/** Convenience method to return a LocalDate */
 	public LocalDate localDate(String key) {
@@ -542,13 +569,13 @@ public class TECL {
 		return localDate(idx, key, null);
 	}
 	public LocalDate localDate(int idx, String key, LocalDate def) {
-		return get(key + "[" + idx + "]", asList(def), LocalDate::parse).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(LocalDate.class)).get(0);
 	}
 	public List<LocalDate> localDates(String key) {
-		return get(key, Collections.emptyList(), LocalDate::parse);
+		return get(key, Collections.emptyList(), convertFunction(LocalDate.class));
 	}
 	public LocalDate localDate(String indexOfKey, String indexOfValue, String key, LocalDate def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), LocalDate::parse).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(LocalDate.class)).get(0);
 	}
 
 	/** Convenience method to return a LocalDateTime */
@@ -562,13 +589,13 @@ public class TECL {
 		return localDateTime(idx, key, null);
 	}
 	public LocalDateTime localDateTime(int idx, String key, LocalDateTime def) {
-		return get(key + "[" + idx + "]", asList(def), LocalDateTime::parse).get(0);
+		return get(key + "[" + idx + "]", asList(def), convertFunction(LocalDateTime.class)).get(0);
 	}
 	public List<LocalDateTime> localDateTimes(String key) {
-		return get(key, Collections.emptyList(), LocalDateTime::parse);
+		return get(key, Collections.emptyList(), convertFunction(LocalDateTime.class));
 	}
 	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
-		return get(indexOfKey, indexOfValue, key, asList(def), LocalDateTime::parse).get(0);
+		return get(indexOfKey, indexOfValue, key, asList(def), convertFunction(LocalDateTime.class)).get(0);
 	}
 	
 	// =====================================
@@ -690,6 +717,9 @@ public class TECL {
 	private class IndexedValues<T> {
 		private final Map<String, List<T>> keyTovaluesMap = new LinkedHashMap<>();
 		
+		/*
+		 * Completely clear a single key; remove all values.
+		 */
 		void clear(String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values != null) {
@@ -698,6 +728,9 @@ public class TECL {
 			}
 		}
 		
+		/*
+		 * Clear a single value for a single key
+		 */
 		void clear(int idx, String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values != null) {
@@ -712,6 +745,9 @@ public class TECL {
 			values.set(idx, null);
 		}
 		
+		/*
+		 * Set a single value for a single key
+		 */
 		void set(int idx, String key, T value, boolean allowOverwrite) {
 			
 			// First get the list of values
@@ -735,12 +771,18 @@ public class TECL {
 			values.set(idx, value);
 		}
 
+		/*
+		 * Append a single value to a key
+		 */
 		int add(String key, T value) {
 			int idx = count(key);
 			set(idx, key, value, false);
 			return idx;
 		}
 
+		/*
+		 * Count the number of values of a key 
+		 */
 		int count(String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values == null) {
@@ -771,7 +813,7 @@ public class TECL {
 		}
 
 		/*
-		 * Get collection
+		 * Get all values for a key
 		 */
 		List<T> get(String key) {
 			List<T> values = keyTovaluesMap.get(key);
@@ -783,7 +825,7 @@ public class TECL {
 		}
 
 		/*
-		 * Get based on index
+		 * Get a single value for a key
 		 */
 		T get(int idx, String key, T def) {
 			List<T> values = keyTovaluesMap.get(key);
@@ -797,6 +839,9 @@ public class TECL {
 			return value;
 		}
 		
+		/*
+		 * 
+		 */
 		public String toString() {
 			return keyTovaluesMap.toString();
 		}
