@@ -17,7 +17,7 @@ public class TECLSchemaTest {
 	public void emptyFileEmptySchema() {
 		TECL tecl = parse("", "");
 	}
-	
+
 	@Test
 	public void minValuesFail() {
 		assertEquals("'key' should occur at least 1 times at /key[1]", assertThrows(ValidationException.class, () -> {
@@ -143,7 +143,6 @@ public class TECLSchemaTest {
 		}).getMessage());
 	}
 	
-	
 	@Test
 	public void minLenFail() {
 		assertEquals("'key' should be at least of length 1 at /key[0]",assertThrows(ValidationException.class, () -> {
@@ -204,6 +203,7 @@ public class TECLSchemaTest {
 		}).getMessage());
 	}	
 	
+	
 	@Test
 	public void maxLenOk() {
 		parse(""
@@ -213,17 +213,50 @@ public class TECLSchemaTest {
 			+ "| key | String |10     | \n" 
 		);
 	}
-
-	//	@Test
-//	public void emptyFile() {
-//		assertEquals("", assertThrows(ValidationException.class, () -> {
-//			TECL tecl = parse(""
-//					, ""
-//					+ "| id              | type          | subtype  | minValues | maxValues |\n" 
-//					+ "| key             | string        |          | 1         |           |\n" 
-//					);
-//		}).getMessage());
-//	}
+	
+	@Test
+	public void minFail() {
+		assertEquals("'key' should be equal or greater than 11 at /key[0]",assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : 10\n"
+				, ""
+				+ "| id  | min | \n" 
+				+ "| key | 11  | \n" 
+				);
+		}).getMessage());
+	}	
+	
+	@Test
+	public void minOk() {
+		parse(""
+			+ "key : 10 \n"
+			, ""
+			+ "| id  | min | \n" 
+			+ "| key | 1   | \n"
+			);
+	}
+	
+	@Test
+	public void maxFail() {
+		assertEquals("'key' should be equal or less than 1 at /key[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : 10 \n"
+				, ""
+				+ "| id  | max | \n" 
+				+ "| key | 1   | \n" 
+			);
+		}).getMessage());
+	}	
+	
+	@Test
+	public void maxOk() {
+		parse(""
+			+ "key : 10 \n"
+			, ""
+			+ "| id  | max | \n" 
+			+ "| key | 11  | \n" 
+		);
+	}
 	
 	// ========================
 	

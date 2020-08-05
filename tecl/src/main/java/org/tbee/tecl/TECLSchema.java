@@ -7,7 +7,6 @@ import java.util.Map;
 
 /**
  * TODO:
- * - min/max -> attempt conversion to BigInteger if min/max value does not contain a decimal dot. With dot attempt with BigDecimal
  * - allowAdditionalProperties (default false): allow more properties than what is defined in the schema
  * - type group
  */
@@ -25,6 +24,7 @@ public class TECLSchema {
 		validators.add(new ValidatorMinMaxValues());
 		validators.add(new ValidatorPropertyType());
 		validators.add(new ValidatorMinMaxLen());
+		validators.add(new ValidatorMinMax());
 		schemaTECL = TECL.parser().parse(tesd);
 	}
 
