@@ -2,7 +2,9 @@ package org.tbee.tecl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 import org.tbee.tecl.TECLSchema.ValidationException;
@@ -19,19 +21,25 @@ public class ValidatorMinMaxLen implements Validator {
 			return;
 		}
 		
-		// Find length method. TODO: caching
-		Method method;
-		try {
-			method = typeClass.getDeclaredMethod("length", new Class<?>[0]);
-		} 
-		catch (NoSuchMethodException e1) {
-			return; // no action on purpose
-		} 
-		catch (SecurityException e1) {
-			return; // no action on purpose
-		}
-		if (!"int".equals(method.getReturnType().getName())) {
-			return;
+		// Find length method.
+		Method method = schemaTypeToMethod.get(schemaType); // cache
+		if (method == null) {
+			
+			try {
+				method = typeClass.getDeclaredMethod("length", new Class<?>[0]);
+			} 
+			catch (NoSuchMethodException e1) {
+				return; // no action on purpose
+			} 
+			catch (SecurityException e1) {
+				return; // no action on purpose
+			}
+			if (!"int".equals(method.getReturnType().getName())) {
+				return;
+			}
+			
+			// remember
+			schemaTypeToMethod.put(schemaType, method);
 		}
 		
 		// Get the actual value
@@ -64,4 +72,6 @@ public class ValidatorMinMaxLen implements Validator {
 			}
 		}
 	}
+	
+	private Map<String, Method> schemaTypeToMethod = new HashMap<>();
 }
