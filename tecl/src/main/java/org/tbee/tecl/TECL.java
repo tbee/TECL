@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 
  * TODO:
+ * - make it a Jigsaw module, so the validators can go in their own package, be public but not in the module
  * - many type methods for int, dbl, localDate, etc... 
  *
  */

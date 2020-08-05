@@ -7,6 +7,9 @@ import java.util.Map;
 
 /**
  * TODO:
+ * - min/maxLen -> any class that has a length() method
+ * - min/maxSize -> any class that has a size() method
+ * - min/max -> any class that has a longValue() method
  * - allowAdditionalProperties (default false): allow more properties than what is defined in the schema
  * - type group
  */
@@ -23,6 +26,7 @@ public class TECLSchema {
 	public TECLSchema(String tesd) {
 		validators.add(new ValidatorMinMaxValues());
 		validators.add(new ValidatorPropertyType());
+		validators.add(new ValidatorMinMaxLen());
 		schemaTECL = TECL.parser().parse(tesd);
 	}
 

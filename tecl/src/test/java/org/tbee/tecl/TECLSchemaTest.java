@@ -155,6 +155,64 @@ public class TECLSchemaTest {
 		});
 	}
 	
+	
+	@Test
+	public void minLenFail() {
+		assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : \n"
+				, ""
+				+ "| id  | type   | minLen | \n" 
+				+ "| key | String | 1      | \n" 
+				);
+		});
+	}	
+	
+	@Test
+	public void minLenOk() {
+		parse(""
+			+ "key : abc \n"
+			, ""
+			+ "| id  | type   | minLen | \n" 
+			+ "| key | String |1      | \n"
+			);
+	}
+	
+	@Test
+	public void maxLenFail() {
+		assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : abc \n"
+				, ""
+				+ "| id  | type   | maxLen | \n" 
+				+ "| key | String |1      | \n" 
+			);
+		});
+	}	
+	
+	@Test
+	public void maxLenFailMultipleValues() {
+		assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "| key    | \n" 
+				+ "| 1234   | \n" 
+				+ "| 123456 | \n" 
+				, ""
+				+ "| id  | type   | maxLen | \n" 
+				+ "| key | String | 5     | \n" 
+			);
+		});
+	}	
+	
+	@Test
+	public void maxLenOk() {
+		parse(""
+			+ "key : abc \n"
+			, ""
+			+ "| id  | type   | maxLen | \n" 
+			+ "| key | String |10     | \n" 
+		);
+	}
 
 	//	@Test
 //	public void emptyFile() {
