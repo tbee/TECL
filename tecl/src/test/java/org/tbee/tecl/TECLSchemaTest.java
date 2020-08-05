@@ -1,19 +1,7 @@
 package org.tbee.tecl;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -32,13 +20,13 @@ public class TECLSchemaTest {
 	
 	@Test
 	public void minValuesFail() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'key' should occur at least 1 times at /key[1]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				, ""
 				+ "| id              | minValues | \n" 
 				+ "| key             | 1         | \n" 
 				);
-		});
+		}).getMessage());
 	}	
 	
 	@Test
@@ -53,7 +41,7 @@ public class TECLSchemaTest {
 	
 	@Test
 	public void maxValuesFail() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'key' should occur at most 1 times at /key[1]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "| key  | \n" 
 				+ "| val1 | \n" 
@@ -62,7 +50,7 @@ public class TECLSchemaTest {
 				+ "| id  | maxValues | \n" 
 				+ "| key | 1         | \n" 
 			);
-		});
+		}).getMessage());
 	}	
 	
 	@Test
@@ -78,14 +66,14 @@ public class TECLSchemaTest {
 	
 	@Test
 	public void typeIntegerFail() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("Error validating value against type for /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : abc \n"
 				, ""
 				+ "| id  | type    | \n" 
 				+ "| key | Integer | \n" 
 				);
-		});
+		}).getMessage());
 	}
 
 	@Test
@@ -116,7 +104,7 @@ public class TECLSchemaTest {
 
 	@Test
 	public void groupFail() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("Error validating value against type for /groupId[0]/key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "groupId { \n"
 				+ "    key : stringValue \n"
@@ -129,22 +117,22 @@ public class TECLSchemaTest {
 				+ "    | key | Integer |\n"
 				+ "} \n"
 				);
-		});
+		}).getMessage());
 	}	
 
 	@Test
 	public void undefinedKey() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'key' is not defined in the schema at /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : abc \n"
 				, ""
 				);
-		});
+		}).getMessage());
 	}
 
 	@Test
 	public void undefinedGroup() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'groupId' is not defined in the schema at /groupId[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "groupId { \n"
 				+ "    key : 1 \n"
@@ -152,20 +140,20 @@ public class TECLSchemaTest {
 				, ""
 				+ "| id      | type  | subtype | \n" 
 				);
-		});
+		}).getMessage());
 	}
 	
 	
 	@Test
 	public void minLenFail() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'key' should be at least of length 1 at /key[0]",assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : \n"
 				, ""
 				+ "| id  | type   | minLen | \n" 
 				+ "| key | String | 1      | \n" 
 				);
-		});
+		}).getMessage());
 	}	
 	
 	@Test
@@ -179,20 +167,32 @@ public class TECLSchemaTest {
 	}
 	
 	@Test
+	public void minLenOkButFailingBecauseOfMissingType() {
+		assertEquals("You cannot define min/maxLen without type on /key[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : abc \n"
+				, ""
+				+ "| id  | minLen | \n" 
+				+ "| key | 1      | \n"
+				);
+		}).getMessage());
+	}
+	
+	@Test
 	public void maxLenFail() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'key' should be no longer than 1 at /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : abc \n"
 				, ""
 				+ "| id  | type   | maxLen | \n" 
 				+ "| key | String |1      | \n" 
 			);
-		});
+		}).getMessage());
 	}	
 	
 	@Test
 	public void maxLenFailMultipleValues() {
-		assertThrows(ValidationException.class, () -> {
+		assertEquals("'key' should be no longer than 5 at /key[1]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "| key    | \n" 
 				+ "| 1234   | \n" 
@@ -201,7 +201,7 @@ public class TECLSchemaTest {
 				+ "| id  | type   | maxLen | \n" 
 				+ "| key | String | 5     | \n" 
 			);
-		});
+		}).getMessage());
 	}	
 	
 	@Test
@@ -216,13 +216,13 @@ public class TECLSchemaTest {
 
 	//	@Test
 //	public void emptyFile() {
-//		assertThrows(ValidationException.class, () -> {
+//		assertEquals("", assertThrows(ValidationException.class, () -> {
 //			TECL tecl = parse(""
 //					, ""
 //					+ "| id              | type          | subtype  | minValues | maxValues |\n" 
 //					+ "| key             | string        |          | 1         |           |\n" 
 //					);
-//		});
+//		}).getMessage());
 //	}
 	
 	// ========================

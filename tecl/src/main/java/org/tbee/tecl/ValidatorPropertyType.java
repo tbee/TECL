@@ -7,10 +7,12 @@ import org.tbee.tecl.TECLSchema.Validator;
 
 public class ValidatorPropertyType implements Validator {
 
+	private static final String TYPE = "type";
+
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
 
 		// type
-		String schemaType = schemaTECL.str(schemaPropertyIdx, "type");
+		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
 		if (schemaType == null || "group".equals(schemaType)) {
 			return;
 		}
@@ -32,7 +34,7 @@ public class ValidatorPropertyType implements Validator {
 				Object result = convertFunction.apply(value, null);
 			}
 			catch (Exception e) {
-				throw new ValidationException("Error validating value for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId), e);
+				throw new ValidationException("Error validating value against type for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId), e);
 			}
 		}
 	}

@@ -12,10 +12,22 @@ import org.tbee.tecl.TECLSchema.Validator;
 
 public class ValidatorMinMaxLen implements Validator {
 
+	private static final String TYPE = "type";
+	private static final String MAX_LEN = "maxLen";
+	private static final String MIN_LEN = "minLen";
+
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
 
-		// check if its type has a length() method		
-		String schemaType = schemaTECL.str(schemaPropertyIdx, "type");
+		// Is either column present?
+		if (schemaTECL.str(schemaPropertyIdx, MIN_LEN) == null && schemaTECL.str(schemaPropertyIdx, MAX_LEN) == null) {
+			return;
+		}
+
+		// Get the type		
+		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
+		if (schemaType == null) {
+			throw new ValidationException("You cannot define min/maxLen without type on " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
+		}
 		Class<?> typeClass = teclSchema.typeToClass.get(schemaType);
 		if (typeClass == null) {
 			return;
@@ -29,20 +41,20 @@ public class ValidatorMinMaxLen implements Validator {
 				method = typeClass.getDeclaredMethod("length", new Class<?>[0]);
 			} 
 			catch (NoSuchMethodException e1) {
-				return; // no action on purpose
+				throw new ValidationException("Type '" + schemaType +"' does not have a length() method on " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
 			} 
 			catch (SecurityException e1) {
-				return; // no action on purpose
+				throw new ValidationException("Error", e1);
 			}
 			if (!"int".equals(method.getReturnType().getName())) {
-				return;
+				throw new ValidationException("Type '" + schemaType +"' does not have a length() method returning int on " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
 			}
 			
 			// remember
 			schemaTypeToMethod.put(schemaType, method);
 		}
 		
-		// Get the actual value
+		// Get the actual values
 		BiFunction<String, ?, ?> convertFunction = tecl.convertFunction(typeClass);
 		List<String> values = tecl.strs(schemaPropertyId);
 		for (int idx = 0; idx < values.size(); idx++) {
@@ -60,13 +72,13 @@ public class ValidatorMinMaxLen implements Validator {
 			}
 			
 			// check minValues
-			int schemaMinLen = schemaTECL.integer(schemaPropertyIdx, "minLen", 0);
+			int schemaMinLen = schemaTECL.integer(schemaPropertyIdx, MIN_LEN, 0);
 			if (length < schemaMinLen) {
 				throw new ValidationException("'" + schemaPropertyId + "' should be at least of length " + schemaMinLen + " at " + tecl.createFullPathToKey(idx, schemaPropertyId));
 			}
 			
 			// check maxValues
-			int schemaMaxLen = schemaTECL.integer(schemaPropertyIdx, "maxLen", Integer.MAX_VALUE);
+			int schemaMaxLen = schemaTECL.integer(schemaPropertyIdx, MAX_LEN, Integer.MAX_VALUE);
 			if (length > schemaMaxLen) {
 				throw new ValidationException("'" + schemaPropertyId + "' should be no longer than " + schemaMaxLen + " at " + tecl.createFullPathToKey(idx, schemaPropertyId));
 			}

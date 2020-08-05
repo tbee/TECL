@@ -7,9 +7,7 @@ import java.util.Map;
 
 /**
  * TODO:
- * - min/maxLen -> any class that has a length() method
- * - min/maxSize -> any class that has a size() method
- * - min/max -> any class that has a longValue() method
+ * - min/max -> attempt conversion to BigInteger if min/max value does not contain a decimal dot. With dot attempt with BigDecimal
  * - allowAdditionalProperties (default false): allow more properties than what is defined in the schema
  * - type group
  */
