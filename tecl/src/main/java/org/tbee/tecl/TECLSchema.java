@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 /**
  * TODO:
@@ -14,13 +13,26 @@ import java.util.function.BiFunction;
 public class TECLSchema {
 	
 	private TECL schemaTECL;
+	private List<Validator> validators = new ArrayList<>();
 
+	
 	/**
 	 * 
 	 * @param tesd
 	 */
 	public TECLSchema(String tesd) {
+		validators.add(new ValidatorMinMaxValues());
+		validators.add(new ValidatorPropertyType());
 		schemaTECL = TECL.parser().parse(tesd);
+	}
+
+	/**
+	 * Add a validator
+	 * @param validator
+	 */
+	TECLSchema addValidator(Validator validator) {
+		validators.add(validator);
+		return this;
 	}
 
 	/**
@@ -42,7 +54,7 @@ public class TECLSchema {
 		// now validate
 		validate(tecl, schemaTECL);
 	}
-	private Map<String, Class<?>> typeToClass = new HashMap<>();
+	public Map<String, Class<?>> typeToClass = new HashMap<>();
 
 
 	/*
@@ -56,30 +68,18 @@ public class TECLSchema {
 		for (int schemaPropertyIdx = 0; schemaPropertyIdx < schemaNumberOfProperties; schemaPropertyIdx++) {
 			
 			// get data
-			String schemaId = schemaTECL.str(schemaPropertyIdx, "id");
-			processedKeys.add(schemaId);
+			String schemaPropertyId = schemaTECL.str(schemaPropertyIdx, "id");
+			processedKeys.add(schemaPropertyId);
 			
-			// min&maxValues
-			int cntValues = tecl.count(schemaId);
-			int schemaMinValues = schemaTECL.integer(schemaPropertyIdx, "minValues", 0);
-			if (cntValues < schemaMinValues) {
-				throw new ValidationException("'" + schemaId + "' should occur at least " + schemaMinValues + " times at " + tecl.createFullPathToKey(schemaMinValues, schemaId));
-			}
-			int schemaMaxValues = schemaTECL.integer(schemaPropertyIdx, "maxValues", Integer.MAX_VALUE);
-			if (cntValues > schemaMaxValues) {
-				throw new ValidationException("'" + schemaId + "' should occur at most " + schemaMaxValues + " times at " + tecl.createFullPathToKey(schemaMaxValues, schemaId));
+			for (Validator validator : validators) {
+				validator.validate(tecl, schemaTECL, schemaPropertyIdx, schemaPropertyId, this);
 			}
 			
 			// type
 			String schemaType = schemaTECL.str(schemaPropertyIdx, "type");
 			String schemaSubtype = schemaTECL.str(schemaPropertyIdx, "subtype");
-			if (schemaType != null) {
-				if ("group".contentEquals(schemaType)) {
-					validateGroup(tecl, schemaPropertyIdx, schemaId, schemaSubtype);
-				}
-				else {
-					validatePropertyType(tecl, schemaPropertyIdx, schemaId, schemaType);
-				}
+			if ("group".equals(schemaType)) {
+				validateGroup(tecl, schemaPropertyIdx, schemaPropertyId, schemaSubtype);
 			}
 		}
 		
@@ -108,33 +108,6 @@ public class TECLSchema {
 		}
 	}
 
-	/*
-	 * 
-	 */
-	private void validatePropertyType(TECL tecl, int schemaPropertyIdx, String schemaPropertyId, String schemaType) {
-
-		// Determine the class for the type
-		Class<?> typeClass = typeToClass.get(schemaType);
-		if (typeClass == null) {
-			throw new ValidationException("Unknown type '" + schemaType + "' for " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
-		}
-		
-		// Determine the converter function for the class
-		BiFunction<String, ?, ?> convertFunction = tecl.convertFunction(typeClass);
-
-		// process all values for the specified id
-		int valuesCnt = tecl.count(schemaPropertyId);
-		for (int valueIdx = 0; valueIdx < valuesCnt; valueIdx++) {
-			String value = tecl.str(valueIdx, schemaPropertyId);
-			try {
-				convertFunction.apply(value, null);
-			}
-			catch (Exception e) {
-				throw new ValidationException("Error validating value for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId), e);
-			}
-		}
-	}
-
 	/**
 	 * 
 	 */
@@ -147,5 +120,18 @@ public class TECLSchema {
 		public ValidationException(String message) {
 			super(message);
 		}
+	}
+	
+	public static interface Validator {
+		
+		/**
+		 * 
+		 * @param tecl the TECL that is validated
+		 * @param schemaTECL the TECL holding the schema information for the validation; over its properties the next two parameters are interating
+		 * @param schemaPropertyIdx the index of the property in the schemaTECL that is currently being validated
+		 * @param schemaPropertyId the id of the property (at the index) in the schemaTECL that is currently being validated
+		 * @param teclSchema the TECLSchema instance doing the validation
+		 */
+		void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema);
 	}
 }
