@@ -258,6 +258,29 @@ public class TECLSchemaTest {
 		);
 	}
 	
+	
+	@Test
+	public void listIntegerFail() {
+		assertEquals("Error validating value against type for /key[1]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : [1, abc, 3] \n"
+				, ""
+				+ "| id  | type  | subtype | \n" 
+				+ "| key | list  | Integer | \n" 
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void listIntegerOk() {
+		parse(""
+			+ "key : [1, 2, 3] \n"
+			, ""
+			+ "| id  | type  | subtype | \n" 
+			+ "| key | list  | Integer | \n" 
+			);
+	}	
+	
 	// ========================
 	
 	private TECL parse(String tecl, String tesd) {

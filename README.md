@@ -178,11 +178,11 @@ int maxSessions = tecl.integer("/servers/name", "gamma", "/server/maxSessions");
 int maxSessions2 = tecl.grp("/servers").integer("name", "gamma", "maxSessions"); // returns 12
 ```
 
-## Validation (not implemented yet) ##
+## Validation ##
 The user basically determines at runtime how a property is to be interpreted, calling `dbl("key")` will make the value being parsed as a double.
 So it is only at runtime that you know if a value can be parsed as a double. 
 This is quite normal for configuration files, but TECL tries to improve this by supporting a schema.
-In the schema you can specify the type, frequence and other characteristics of properties and groups.
+In the schema you can specify the type, frequency and other characteristics of properties and groups.
 
 
 ```bash

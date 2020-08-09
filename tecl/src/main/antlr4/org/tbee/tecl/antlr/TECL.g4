@@ -54,7 +54,7 @@ config
  ;
 
 property
- : WORD conditions? ASSIGN value						{ listener.setProperty(0, $WORD.text, $value.text); } 
+ : WORD conditions? ASSIGN value						{ listener.setProperty(0, $WORD.text, $value.text); } // _localctx.start.getLine() 
  | WORD conditions? ASSIGN list							{ listener.setProperty($WORD.text, listValues); } 
  | WORD conditions? ASSIGN       						{ listener.setProperty(0, $WORD.text, ""); } 
  ;
