@@ -215,6 +215,14 @@ servers {
 protos = [http, https]
 ```
 
+The schema can be specified just before parsing:
+
+```java
+TECL tecl = TECL.parser()
+    .schema("..schemafile.." ) // Optionally custom validators can be added here
+    .parse("..filename..");
+```
+
 ## References ##
 In order to prevent very complex and deeply nested data, TECL allows for references.
 This are written somewhat similar like an xpath expression, but starting with a $-sign. For example:
@@ -268,4 +276,26 @@ group1 {
 ```
 
 ## Custom convert functions and types ##
-TODO
+TECL supports build in types for integer, dates, BigDecimal and BigInteger, but you can easily register your own custom types.
+
+```java
+class Temperature {
+	int value;
+	String unit;
+}
+
+TECLParser parser = TECL.parser();
+
+parser.addConvertFunction(Temperature.class, (str, def) -> {
+	Temperature t = new Temperature();
+	t.value = Integer.parseInt(str.replace("F", ""));
+	t.unit = str.substring(str.length() - 1);
+	return t;
+});
+
+TECL tecl = parser.parse("key : 123F \n");
+
+Temperature temperature = tecl.get("key", Temperature.class);
+List<Temperature> temperatures = tecl.list("key", Temperature.class);
+
+```

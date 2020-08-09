@@ -19,16 +19,22 @@ public class TECLSchemaTest {
 		TECL tecl = parse("", "");
 	}
 
+	// ========================
+	// MISSING KEY
+	
 	@Test
-	public void missingKey() {
+	public void undefinedKey() {
 		assertEquals("'key' is not defined in the schema at /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : abc \n"
 				, ""
 				);
 		}).getMessage());
-	}	
+	}
 
+	// ========================
+	// MIN/MAX VALUES
+	
 	@Test
 	public void minValuesFail() {
 		assertEquals("'key' should occur at least 1 times at /key[1]", assertThrows(ValidationException.class, () -> {
@@ -74,6 +80,9 @@ public class TECLSchemaTest {
 			+ "| key | 1         | \n" 
 		);
 	}
+	
+	// ========================
+	// PROPERTY TYPE
 	
 	@Test
 	public void typeIntegerFail() {
@@ -123,6 +132,9 @@ public class TECLSchemaTest {
 			);
 	}	
 
+	// ========================
+	// GROUP
+	
 	@Test
 	public void groupOk() {
 		parse(""
@@ -158,16 +170,6 @@ public class TECLSchemaTest {
 	}	
 
 	@Test
-	public void undefinedKey() {
-		assertEquals("'key' is not defined in the schema at /key[0]", assertThrows(ValidationException.class, () -> {
-			parse(""
-				+ "key : abc \n"
-				, ""
-				);
-		}).getMessage());
-	}
-
-	@Test
 	public void undefinedGroup() {
 		assertEquals("'groupId' is not defined in the schema at /groupId[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
@@ -179,6 +181,9 @@ public class TECLSchemaTest {
 				);
 		}).getMessage());
 	}
+	
+	// ========================
+	// MIN/MAX LEN
 	
 	@Test
 	public void minLenFail() {
@@ -240,7 +245,6 @@ public class TECLSchemaTest {
 		}).getMessage());
 	}	
 	
-	
 	@Test
 	public void maxLenOk() {
 		parse(""
@@ -250,6 +254,9 @@ public class TECLSchemaTest {
 			+ "| key | String |10     | \n" 
 		);
 	}
+	
+	// ========================
+	// MIN/MAX
 	
 	@Test
 	public void minFail() {
@@ -294,6 +301,9 @@ public class TECLSchemaTest {
 			+ "| key | 11  | \n" 
 		);
 	}	
+	
+	// ========================
+	// LIST
 	
 	@Test
 	public void listIntegerFail() {
@@ -342,6 +352,9 @@ public class TECLSchemaTest {
 			+ "| key2 | Integer |         | \n" 
 			);
 	}	
+	
+	// ========================
+	// ENUM
 	
 	@Test
 	public void enumIntegerFail() {
@@ -418,6 +431,9 @@ public class TECLSchemaTest {
 			+ "anEnum : [1, 2, 3]\n"
 			);
 	}	
+	
+	// ========================
+	// CUSTOM VALIDATOR
 	
 	@Test
 	public void customValidatorFail() {
