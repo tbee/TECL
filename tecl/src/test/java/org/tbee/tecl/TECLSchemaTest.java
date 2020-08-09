@@ -256,8 +256,7 @@ public class TECLSchemaTest {
 			+ "| id  | max | \n" 
 			+ "| key | 11  | \n" 
 		);
-	}
-	
+	}	
 	
 	@Test
 	public void listIntegerFail() {
@@ -281,6 +280,54 @@ public class TECLSchemaTest {
 			);
 	}	
 	
+	@Test
+	public void enumIntegerFail() {
+		assertEquals("Value '4' does not occur in the enum 'anEnum' for /key[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : 4 \n"
+				, ""
+				+ "| id  | type    | enum   |\n" 
+				+ "| key | Integer | anEnum |\n" 
+				+ "anEnum : [1, 2, 3]\n"
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void enumIntegerOk() {
+		parse(""
+			+ "key : 2 \n"
+			, ""
+			+ "| id  | type    | enum   |\n" 
+			+ "| key | Integer | anEnum |\n" 
+			+ "anEnum : [1, 2, 3]\n"
+			);
+	}	
+	
+	@Test
+	public void listEnumIntegerFail() {
+		assertEquals("Value '4' does not occur in the enum 'anEnum' for /key[1]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : [1, 4] \n"
+				, ""
+				+ "| id  | type  | subtype | enum   |\n" 
+				+ "| key | list  | Integer | anEnum |\n" 
+				+ "anEnum : [1, 2, 3]\n"
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void listEnumIntegerOk() {
+		parse(""
+			+ "key : [1, 2] \n"
+			, ""
+			+ "| id  | type  | subtype | enum   |\n" 
+			+ "| key | list  | Integer | anEnum |\n" 
+			+ "anEnum : [1, 2, 3]\n"
+			);
+	}	
+
 	// ========================
 	
 	private TECL parse(String tecl, String tesd) {

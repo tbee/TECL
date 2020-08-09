@@ -188,14 +188,15 @@ In the schema you can specify the type, frequency and other characteristics of p
 ```bash
 @version = 1
  
-| id              | type          | subtype  | minValues | maxValues |
-| title           | String        |          | 1         |           |
-| description     | String        |          |           |           |
-| releaseDateTime | LocalDateTime |          |           |           |
-| hosts           | list          | String   | 1         | 5         |
-| database        | group         | database |           |           |
-| servers         | group         | servers  |           | 10        |
-| protocols       | list          | protos   |           |           |
+| id              | type          | subtype  | enum   |minValues | maxValues |
+| title           | String        |          |        | 1         |           |
+| description     | String        |          |        |           |           |
+| releaseDateTime | LocalDateTime |          |        |           |           |
+| hosts           | list          | String   |        | 1         | 5         |
+| database        | group         | database |        |           |           |
+| servers         | group         | servers  |        |           | 10        |
+| protocols       | list          | String   | protos |           |           |
+| protos          | list          | String   |        |           |           |
  
 database {
     | id       | type      | minLen | maxLen |

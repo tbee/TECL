@@ -1,5 +1,6 @@
 package org.tbee.tecl;
 
+import java.util.List;
 import java.util.function.BiFunction;
 
 import org.tbee.tecl.TECLSchema.ValidationException;
@@ -8,9 +9,17 @@ import org.tbee.tecl.TECLSchema.Validator;
 public class ValidatorPropertyType implements Validator {
 
 	private static final String TYPE = "type";
+	private static final String ENUM = "enum";
 
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
-
+		
+		// If a enum is specified, fetch the enum values
+		String schemaEnum = schemaTECL.str(schemaPropertyIdx, ENUM);
+		List<String> enumValues = null; 
+		if (schemaEnum != null) {
+			enumValues = schemaTECL.strs(schemaEnum);
+		}
+		
 		// type
 		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
 		if (schemaType == null || "group".equals(schemaType) || "list".equals(schemaType)) { // TODO: better meta type detection?
@@ -35,6 +44,11 @@ public class ValidatorPropertyType implements Validator {
 			}
 			catch (Exception e) {
 				throw new ValidationException("Error validating value against type for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId), e);
+			}
+			
+			// validate against enum
+			if (enumValues != null && !enumValues.contains(value)) {
+				throw new ValidationException("Value '" + value + "' does not occur in the enum '"  + schemaEnum + "' for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId));
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 package org.tbee.tecl;
 
+import java.util.List;
 import java.util.function.BiFunction;
 
 import org.tbee.tecl.TECLSchema.ValidationException;
@@ -9,9 +10,17 @@ public class ValidatorListType implements Validator {
 
 	private static final String TYPE = "type";
 	private static final String SUBTYPE = "subtype";
+	private static final String ENUM = "enum";
 
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
 
+		// If a enum is specified, fetch the enum values
+		String schemaEnum = schemaTECL.str(schemaPropertyIdx, ENUM);
+		List<String> enumValues = null; 
+		if (schemaEnum != null) {
+			enumValues = schemaTECL.strs(schemaEnum);
+		}
+		
 		// type must be 'list'
 		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
 		if (!"list".equals(schemaType)) {
@@ -42,6 +51,11 @@ public class ValidatorListType implements Validator {
 			}
 			catch (Exception e) {
 				throw new ValidationException("Error validating value against type for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId), e);
+			}
+			
+			// validate against enum
+			if (enumValues != null && !enumValues.contains(value)) {
+				throw new ValidationException("Value '" + value + "' does not occur in the enum '"  + schemaEnum + "' for " + tecl.createFullPathToKey(valueIdx, schemaPropertyId));
 			}
 		}
 	}
