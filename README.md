@@ -215,8 +215,57 @@ servers {
 protos = [http, https]
 ```
 
-## Variables ##
-TODO
+## References ##
+In order to prevent very complex and deeply nested data, TECL allows for references.
+This are written somewhat similar like an xpath expression, but starting with a $-sign. For example:
+
+
+```bash
+key1 : $key2
+key2 : value
+```
+
+References are handled transparently:
+
+```java
+parse.str('key1') // returns "value"
+```
+
+This of course becomes more relevant as a TECL becomes more complex. Fetching the value of '/server/name' iin the TECL below will return "value".
+
+```bash
+servers {
+    | name  | 
+    | $/key | 
+}
+key : value
+```
+
+Note the slash that was inserted in the reference. This is needed because '$key' would have been solved within the 'servers' group, and thus be null. The slash makes it refer to the root-level.
+
+It is also possible to use indexes in references, like so:
+
+```bash
+key : $/servers/name[1]
+servers {
+    | name   | 
+    | value1 | 
+    | value2 | 
+}
+```
+
+Or refer to the parent:
+
+```bash
+key : $/group1/group2/name
+group1 {
+    group2 {
+        | name     | 
+        | $../key2 | 
+    }
+    key : value
+}
+```
 
 ## Custom convert functions and types ##
 TODO
