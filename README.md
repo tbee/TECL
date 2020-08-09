@@ -82,18 +82,25 @@ environment[env=production] {
 ```
 
 ## Usage ##
-The configuration hierarchy is accessed using a single 'get' method:  
+The configuration hierarchy is accessed using a single 'list' method, because each key may have multiple values:  
 
-	List<R> get(String path, List<R> defaultValue, Function<String, R> convertFunction)
+	List<R> list(String path, List<R> defaultValue, Class<R> clazz)
 
-This allows you to specify your own converter functions, but is not very user friendly.
-Usually one of the many the convenience methods are used:
+But if you only want one (which is very often the case) there is the 'get':  
+
+	R get(String path, R defaultValue, Class<R> clazz)
+
+The class at the end specifies the return type. 
+TECL has build in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow.
+These build in types also have convenience methods:
 
 	str("/database/url")
 	integer("/database/timepout")
 	grp("/database")
 
-But in case no matching convenience method is present, the get method is the way to go.
+But in case no matching convenience method is present, the get or list method is the way to go.
+It is possible to register custom types (see below), or simply provide a convert function to the 'listUsingFunction' method.
+
 The path in the methods travels the hierarchy.
 If no value is found, the default is returned. Per default this is null, but can be set as the last parameter:
 
@@ -276,7 +283,7 @@ group1 {
 ```
 
 ## Custom convert functions and types ##
-TECL supports build in types for integer, dates, BigDecimal and BigInteger, but you can easily register your own custom types.
+TECL supports build in types for a number of types, but you can easily register your own:
 
 ```java
 class Temperature {
@@ -297,5 +304,11 @@ TECL tecl = parser.parse("key : 123F \n");
 
 Temperature temperature = tecl.get("key", Temperature.class);
 List<Temperature> temperatures = tecl.list("key", Temperature.class);
+```
 
+Or just provide a convert function:
+
+```java
+TECLParser parser = TECL.parser();
+List<Integer> ints = tecl.listUsingFunction("key", Integer::parseInt);
 ```

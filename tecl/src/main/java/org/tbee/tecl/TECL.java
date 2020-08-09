@@ -133,6 +133,7 @@ public class TECL {
 	 * 
 	 * @param <R>
 	 * @param path the path the access
+	 * @param def
 	 * @param clazz the return type (also used to get appropriate convert function)
 	 * @return a list of found values
 	 */
@@ -142,6 +143,20 @@ public class TECL {
 			return def;
 		}
 		return list.get(0);
+	}
+
+	/**
+	 * Get a value using a directory-style path, like /group1/group2[4]/value
+	 * 
+	 * @param <R>
+	 * @param path the path the access
+	 * @param def
+	 * @param clazz the return type (also used to get appropriate convert function)
+	 * @return a list of found values
+	 */
+	public <R> R getUsingFunction(String path, R def, BiFunction<String, R, R> convertFunction) {
+		List<R> list = listUsingFunction(path, Arrays.asList(def), convertFunction);
+		return list.isEmpty() ? def : list.get(0);
 	}
 	
 	/**
@@ -162,7 +177,7 @@ public class TECL {
 		if (idx < 0) {
 			return def;
 		}
-		return getUsingFunction(path + "[" + idx + "]", def, convertFunction(clazz));
+		return listUsingFunction(path + "[" + idx + "]", def, convertFunction(clazz));
 	}
 	
 	/**
@@ -189,11 +204,11 @@ public class TECL {
 	 * @return a list of found values
 	 */
 	public <R> List<R> list(String path, List<R> def, Class<R> clazz) {
-		return getUsingFunction(path, def, convertFunction(clazz));
+		return listUsingFunction(path, def, convertFunction(clazz));
 	}
 	
-	/*
-	 * Get a value using a directory-style path, like /group1/group2[4]/value
+	/**
+	 * Get values using a directory-style path, like /group1/group2[4]/value
 	 * 
 	 * This is the main way to access values in TECL, all convenience methods use this method
 	 * 
@@ -204,7 +219,7 @@ public class TECL {
 	 * @return a list of found values
 	 */
 	@SuppressWarnings("unchecked")
-	private <R> List<R> getUsingFunction(String path, List<R> def, BiFunction<String, R, R> convertFunction) {
+	public <R> List<R> listUsingFunction(String path, List<R> def, BiFunction<String, R, R> convertFunction) {
 		String context = this.getPath() + " -> " + path + ": ";
 		
 		// Specials 
@@ -260,7 +275,7 @@ public class TECL {
 			if (properties != null && properties.size() > idx && properties.get(idx).startsWith("$")) {
 				logger.atDebug().log(context + "Found reference: " + properties.get(idx));
 				String var = properties.get(idx).substring(1);
-				tecl = getUsingFunction(var, emptyGroup(idx), null).get(0);
+				tecl = listUsingFunction(var, emptyGroup(idx), null).get(0);
 				logger.atDebug().log(context + "Resolved reference: " + var + " -> TECL= " + tecl.getPath());
 			}
 			else {
@@ -299,7 +314,7 @@ public class TECL {
 				// Resolve the reference
 				logger.atDebug().log(context + "We have no groups, but we do a single property which is a reference: " + properties);					
 				String var = properties.get(0).substring(1);
-				results = getUsingFunction(var, null, null);
+				results = listUsingFunction(var, null, null);
 			}
 			else {
 				// The result are the groups
@@ -315,7 +330,7 @@ public class TECL {
 			if (properties.size() == 1 && properties.get(0).startsWith("$")) {
 				logger.atDebug().log(context + "We have a single property which is a reference, going to resolve that: " + properties);					
 				String var = properties.get(0).substring(1);
-				results = getUsingFunction(var, null, convertFunction);
+				results = listUsingFunction(var, null, convertFunction);
 				results = optionallyApplyIdx(context, results, idx);
 			}
 			// No reference, so we're processing the properties
@@ -340,7 +355,7 @@ public class TECL {
 						// Resolve reference
 						logger.atDebug().log(context + "Property is a reference: " + property);
 						String var = property.substring(1);
-						List<R> varResult = getUsingFunction(var, null, convertFunction);
+						List<R> varResult = listUsingFunction(var, null, convertFunction);
 						results.addAll(varResult);
 					}
 					else {
@@ -729,7 +744,7 @@ public class TECL {
 	 * @return
 	 */
 	public TECL grp(int idx, String key) {
-		return getUsingFunction(key + "[" + idx + "]", emptyGroup(idx), null).get(0);
+		return listUsingFunction(key + "[" + idx + "]", emptyGroup(idx), null).get(0);
 	}
 
 
@@ -743,7 +758,7 @@ public class TECL {
 	 * @return
 	 */
 	public List<TECL> grps(String key) {
-		return getUsingFunction(key, Collections.emptyList(), null);
+		return listUsingFunction(key, Collections.emptyList(), null);
 	}
 
 	// =====================================
