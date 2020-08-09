@@ -23,7 +23,7 @@ public class TECLSchema {
 	public TECLSchema(String tesd) {
 		validators.add(new ValidatorMinMaxValues());
 		validators.add(new ValidatorPropertyType());
-		validators.add(new ValidatorPropertyType());
+		validators.add(new ValidatorListType());
 		validators.add(new ValidatorMinMaxLen());
 		validators.add(new ValidatorMinMax());
 		schemaTECL = TECL.parser().parse(tesd);
