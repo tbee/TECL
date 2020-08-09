@@ -14,13 +14,6 @@ public class ValidatorListType implements Validator {
 
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
 
-		// If a enum is specified, fetch the enum values
-		String schemaEnum = schemaTECL.str(schemaPropertyIdx, ENUM);
-		List<String> enumValues = null; 
-		if (schemaEnum != null) {
-			enumValues = schemaTECL.strs(schemaEnum);
-		}
-		
 		// type must be 'list'
 		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
 		if (!"list".equals(schemaType)) {
@@ -31,6 +24,13 @@ public class ValidatorListType implements Validator {
 		String schemaSubtype = schemaTECL.str(schemaPropertyIdx, SUBTYPE);
 		if (schemaSubtype == null) {
 			throw new ValidationException("Type list requires a subtype for " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
+		}
+		
+		// If a enum is specified, fetch the enum values
+		String schemaEnum = schemaTECL.str(schemaPropertyIdx, ENUM);
+		List<String> enumValues = null; 
+		if (schemaEnum != null && !schemaEnum.isBlank()) {
+			enumValues = schemaTECL.strs(schemaEnum);
 		}
 		
 		// Determine the class for the type

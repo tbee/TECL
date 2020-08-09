@@ -19,12 +19,22 @@ public class TECLSchemaTest {
 	}
 
 	@Test
+	public void missingKey() {
+		assertEquals("'key' is not defined in the schema at /key[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : abc \n"
+				, ""
+				);
+		}).getMessage());
+	}	
+
+	@Test
 	public void minValuesFail() {
 		assertEquals("'key' should occur at least 1 times at /key[1]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				, ""
-				+ "| id              | minValues | \n" 
-				+ "| key             | 1         | \n" 
+				+ "| id  | minValues | \n" 
+				+ "| key | 1         | \n" 
 				);
 		}).getMessage());
 	}	
@@ -83,6 +93,32 @@ public class TECLSchemaTest {
 			, ""
 			+ "| id  | type    | \n" 
 			+ "| key | Integer | \n" 
+			);
+	}	
+	
+	@Test
+	public void typeThroughVarIntegerFail() {
+		assertEquals("Error validating value against type for /key[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : $key2 \n"
+				+ "key2 : abc \n"
+				, ""
+				+ "| id   | type    | \n" 
+				+ "| key  | Integer | \n" 
+				+ "| key2 | Integer | \n" 
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void typeThroughVarIntegerOk() {
+		parse(""
+			+ "key : $key2 \n"
+			+ "key2 : 1 \n"
+			, ""
+			+ "| id   | type    | \n" 
+			+ "| key  | Integer | \n" 
+			+ "| key2 | Integer | \n" 
 			);
 	}	
 
@@ -281,6 +317,32 @@ public class TECLSchemaTest {
 	}	
 	
 	@Test
+	public void listThroughVarIntegerFail() {
+		assertEquals("Error validating value against type for /key[1]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : [1, $key2, 3] \n"
+				+ "key2 : abc \n"
+				, ""
+				+ "| id  | type     | subtype | \n" 
+				+ "| key | list     | Integer | \n" 
+				+ "| key2 | Integer |         | \n" 
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void listThroughVarIntegerOk() {
+		parse(""
+			+ "key : [1, $key2, 3] \n"
+			+ "key2 : 2 \n"
+			, ""
+			+ "| id  | type     | subtype | \n" 
+			+ "| key | list     | Integer | \n" 
+			+ "| key2 | Integer |         | \n" 
+			);
+	}	
+	
+	@Test
 	public void enumIntegerFail() {
 		assertEquals("Value '4' does not occur in the enum 'anEnum' for /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
@@ -300,6 +362,34 @@ public class TECLSchemaTest {
 			, ""
 			+ "| id  | type    | enum   |\n" 
 			+ "| key | Integer | anEnum |\n" 
+			+ "anEnum : [1, 2, 3]\n"
+			);
+	}	
+	
+	@Test
+	public void enumThroughVarIntegerFail() {
+		assertEquals("Value '4' does not occur in the enum 'anEnum' for /key[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "key : $key2 \n"
+				+ "key2 : 4 \n"
+				, ""
+				+ "| id   | type    | enum   |\n" 
+				+ "| key  | Integer | anEnum |\n" 
+				+ "| key2 | Integer |        |\n" 
+				+ "anEnum : [1, 2, 3]\n"
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void enumThroughVarIntegerOk() {
+		parse(""
+			+ "key : $key2 \n"
+			+ "key2 : 2 \n"
+			, ""
+			+ "| id   | type    | enum   |\n" 
+			+ "| key  | Integer | anEnum |\n" 
+			+ "| key2 | Integer |        |\n" 
 			+ "anEnum : [1, 2, 3]\n"
 			);
 	}	

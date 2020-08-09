@@ -13,17 +13,17 @@ public class ValidatorPropertyType implements Validator {
 
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
 		
-		// If a enum is specified, fetch the enum values
-		String schemaEnum = schemaTECL.str(schemaPropertyIdx, ENUM);
-		List<String> enumValues = null; 
-		if (schemaEnum != null) {
-			enumValues = schemaTECL.strs(schemaEnum);
-		}
-		
 		// type
 		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
 		if (schemaType == null || "group".equals(schemaType) || "list".equals(schemaType)) { // TODO: better meta type detection?
 			return;
+		}
+		
+		// If a enum is specified, fetch the enum values
+		String schemaEnum = schemaTECL.str(schemaPropertyIdx, ENUM);
+		List<String> enumValues = null; 
+		if (schemaEnum != null && !schemaEnum.isBlank()) {
+			enumValues = schemaTECL.strs(schemaEnum);
 		}
 		
 		// Determine the class for the type
