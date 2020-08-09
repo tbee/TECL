@@ -34,6 +34,7 @@ import org.apache.commons.text.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECLParser.ParserListener.TECLContext;
+import org.tbee.tecl.TECLSchema.Validator;
 
 public class TECLParser {
 	final Logger logger = LoggerFactory.getLogger(TECLParser.class);
@@ -453,8 +454,11 @@ public class TECLParser {
 
 	private TECLSchema teclSchema = null;
 	
-	public TECLParser schema(String tesd) {		
+	public TECLParser schema(String tesd, Validator... validators) {		
 		this.teclSchema = new TECLSchema(tesd);
+		for (Validator validator : validators) {
+			this.teclSchema.addValidator(validator);
+		}
 		return this;
 	}
 

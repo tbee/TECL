@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECLSchema.ValidationException;
+import org.tbee.tecl.TECLSchema.Validator;
 import org.tbee.tecl.antlr.PrintLexer;
 
 public class TECLSchemaTest {
@@ -417,15 +418,48 @@ public class TECLSchemaTest {
 			+ "anEnum : [1, 2, 3]\n"
 			);
 	}	
+	
+	@Test
+	public void customValidatorFail() {
+		assertEquals("Is not 'abc'", assertThrows(ValidationException.class, () -> {
+			parse(""
+					+ "key : def \n"
+					, ""
+					+ "| id  | type  | \n" 
+					+ "| key | String  | \n"
+					, new CustomMustBeABCValidator()
+					);
+		}).getMessage());
+	}
+
+	@Test
+	public void customValidatorOk() {
+		parse(""
+			+ "key : abc \n"
+			, ""
+			+ "| id  | type  | \n" 
+			+ "| key | String  | \n"
+			, new CustomMustBeABCValidator()
+			);
+	}	
+	
+	public static class CustomMustBeABCValidator implements Validator {
+
+		@Override
+		public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
+			String value = tecl.str(schemaPropertyId);
+			if (!"abc".equals(value)) {
+				throw new ValidationException("Is not 'abc'");
+			}
+		}
+	}
 
 	// ========================
 	
-	private TECL parse(String tecl, String tesd) {
+	private TECL parse(String tecl, String tesd, Validator... validators) {
 		logger.atDebug().log("Parsing:\n" + tecl + new PrintLexer().lex(tecl));
 		return TECL.parser()
-				.addParameter("sys", "A")
-				.addParameter("env", "test")
-				.schema(tesd)
+				.schema(tesd, validators)
 				.parse(tecl);
 	}
 }
