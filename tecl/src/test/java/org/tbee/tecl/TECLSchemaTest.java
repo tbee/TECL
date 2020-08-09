@@ -97,7 +97,7 @@ public class TECLSchemaTest {
 	}	
 	
 	@Test
-	public void typeThroughVarIntegerFail() {
+	public void typeThroughRefIntegerFail() {
 		assertEquals("Error validating value against type for /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : $key2 \n"
@@ -111,7 +111,7 @@ public class TECLSchemaTest {
 	}
 
 	@Test
-	public void typeThroughVarIntegerOk() {
+	public void typeThroughRefIntegerOk() {
 		parse(""
 			+ "key : $key2 \n"
 			+ "key2 : 1 \n"
@@ -317,7 +317,7 @@ public class TECLSchemaTest {
 	}	
 	
 	@Test
-	public void listThroughVarIntegerFail() {
+	public void listThroughRefIntegerFail() {
 		assertEquals("Error validating value against type for /key[1]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : [1, $key2, 3] \n"
@@ -331,7 +331,7 @@ public class TECLSchemaTest {
 	}
 
 	@Test
-	public void listThroughVarIntegerOk() {
+	public void listThroughRefIntegerOk() {
 		parse(""
 			+ "key : [1, $key2, 3] \n"
 			+ "key2 : 2 \n"
@@ -367,7 +367,7 @@ public class TECLSchemaTest {
 	}	
 	
 	@Test
-	public void enumThroughVarIntegerFail() {
+	public void enumThroughRefIntegerFail() {
 		assertEquals("Value '4' does not occur in the enum 'anEnum' for /key[0]", assertThrows(ValidationException.class, () -> {
 			parse(""
 				+ "key : $key2 \n"
@@ -382,7 +382,7 @@ public class TECLSchemaTest {
 	}
 
 	@Test
-	public void enumThroughVarIntegerOk() {
+	public void enumThroughRefIntegerOk() {
 		parse(""
 			+ "key : $key2 \n"
 			+ "key2 : 2 \n"

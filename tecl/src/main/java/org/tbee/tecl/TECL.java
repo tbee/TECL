@@ -197,15 +197,15 @@ public class TECL {
 				break;
 			}
 			
-			// Not the last token, so this either is a group or a variable resolving to a group
+			// Not the last token, so this either is a group or a reference resolving to a group
 			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
-			// if it is a variable
+			// if it is a reference
 			List<String> properties = tecl.properties.get(node);
 			if (properties != null && properties.size() > idx && properties.get(idx).startsWith("$")) {
-				logger.atDebug().log(context + "Found variable: " + properties.get(idx));
+				logger.atDebug().log(context + "Found reference: " + properties.get(idx));
 				String var = properties.get(idx).substring(1);
 				tecl = get(var, emptyGroup(idx), null).get(0);
-				logger.atDebug().log(context + "Resolved variable: " + var + " -> TECL= " + tecl.getPath());
+				logger.atDebug().log(context + "Resolved reference: " + var + " -> TECL= " + tecl.getPath());
 			}
 			else {
 				if ("..".equals(node)) {
@@ -218,7 +218,7 @@ public class TECL {
 			}
 		}
 		
-		// This is the last node, it may be a property, group, list or variable
+		// This is the last node, it may be a property, group, list or reference
 		// First get all relevant info
 		// Properties
 		List<String> properties = tecl.properties.get(node);
@@ -237,11 +237,11 @@ public class TECL {
 		if (convertFunction == null) {
 			logger.atDebug().log(context + "There no convert function, so the last token must be groups.");
 			
-			// If we have a variable overlapping the groups
+			// If we have a reference overlapping the groups
 			if (groups.isEmpty() && properties.size() == 1 && properties.get(0).startsWith("$")) {
 				
-				// Resolve the variable
-				logger.atDebug().log(context + "We have no groups, but we do a single property which is a variable: " + properties);					
+				// Resolve the reference
+				logger.atDebug().log(context + "We have no groups, but we do a single property which is a reference: " + properties);					
 				String var = properties.get(0).substring(1);
 				results = get(var, null, null);
 			}
@@ -255,14 +255,14 @@ public class TECL {
 		else {
 			logger.atDebug().log(context + "There is a convert function, so the last token must be properties.");
 			
-			// If there is a variable
+			// If there is a reference
 			if (properties.size() == 1 && properties.get(0).startsWith("$")) {
-				logger.atDebug().log(context + "We have a single property which is a variable, going to resolve that: " + properties);					
+				logger.atDebug().log(context + "We have a single property which is a reference, going to resolve that: " + properties);					
 				String var = properties.get(0).substring(1);
 				results = get(var, null, convertFunction);
 				results = optionallyApplyIdx(context, results, idx);
 			}
-			// No variable, so we're processing the properties
+			// No reference, so we're processing the properties
 			else {
 				
 				// If we have a list overlapping the properties, replace the properties with those in the list
@@ -278,11 +278,11 @@ public class TECL {
 				results = new ArrayList<R>();
 				for (String property : properties) {
 					
-					// But each property can be a variable again
+					// But each property can be a reference again
 					if (property.startsWith("$")) {
 						
-						// Resolve variable
-						logger.atDebug().log(context + "Property is a variable: " + property);
+						// Resolve reference
+						logger.atDebug().log(context + "Property is a reference: " + property);
 						String var = property.substring(1);
 						List<R> varResult = get(var, null, convertFunction);
 						results.addAll(varResult);
@@ -431,7 +431,7 @@ public class TECL {
 
 	/**
 	 * Get the raw uninterpreted value of a property.
-	 * This is a last resort when, for example, there is an overlap using variables.
+	 * This is a last resort when, for example, there is an overlap using references.
 	 * But these situations preferably are prevented.
 	 * 
 	 * @param idx

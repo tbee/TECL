@@ -221,7 +221,7 @@ public class TECLTest {
 	}
 
 	@Test
-	public void integerListWithVariable() {
+	public void integerListWithReference() {
 		TECL tecl = parse(""
 				+ "key : [1,$/someInt,3] \n"
 				+ "someInt : 5 \n"
@@ -677,7 +677,7 @@ public class TECLTest {
 		
 		// The column name 'type' in the table is the same as the group name 'type' 
 		// This normally is no problem, because we have separate sets of properties and groups.
-		// But here the column type is referring through a variable to a group, so property type becomes a group.
+		// But here the column type is referring through a reference to a group, so property type becomes a group.
 		// And that conflicts with the group 'type'.
 		// The group wins, so in order to access the property as a group, you need to get the raw value and push that through var.
 		// Better is not to do this of course :-)

@@ -98,7 +98,7 @@ col_value : ~( PIPE | NL )*;
 
 value
  : WORD
- | VARIABLE
+ | REFERENCE
  | string
  ;
 
@@ -128,7 +128,7 @@ PIPE   : '|';
 AND    : '&';
 COMPAR : '=';
 
-VARIABLE
+REFERENCE
  : '$' WORD
  ;
 
