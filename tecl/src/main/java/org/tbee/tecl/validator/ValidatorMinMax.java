@@ -1,4 +1,4 @@
-package org.tbee.tecl;
+package org.tbee.tecl.validator;
 
 /*-
  * #%L
@@ -29,6 +29,8 @@ package org.tbee.tecl;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.tbee.tecl.TECL;
+import org.tbee.tecl.TECLSchema;
 import org.tbee.tecl.TECLSchema.ValidationException;
 import org.tbee.tecl.TECLSchema.Validator;
 

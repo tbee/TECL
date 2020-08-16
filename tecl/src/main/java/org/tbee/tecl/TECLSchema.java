@@ -31,6 +31,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.tbee.tecl.validator.ValidatorListType;
+import org.tbee.tecl.validator.ValidatorMinMax;
+import org.tbee.tecl.validator.ValidatorMinMaxLen;
+import org.tbee.tecl.validator.ValidatorMinMaxValues;
+import org.tbee.tecl.validator.ValidatorPropertyType;
+
 /**
  * TODO:
  * - allowAdditionalProperties (default false): allow more properties than what is defined in the schema

@@ -1,4 +1,4 @@
-package org.tbee.tecl;
+package org.tbee.tecl.validator;
 
 /*-
  * #%L
@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import org.tbee.tecl.TECL;
+import org.tbee.tecl.TECLSchema;
 import org.tbee.tecl.TECLSchema.ValidationException;
 import org.tbee.tecl.TECLSchema.Validator;
 

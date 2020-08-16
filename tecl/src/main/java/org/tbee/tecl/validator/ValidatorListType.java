@@ -1,4 +1,4 @@
-package org.tbee.tecl;
+package org.tbee.tecl.validator;
 
 /*-
  * #%L
@@ -29,20 +29,29 @@ package org.tbee.tecl;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import org.tbee.tecl.TECL;
+import org.tbee.tecl.TECLSchema;
 import org.tbee.tecl.TECLSchema.ValidationException;
 import org.tbee.tecl.TECLSchema.Validator;
 
-public class ValidatorPropertyType implements Validator {
+public class ValidatorListType implements Validator {
 
 	private static final String TYPE = "type";
+	private static final String SUBTYPE = "subtype";
 	private static final String ENUM = "enum";
 
 	public void validate(TECL tecl, TECL schemaTECL, int schemaPropertyIdx, String schemaPropertyId, TECLSchema teclSchema) {
-		
-		// type
+
+		// type must be 'list'
 		String schemaType = schemaTECL.str(schemaPropertyIdx, TYPE);
-		if (schemaType == null || "group".equals(schemaType) || "list".equals(schemaType)) { // TODO: better meta type detection?
+		if (!"list".equals(schemaType)) {
 			return;
+		}
+		
+		// Subtype has the actual type
+		String schemaSubtype = schemaTECL.str(schemaPropertyIdx, SUBTYPE);
+		if (schemaSubtype == null) {
+			throw new ValidationException("Type list requires a subtype for " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
 		}
 		
 		// If a enum is specified, fetch the enum values
@@ -53,9 +62,9 @@ public class ValidatorPropertyType implements Validator {
 		}
 		
 		// Determine the class for the type
-		Class<?> typeClass = teclSchema.typeToClass.get(schemaType);
+		Class<?> typeClass = teclSchema.typeToClass.get(schemaSubtype);
 		if (typeClass == null) {
-			throw new ValidationException("Unknown type '" + schemaType + "' for " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
+			throw new ValidationException("Unknown type '" + schemaSubtype + "' for " + schemaTECL.createFullPathToKey(schemaPropertyIdx, schemaPropertyId));
 		}
 		
 		// Determine the converter function for the class

@@ -1,4 +1,7 @@
-package org.tbee.tecl;
+package org.tbee.tecl.validator;
+
+import org.tbee.tecl.TECL;
+import org.tbee.tecl.TECLSchema;
 
 /*-
  * #%L

@@ -108,7 +108,7 @@ public class TECL {
 		return path;
 	}
 	
-	String createFullPathToKey(int idx, String key) {
+	public String createFullPathToKey(int idx, String key) {
 		String path 
 		     = getPath()
 		     + key
@@ -543,11 +543,11 @@ public class TECL {
 	/**
 	 * Add a custom convert function to the tecl
 	 */
-	<R> void addConvertFunction(Class<R> clazz, BiFunction<String, R, R> convertFunction) {
+	public <R> void addConvertFunction(Class<R> clazz, BiFunction<String, R, R> convertFunction) {
 		convertFunctions.put(clazz, convertFunction);
 	}
 	@SuppressWarnings("unchecked")
-	<R> BiFunction<String, R, R> convertFunction(Class<R> clazz) {
+	public <R> BiFunction<String, R, R> convertFunction(Class<R> clazz) {
 		return (BiFunction<String, R, R>)getRoot().convertFunctions.get(clazz);
 	}
 	public void populateConvertFunctions() {
