@@ -96,6 +96,15 @@
 		</repository>
 	</distributionManagement>
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.8.1</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<!-- license headers -->
 			<plugin>
@@ -136,10 +145,11 @@
 			
 		    <!-- attach javadoc -->
 		    <!-- The code being documented uses modules but the packages defined in http://docs.oracle.com/javase/7/docs/api/ are in the unnamed module.
-   			<plugin>
+     		-->
+     		<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
+				<version>3.2.0</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -149,7 +159,7 @@
 					</execution>
 				</executions>
 			</plugin>
-     		-->
+
      		
 			<!-- sign the jars files -->
 			<plugin>
