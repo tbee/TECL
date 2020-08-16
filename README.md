@@ -157,7 +157,7 @@ TECL databaseTECL = tecl.grp("database");
 String url = databaseTECL.str("url");
 String password = databaseTECL.decrypt("password");
  
-// Or directly using a path chaining
+// Or directly using a path
 String url2 = tecl.str("database/url");
  
 // The path starts at the current node, or root if it starts with a slash
@@ -166,13 +166,13 @@ String url3 = tecl.str("/database/url");
 // And you can move back up
 String title2 = databaseTECL.str("../title");
  
-// In case a group was not defined, get ALWAYS returns an empty TECL.
+// In case a group was not defined, an empty TECL is ALWAYS returned.
 // This will prevent null pointers in call chains.
 // Only a leaf (value) method will return a null if undefined.
 // So in the case below, field will be null, but no NPE will be thrown.
 String field = tecl.str("/notThere/alsoNotThere/field");
  
-// Tables use indexes and lists
+// Tables are accessed using indexes/
 // Index is the first parameter in order not to confuse with defaults
 String ip = tecl.str(0, "/servers/ip");
 // But indexes can also be written in the path
@@ -186,7 +186,7 @@ int maxSessions2 = tecl.grp("/servers").integer("name", "gamma", "maxSessions");
 ```
 
 ## Validation ##
-The user basically determines at runtime how a property is to be interpreted, calling `dbl("key")` will make the value being parsed as a double.
+The user basically determines at runtime how a property is to be interpreted, calling `bd("key")` will make the value being parsed as a BigDecimal.
 So it is only at runtime that you know if a value can be parsed as a double. 
 This is quite normal for configuration files, but TECL tries to improve this by supporting a schema.
 In the schema you can specify the type, frequency and other characteristics of properties and groups.
@@ -232,7 +232,7 @@ TECL tecl = TECL.parser()
 
 ## References ##
 In order to prevent very complex and deeply nested data, TECL allows for references.
-This are written somewhat similar like an xpath expression, but starting with a $-sign. For example:
+This are written like the paths when accessing the data (which is similar to xpath expressions), starting with a $-sign. For example:
 
 
 ```bash
@@ -243,10 +243,10 @@ key2 : value
 References are handled transparently:
 
 ```java
-parse.str('key1') // returns "value"
+parse.str("key1") // returns "value"
 ```
 
-This of course becomes more relevant as a TECL becomes more complex. Fetching the value of '/server/name' iin the TECL below will return "value".
+This of course becomes more relevant as a TECL becomes more complex. Fetching the value of '/server/name' in the TECL below will return "value".
 
 ```bash
 servers {
@@ -286,13 +286,17 @@ group1 {
 TECL supports build in types for a number of types, but you can easily register your own:
 
 ```java
+// This is the new type
 class Temperature {
 	int value;
 	String unit;
 }
 
+// Create the parser where the type can be registered
 TECLParser parser = TECL.parser();
 
+// Add the new type by providing a converted function. 
+// The parameters are the STRing that needs to be converted, and the DEFault that may be returned when something goes wrong.
 parser.addConvertFunction(Temperature.class, (str, def) -> {
 	Temperature t = new Temperature();
 	t.value = Integer.parseInt(str.replace("F", ""));
@@ -300,8 +304,10 @@ parser.addConvertFunction(Temperature.class, (str, def) -> {
 	return t;
 });
 
+// Now parse a file
 TECL tecl = parser.parse("key : 123F \n");
 
+// And get the key as the registered new type.
 Temperature temperature = tecl.get("key", Temperature.class);
 List<Temperature> temperatures = tecl.list("key", Temperature.class);
 ```
@@ -309,6 +315,6 @@ List<Temperature> temperatures = tecl.list("key", Temperature.class);
 Or just provide a convert function:
 
 ```java
-TECLParser parser = TECL.parser();
+TECL tecl = TECL.parser().parse("...");
 List<Integer> ints = tecl.listUsingFunction("key", Integer::parseInt);
 ```
