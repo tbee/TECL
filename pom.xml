@@ -144,8 +144,6 @@
 			</plugin>
 			
 		    <!-- attach javadoc -->
-		    <!-- The code being documented uses modules but the packages defined in http://docs.oracle.com/javase/7/docs/api/ are in the unnamed module.
-     		-->
      		<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>

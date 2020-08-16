@@ -47,7 +47,6 @@ public class TECLSchema {
 	private TECL schemaTECL;
 	private List<Validator> validators = new ArrayList<>();
 
-	
 	/**
 	 * 
 	 * @param tesd

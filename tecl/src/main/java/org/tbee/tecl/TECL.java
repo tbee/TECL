@@ -45,10 +45,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * <p>For a more detail explanation refer to the <a href="https://bitbucket.org/tbee/tecl/src/master/" target="_blank">README</a></p>
+ *   
+ *   
+ * <p>Basic usage:
+ * <pre>{@code
+ *     TECL tecl = TECL.parser()
+ *         .addParameter("env", "production") // Optional
+ *         .schema("..TESD file.." ) // Optional
+ *         .parse("..TECL file..");
+ *     String title = tecl.str("title");
+ *     int timeout = tecl.integer("/servers/settings[3]/timeout", 1000);  
+ * }</pre>
+ * </p>
+ *  
  * 
- * TODO:
- * - make it a Jigsaw module, so the validators can go in their own package, be public but not in the module
- * - many type methods for int, dbl, localDate, etc... 
  *
  */
 public class TECL {
@@ -177,7 +188,7 @@ public class TECL {
 	 * @param <R>
 	 * @param path the path the access
 	 * @param def
-	 * @param clazz the return type (also used to get appropriate convert function)
+	 * @param convertFunction
 	 * @return a list of found values
 	 */
 	public <R> R getUsingFunction(String path, R def, BiFunction<String, R, R> convertFunction) {
@@ -766,7 +777,7 @@ public class TECL {
 	 * Get the indexed group.
 	 * If the group is not found, an empty group is returned. 
 	 * @param idx
-	 * @param id
+	 * @param key
 	 * @return
 	 */
 	public TECL grp(int idx, String key) {
@@ -780,7 +791,7 @@ public class TECL {
 	
 	/**
 	 * Get all groups for a key.
-	 * @param id
+	 * @param key
 	 * @return
 	 */
 	public List<TECL> grps(String key) {

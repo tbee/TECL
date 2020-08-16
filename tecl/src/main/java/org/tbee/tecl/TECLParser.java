@@ -476,6 +476,36 @@ public class TECLParser {
 
 	private TECLSchema teclSchema = null;
 	
+	/**
+	 * @param file file containing the schema
+	 * @return
+	 * @throws IOException 
+	 * @throws FileNotFoundException 
+	 */
+	public TECLParser schema(File file, java.nio.charset.Charset charset, Validator... validators) throws FileNotFoundException, IOException {
+		try (
+			FileInputStream fileInputStream = new FileInputStream(file); 
+		){ 
+			return schema(fileInputStream, charset, validators);
+		}
+	}
+	
+	/**
+	 * @param inputStream inputStream containing the schema
+	 * @return
+	 * @throws IOException 
+	 */
+	public TECLParser schema(InputStream inputStream, java.nio.charset.Charset charset, Validator... validators) throws IOException {
+		String content = readToString(inputStream, charset);
+		return schema(content, validators);
+	}
+
+	/**
+	 * 
+	 * @param tesd the schema
+	 * @param validators
+	 * @return
+	 */
 	public TECLParser schema(String tesd, Validator... validators) {		
 		this.teclSchema = new TECLSchema(tesd);
 		for (Validator validator : validators) {
