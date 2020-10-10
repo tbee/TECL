@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 /**
  * <p>For a more detail explanation refer to the <a href="https://bitbucket.org/tbee/tecl/src/master/" target="_blank">README</a></p>
  *   
- *   
  * <p>Basic usage:
  * <pre>{@code
  *     TECL tecl = TECL.parser()
@@ -58,9 +57,6 @@ import org.slf4j.LoggerFactory;
  *     int timeout = tecl.integer("/servers/settings[3]/timeout", 1000);  
  * }</pre>
  * </p>
- *  
- * 
- *
  */
 public class TECL {
 	private final static String ENV_PREFIX = "env@";
@@ -939,6 +935,7 @@ public class TECL {
 		/*
 		 * 
 		 */
+		@Override
 		public String toString() {
 			return keyTovaluesMap.toString();
 		}
@@ -1013,6 +1010,7 @@ public class TECL {
 		return values;
 	}
 	
+	@Override
 	public String toString() {
 		return getPath();
 	}
