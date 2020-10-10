@@ -271,17 +271,17 @@ public class TECL {
 		TECL tecl = null;
 		if (path.startsWith("/")) {
 			tecl = this.getRoot();
-			logger.atDebug().log(context + "start at root, tecl = " + tecl);
+			if (logger.isDebugEnabled()) logger.debug(context + "start at root, tecl = " + tecl);
 		}
 		else {
 			tecl = this;
-			logger.atDebug().log(context + "start at current, tecl = " + tecl);
+			if (logger.isDebugEnabled()) logger.debug(context + "start at current, tecl = " + tecl);
 		}
 		context = tecl.getPath() + " -> " + path + ": ";
 		
 		// First split into its parts
 		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
-		logger.atDebug().log(context + "var tokenized: "  + nodes);
+		if (logger.isDebugEnabled()) logger.debug(context + "var tokenized: "  + nodes);
 		
 		// Navigate through the tree
 		// All intermediate tokens must be a single group, the last token can be more complex
@@ -291,12 +291,12 @@ public class TECL {
 			
 			// Get current token
 			node = nodes.remove(0);
-			logger.atDebug().log(context + "node = "  + node);
+			if (logger.isDebugEnabled()) logger.debug(context + "node = "  + node);
 			context = tecl.getPath() + node + ": ";
 			
 			// extract the indexes from the node
 			node = extractIdxs(node, idxs);
-			logger.atDebug().log(context + "node = "  + node + ", idxs = "  + idxs);
+			if (logger.isDebugEnabled()) logger.debug(context + "node = "  + node + ", idxs = "  + idxs);
 			
 			// Is this the last token? 
 			// If so, break out, because that is much more complex
@@ -310,10 +310,10 @@ public class TECL {
 			// if it is a reference
 			List<String> properties = tecl.properties.get(node);
 			if (properties != null && properties.size() > idx && properties.get(idx).startsWith("$")) {
-				logger.atDebug().log(context + "Found reference: " + properties.get(idx));
+				if (logger.isDebugEnabled()) logger.debug(context + "Found reference: " + properties.get(idx));
 				String var = properties.get(idx).substring(1);
 				tecl = listUsingFunction(var, emptyGroup(idx), null).get(0);
-				logger.atDebug().log(context + "Resolved reference: " + var + " -> TECL= " + tecl.getPath());
+				if (logger.isDebugEnabled()) logger.debug(context + "Resolved reference: " + var + " -> TECL= " + tecl.getPath());
 			}
 			else {
 				if ("..".equals(node)) {
@@ -322,7 +322,7 @@ public class TECL {
 				else {
 					tecl = tecl.grp(idx, node);
 				}
-				logger.atDebug().log(context + "Assumed group, TECL= " + tecl.getPath());
+				if (logger.isDebugEnabled()) logger.debug(context + "Assumed group, TECL= " + tecl.getPath());
 			}
 		}
 		
@@ -330,26 +330,26 @@ public class TECL {
 		// First get all relevant info
 		// Properties
 		List<String> properties = tecl.properties.get(node);
-		logger.atDebug().log(context + "Properties = " + properties);
+		if (logger.isDebugEnabled()) logger.debug(context + "Properties = " + properties);
 		// Group
 		List<TECL> groups = tecl.groups.get(node); 
-		logger.atDebug().log(context + "Groups = " + groups);
+		if (logger.isDebugEnabled()) logger.debug(context + "Groups = " + groups);
 		// List
 		List<TECL> list = tecl.groups.get("|" + node + "|"); 
-		logger.atDebug().log(context + "Lists = " + list);
+		if (logger.isDebugEnabled()) logger.debug(context + "Lists = " + list);
 		
 		// Construct the results
 		Integer idx = (idxs.isEmpty() ? null : idxs.get(0));
 		List<R> results = null;
 		// If there is no convertFunction, then it the result are groups
 		if (convertFunction == null) {
-			logger.atDebug().log(context + "There no convert function, so the last token must be groups.");
+			if (logger.isDebugEnabled()) logger.debug(context + "There no convert function, so the last token must be groups.");
 			
 			// If we have a reference overlapping the groups
 			if (groups.isEmpty() && properties.size() == 1 && properties.get(0).startsWith("$")) {
 				
 				// Resolve the reference
-				logger.atDebug().log(context + "We have no groups, but we do a single property which is a reference: " + properties);					
+				if (logger.isDebugEnabled()) logger.debug(context + "We have no groups, but we do a single property which is a reference: " + properties);					
 				String var = properties.get(0).substring(1);
 				results = listUsingFunction(var, null, null);
 			}
@@ -361,11 +361,11 @@ public class TECL {
 		}
 		// A convertFunction says it is from the properties
 		else {
-			logger.atDebug().log(context + "There is a convert function, so the last token must be properties.");
+			if (logger.isDebugEnabled()) logger.debug(context + "There is a convert function, so the last token must be properties.");
 			
 			// If there is a reference
 			if (properties.size() == 1 && properties.get(0).startsWith("$")) {
-				logger.atDebug().log(context + "We have a single property which is a reference, going to resolve that: " + properties);					
+				if (logger.isDebugEnabled()) logger.debug(context + "We have a single property which is a reference, going to resolve that: " + properties);					
 				String var = properties.get(0).substring(1);
 				results = listUsingFunction(var, null, convertFunction);
 				results = optionallyApplyIdx(context, results, idx);
@@ -376,7 +376,7 @@ public class TECL {
 				// If we have a list overlapping the properties, replace the properties with those in the list
 				if (idx != null && list.size() > idx && list.get(idx) != null) {
 					properties = list.get(idx).properties.get(node);
-					logger.atDebug().log(context + "There is an overlapping list, replaced properties with its contents. Properties = " + properties);
+					if (logger.isDebugEnabled()) logger.debug(context + "There is an overlapping list, replaced properties with its contents. Properties = " + properties);
 				}
 				
 				// Apply the index
@@ -390,7 +390,7 @@ public class TECL {
 					if (property.startsWith("$")) {
 						
 						// Resolve reference
-						logger.atDebug().log(context + "Property is a reference: " + property);
+						if (logger.isDebugEnabled()) logger.debug(context + "Property is a reference: " + property);
 						String var = property.substring(1);
 						List<R> varResult = listUsingFunction(var, null, convertFunction);
 						results.addAll(varResult);
@@ -400,13 +400,13 @@ public class TECL {
 						// Convert property to end type
 						property = sanatizeString(property);
 						R result = convertFunction.apply(property, def == null || def.isEmpty() ? null : def.get(0));
-						logger.atDebug().log(context + "Property converted: " + property + " -> "  + result);
+						if (logger.isDebugEnabled()) logger.debug(context + "Property converted: " + property + " -> "  + result);
 						results.add(result);
 					}
 				};
 			}
 		}	
-		logger.atDebug().log(context + "Results: " + results);
+		if (logger.isDebugEnabled()) logger.debug(context + "Results: " + results);
 
 		// secondary index (for lists)
 		Integer idx1 = (idxs.size() <= 1 ? null : idxs.get(1));
@@ -422,7 +422,7 @@ public class TECL {
 	private <R> List<R> getSys(String path, BiFunction<String, R, R> convertFunction, String context) {
 		String sys = path.substring(SYS_PREFIX.length());
 		R result = convertFunction.apply(System.getProperty(sys), null);
-		logger.atDebug().log(context + "sys path, result = " + result);
+		if (logger.isDebugEnabled()) logger.debug(context + "sys path, result = " + result);
 		return Arrays.asList(result);
 	}
 
@@ -432,7 +432,7 @@ public class TECL {
 	private <R> List<R> getEnv(String path, BiFunction<String, R, R> convertFunction, String context) {
 		String env = path.substring(ENV_PREFIX.length());
 		R result = convertFunction.apply(System.getenv(env), null);
-		logger.atDebug().log(context + "env path, result = " + result);
+		if (logger.isDebugEnabled()) logger.debug(context + "env path, result = " + result);
 		return Arrays.asList(result);
 	}
 
@@ -461,7 +461,7 @@ public class TECL {
 			R result = list.get(idx);
 			list = new ArrayList<R>();
 			list.add(result);
-			logger.atDebug().log(context + "Limit to idx = " + idx + ", result: " + list);
+			if (logger.isDebugEnabled()) logger.debug(context + "Limit to idx = " + idx + ", result: " + list);
 		}
 		return list;
 	}
@@ -813,7 +813,7 @@ public class TECL {
 		void clear(String key) {
 			List<T> values = keyTovaluesMap.get(key);
 			if (values != null) {
-				logger.atDebug().log(getPath() + ": clear property " + key);
+				if (logger.isDebugEnabled()) logger.debug(getPath() + ": clear property " + key);
 				values.clear();
 			}
 		}
@@ -831,7 +831,7 @@ public class TECL {
 			if (values.size() <= idx) {
 				return;
 			}
-			logger.atDebug().log(getPath() + ": clear property " + key + "[" + idx + "]");
+			if (logger.isDebugEnabled()) logger.debug(getPath() + ": clear property " + key + "[" + idx + "]");
 			values.set(idx, null);
 		}
 		
@@ -857,7 +857,7 @@ public class TECL {
 			if (oldValue != null && !allowOverwrite) {
 				throw new IllegalStateException(createFullPathToKey(idx, key) + " value is overwritten! " + oldValue + " -> " + value);
 			}
-			logger.atDebug().log(getPath() + ": set property "  + key + "[" + idx + "] = " + value);
+			if (logger.isDebugEnabled()) logger.debug(getPath() + ": set property "  + key + "[" + idx + "] = " + value);
 			values.set(idx, value);
 		}
 
@@ -957,8 +957,8 @@ public class TECL {
 	 */
 	private String sanatizeString(String s) {
 		
-		logger.atDebug().log("-----");
-		logger.atDebug().log("sanatize: >"  + s + "<");
+		if (logger.isDebugEnabled()) logger.debug("-----");
+		if (logger.isDebugEnabled()) logger.debug("sanatize: >"  + s + "<");
 		
 		// check to see if it is quoted
 		String trimmed = s.trim();
@@ -973,7 +973,7 @@ public class TECL {
 			s = sanatizeUnquotedString(s);
 		}
 		
-		logger.atDebug().log("sanatize: done: >"  + s + "<");
+		if (logger.isDebugEnabled()) logger.debug("sanatize: done: >"  + s + "<");
 		return s;
 	}
 
@@ -981,11 +981,11 @@ public class TECL {
 	 * 
 	 */
 	private String sanatizeQuotedString(String s) {
-		logger.atDebug().log("sanatize: treat as quoted string: >"  + s + "<");
+		if (logger.isDebugEnabled()) logger.debug("sanatize: treat as quoted string: >"  + s + "<");
 
 		// strip quoted
 		s = s.substring(1, s.length() - 1);
-		logger.atDebug().log("sanatize: trimmed quotes: >"  + s + "<");
+		if (logger.isDebugEnabled()) logger.debug("sanatize: trimmed quotes: >"  + s + "<");
 		
 		// unescape
 		s = StringEscapeUtils.unescapeJava(s);
@@ -998,7 +998,7 @@ public class TECL {
 	 * 
 	 */
 	private String sanatizeUnquotedString(String s) {
-		logger.atDebug().log("sanatize: treat as unquoted string: >"  + s + "<");
+		if (logger.isDebugEnabled()) logger.debug("sanatize: treat as unquoted string: >"  + s + "<");
 
 		// done
 		return s.trim();

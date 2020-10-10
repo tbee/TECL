@@ -296,7 +296,7 @@ public class TECLParser {
 		public ParserListener(TECL toplevelTECL) {
 			this.toplevelTECL = toplevelTECL;
 			teclContext = new TECLContext(toplevelTECL);
-			logger.atDebug().log("startGroup $");
+			if (logger.isDebugEnabled()) logger.debug("startGroup $");
 			teclContextStack.push(teclContext);
 		}
 		private final TECL toplevelTECL;	
@@ -345,11 +345,11 @@ public class TECLParser {
 		@Override
 		public void startGroup(String id) {
 
-			logger.atDebug().log("startGroup '" + id + "'");
+			if (logger.isDebugEnabled()) logger.debug("startGroup '" + id + "'");
 			Boolean matchConditions = matchConditions(useConditions(), null /*teclContext*/, id);
 			if (matchConditions == null || matchConditions) {
 				teclContext = new TECLContext(teclContext.tecl.addGroup(id));
-				logger.atDebug().log("new group '" + id + "' added at " + teclContext.tecl.getPath());
+				if (logger.isDebugEnabled()) logger.debug("new group '" + id + "' added at " + teclContext.tecl.getPath());
 			}
 			else {
 				// We create a TECL so we can continue parsing the file, but it is not added as a group
@@ -360,7 +360,7 @@ public class TECLParser {
 		
 		@Override
 		public void endGroup() {
-			logger.atDebug().log("endGroup " + teclContext.tecl.getId());
+			if (logger.isDebugEnabled()) logger.debug("endGroup " + teclContext.tecl.getId());
 			teclContextStack.pop(); 
 			teclContext = teclContextStack.peek();		
 		}
@@ -409,7 +409,7 @@ public class TECLParser {
 			
 		@Override
 		public void startTable() {
-			logger.atDebug().log("startTable");
+			if (logger.isDebugEnabled()) logger.debug("startTable");
 			validateOneTablePerGroup();  
 			tableKeys.clear(); 
 			tableRowIdx = -2;		
@@ -417,7 +417,7 @@ public class TECLParser {
 		
 		@Override
 		public void terminateTable() {
-			logger.atDebug().log("terminateTable");
+			if (logger.isDebugEnabled()) logger.debug("terminateTable");
 			teclsWithTerminatedTable.add(teclContext.tecl);
 		}	
 		
@@ -425,21 +425,21 @@ public class TECLParser {
 		public void startTableRow() {
 			tableColIdx = 0;
 			tableRowIdx++;
-			logger.atDebug().log("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
+			if (logger.isDebugEnabled()) logger.debug("startTableRow row=" + tableRowIdx + ", col=" + tableColIdx);
 		}	
 	
 		@Override
 		public void addTableData(String value) {
 			validateTerminatedTable();
-			logger.atDebug().log("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
+			if (logger.isDebugEnabled()) logger.debug("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", value=" + value);
 			
 			if (tableRowIdx < 0) {
-				logger.atDebug().log("addTableRow add header " + value);
+				if (logger.isDebugEnabled()) logger.debug("addTableRow add header " + value);
 				tableKeys.add(value);
 			}
 			else {
 				String key = tableKeys.get(tableColIdx);
-				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
+				if (logger.isDebugEnabled()) logger.debug("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
 				teclContext.tecl.setProperty(tableRowIdx, key, value);
 			}
 			tableColIdx++;
@@ -448,19 +448,19 @@ public class TECLParser {
 		@Override
 		public void addTableData(List<String> values) {
 			validateTerminatedTable();
-			logger.atDebug().log("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", values=" + values);
+			if (logger.isDebugEnabled()) logger.debug("addTableRow row=" + tableRowIdx + ", col=" + tableColIdx + ", values=" + values);
 			
 			if (tableRowIdx < 0) {
-				logger.atDebug().log("addTableRow add header " + values);
+				if (logger.isDebugEnabled()) logger.debug("addTableRow add header " + values);
 				throw new IllegalArgumentException("Cannot use a list in the table header: " + values);
 			}
 			else {
 				String key = tableKeys.get(tableColIdx);
-				logger.atDebug().log("addTableRow add data " + key + "[" + tableRowIdx + "]=" + values);
+				if (logger.isDebugEnabled()) logger.debug("addTableRow add data " + key + "[" + tableRowIdx + "]=" + values);
 				
 				String id = "|" + key + "|";
 				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, id);
-				logger.atDebug().log("new group '" + id + "' added at " + teclContext.tecl.getPath());
+				if (logger.isDebugEnabled()) logger.debug("new group '" + id + "' added at " + teclContext.tecl.getPath());
 				AtomicInteger idx = new AtomicInteger();
 				values.forEach(value -> {
 					listTECL.setProperty(idx.getAndIncrement(), key, value);
@@ -560,7 +560,7 @@ public class TECLParser {
 		int cnt = 0;
 		for (Condition condition : conditions) {
 			String parameter = this.parameters.get(condition.key);
-			logger.atDebug().log(key + ": " + parameter + " matching " + condition);
+			if (logger.isDebugEnabled()) logger.debug(key + ": " + parameter + " matching " + condition);
 			
 			// condition is not present in the parameters: do not count
 			if (parameter == null) {
@@ -574,7 +574,7 @@ public class TECLParser {
 			
 			// condition is present in the parameters, but and matches
 			cnt++;
-			logger.atDebug().log(key + ": " + "cnt=" + cnt);
+			if (logger.isDebugEnabled()) logger.debug(key + ": " + "cnt=" + cnt);
 		}
 		
 		// We have a match, but is it better that the previous match
@@ -582,7 +582,7 @@ public class TECLParser {
 			
 			// find previous match
 			Integer previousCnt = teclContext.bestMatchConditions.get(key);
-			logger.atDebug().log(key + ": " + "previous bestMatchConditions = " + previousCnt);
+			if (logger.isDebugEnabled()) logger.debug(key + ": " + "previous bestMatchConditions = " + previousCnt);
 			
 			// Compare with current match
 			if (previousCnt != null && previousCnt.intValue() >= cnt) {
@@ -591,7 +591,7 @@ public class TECLParser {
 			}
 			
 			// We have a (better) match!
-			logger.atDebug().log(key + ": " + "bestMatchConditions = " + cnt);
+			if (logger.isDebugEnabled()) logger.debug(key + ": " + "bestMatchConditions = " + cnt);
 			teclContext.bestMatchConditions.put(key, cnt);
 		}
 		

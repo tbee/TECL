@@ -499,7 +499,7 @@ public class TECLSchemaTest {
 	// ========================
 	
 	private TECL parse(String tecl, String tesd, Validator... validators) {
-		logger.atDebug().log("Parsing:\n" + tecl + new PrintLexer().lex(tecl));
+		if (logger.isDebugEnabled()) logger.debug("Parsing:\n" + tecl + new PrintLexer().lex(tecl));
 		return TECL.parser()
 				.schema(tesd, validators)
 				.parse(tecl);

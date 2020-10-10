@@ -947,7 +947,7 @@ public class TECLTest {
 	// ========================
 	
 	private TECL parse(String s) {
-		logger.atDebug().log("Parsing:\n" + s + new PrintLexer().lex(s));
+		if (logger.isDebugEnabled()) logger.debug("Parsing:\n" + s + new PrintLexer().lex(s));
 		return TECL.parser()
 				.addParameter("sys", "A")
 				.addParameter("env", "test")
