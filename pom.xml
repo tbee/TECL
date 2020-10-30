@@ -147,7 +147,7 @@
 			</plugin>
 			
 		    <!-- attach javadoc -->
-     		<plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.2.0</version>
@@ -159,8 +159,10 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<additionalparam>-Xdoclint:none</additionalparam>
+				</configuration>
 			</plugin>
-
      		
 			<!-- sign the jars files; the credentials are in .m2/settings.xml, the key itself is shown by the gpg list-keys command -->
 			<plugin>
@@ -170,7 +172,7 @@
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
-						<phase>verify</phase>
+						<phase>deploy</phase> <!--  see if this works instead of verify -->
 						<goals>
 							<goal>sign</goal>
 						</goals>
