@@ -70,6 +70,7 @@ public class TECL {
 		buildinConvertFunctions.put(Integer.class, (s, d) -> s.isBlank() ? d : Integer.valueOf(s));
 		buildinConvertFunctions.put(BigInteger.class, (s, d) -> s.isBlank() ? d : new BigInteger(s));
 		buildinConvertFunctions.put(BigDecimal.class, (s, d) -> s.isBlank() ? d : new BigDecimal(s));
+		buildinConvertFunctions.put(Boolean.class, (s, d) -> s.isBlank() ? d : Boolean.valueOf(s));
 		buildinConvertFunctions.put(Double.class, (s, d) -> s.isBlank() ? d : Double.valueOf(s));
 		buildinConvertFunctions.put(LocalDate.class, (s, d) -> s.isBlank() ? d : LocalDate.parse(s));
 		buildinConvertFunctions.put(LocalDateTime.class, (s, d) -> s.isBlank() ? d : LocalDateTime.parse(s));
@@ -600,6 +601,26 @@ public class TECL {
 	}
 	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
 		return list(indexOfKey, indexOfValue, key, asList(def), Integer.class).get(0);
+	}
+
+	/** Convenience method to return an Boolean */
+	public Boolean bool(String key) {
+		return bool(0, key, null);
+	}
+	public Boolean bool(String key, Boolean def) {
+		return bool(0, key, def);
+	}
+	public Boolean bool(int idx, String key) {
+		return bool(idx, key, null);
+	}
+	public Boolean bool(int idx, String key, Boolean def) {
+		return list(key + "[" + idx + "]", asList(def), Boolean.class).get(0);
+	}
+	public List<Boolean> bools(String key) {
+		return list(key, Collections.emptyList(), Boolean.class);
+	}
+	public Boolean bool(String indexOfKey, String indexOfValue, String key, Boolean def) {
+		return list(indexOfKey, indexOfValue, key, asList(def), Boolean.class).get(0);
 	}
 
 	/** Convenience method to return a BigInteger */

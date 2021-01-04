@@ -39,13 +39,11 @@ import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tbee.tecl.TECLTest.Temperature;
 import org.tbee.tecl.antlr.PrintLexer;
 
 public class TECLTest {
@@ -192,6 +190,12 @@ public class TECLTest {
 	public void integerPropertyIdx0DefaultNotUsed() {
 		TECL tecl = parse("key : 1 \n");
 		assertEquals(1, tecl.integer(0, "key", 0).intValue());
+	}
+	
+	@Test
+	public void boolProperty() {
+		TECL tecl = parse("key : \"true\" \n");
+		assertEquals(Boolean.TRUE, tecl.bool("key"));
 	}
 	
 	@Test
