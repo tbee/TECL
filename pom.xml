@@ -161,6 +161,7 @@
 				</executions>
 				<configuration>
 					<additionalparam>-Xdoclint:none</additionalparam>
+					<additionalJOption>-Xdoclint:none</additionalJOption>
 				</configuration>
 			</plugin>
      		
