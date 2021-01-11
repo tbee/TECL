@@ -193,9 +193,15 @@ public class TECLTest {
 	}
 	
 	@Test
-	public void boolProperty() {
-		TECL tecl = parse("key : \"true\" \n");
+	public void boolTrueProperty() {
+		TECL tecl = parse("key : true \n");
 		assertEquals(Boolean.TRUE, tecl.bool("key"));
+	}
+	
+	@Test
+	public void boolFalseProperty() {
+		TECL tecl = parse("key : false \n");
+		assertEquals(Boolean.FALSE, tecl.bool("key"));
 	}
 	
 	@Test
