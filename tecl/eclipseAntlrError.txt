@@ -1,0 +1,5 @@
+"VOCABULARY cannot be resolved or is not a field":
+- in Eclipse ANTLR Tool settings
+- add the antlr jar in the tecl-parent/tools
+- make it the default
+- update maven
