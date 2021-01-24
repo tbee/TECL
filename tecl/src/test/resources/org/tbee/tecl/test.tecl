@@ -1,40 +1,51 @@
 # This is the most simple configuration, if you need spaces or new lines you'll need quotes
-title : "TECL rulez"
-escaped : "escaped\"quote"
+title: "TECL rulez"
+escaped: "escaped\"quote"
  
 # We use ISO notations only, so no local styles, but using colons needs quoting
-releaseDateTime : "2020-09-12T12:34:56"
+releaseDateTime: "2020-09-12T12:34:56"
  
 # Multiline strings
-description : "So,
+description: "So,
 I'm curious 
 where this will end."
+
+indented {
+	description1: 	" 
+					This should not be a problem
+					Having indented multiple lines 
+					"
+	description2: 	"""    
+					This should not be a problem
+					Having indented multiple lines 
+					"""
+}
  
 # Shorcut string; no quotes are needed in a simple property style assignment
 # Or if a string is just one word. These strings are trimmed.
-protocol : http
+protocol: http
  
 # Conditions allow for overriding, best match wins (most conditions)
 # If multiple condition sets equally match, the first one will win.
-title2[env=production] : "One config file to rule them all"
-title2[env=production & os=osx] : "Even on Mac"
+title2[env=production]: "One config file to rule them all"
+title2[env=production & os=osx]: "Even on Mac"
  
 # Lists
-hosts : [alpha, beta]
+hosts: [alpha, beta]
  
 # Hierarchy is implemented using groups denoted by curly brackets
 database {
  
     # indenting is allowed and encouraged, but has no semantic meaning
-    url : "jdbc://..."
-    user : "admin"
+    url: "jdbc://..."
+    user: "admin"
  
     # Strings support default encryption with a external key file, like maven
-    password : "FGFGGHDRG#$BRTHT%G%GFGHFH%twercgfg"
+    password: "FGFGGHDRG#$BRTHT%G%GFGHFH%twercgfg"
  
     # groups can nest
     dialect {
-        database : postgres
+        database: postgres
     }
 }
  
@@ -54,18 +65,18 @@ servers {
  
 # environments can be easily done using conditions
 environment[env=development] {
-    datasource : tst
+    datasource: tst
 }
 environment[env=production] {
-    datasource : prd
+    datasource: prd
 }
 
 group1 { 
-    key : value1 
+    key: value1 
     group2 {
-        key : value2 
+        key: value2 
         group3 { 
-            key : value3 
+            key: value3 
 		    | id  | val  | 
 		    | id0 | val0 |
 		    | id1 | val1 |
@@ -73,6 +84,6 @@ group1 {
         }
     }
     group2 {
-        key : value2a 
+        key: value2a 
     }
 }

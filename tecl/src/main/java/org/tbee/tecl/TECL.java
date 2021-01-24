@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.text.StringTokenizer;
@@ -980,10 +981,15 @@ public class TECL {
 		
 		// check to see if it is quoted
 		String trimmed = s.trim();
-		int trimmedLen = s.length();
-		if ( s.length() > 1 
-		  && "\"".contentEquals(trimmed.substring(0, 1))
-		  && "\"".contentEquals(trimmed.substring(trimmedLen - 1, trimmedLen))
+		if ( s.length() >= 6
+		  && trimmed.startsWith("\"\"\"")
+		  && trimmed.endsWith("\"\"\"")
+		  ) {
+			s = sanitizeMultiline(s);
+		}
+		else if ( s.length() >= 2 
+		  && trimmed.startsWith("\"")
+		  && trimmed.endsWith("\"")
 		  ) {
 			s = sanatizeQuotedString(s);
 		}
@@ -992,6 +998,49 @@ public class TECL {
 		}
 		
 		if (logger.isDebugEnabled()) logger.debug("sanatize: done: >"  + s + "<");
+		return s;
+	}
+	
+
+	/**
+	 * A normal string is "...", a multiline string is """..."""
+	 * 
+	 * @param s
+	 * @return
+	 */
+	String sanitizeMultiline(String s) {
+		
+		// Strip multiline markers
+		s = s.substring(3, s.length() - 3);
+			
+		// There is possible whitespace plus a newline after the CDATA-start,
+		// and a newline plus white spaces before the CDATA-end
+		s = s.replaceAll("^\\s*\n", "") // preceding whitespace + first newline
+			.replaceAll("\n\\s*$", ""); // last newline + trailing whitespace
+		
+		// split in lines
+		List<String> lines = s.lines().collect(Collectors.toList());
+		
+		// determine the minimal number of whitespaces prefixing any of the lines
+		int numberOfWhitespaceMin = Integer.MAX_VALUE;		        
+		for (String line : lines) {
+		    int numberOfWhitespace = 0;		        
+		    while (Character.isWhitespace(line.charAt(0))) {
+		    	line = line.substring(1);
+		    	numberOfWhitespace++;
+		    }
+		    if (numberOfWhitespace < numberOfWhitespaceMin) {
+		    	numberOfWhitespaceMin = numberOfWhitespace;
+		    }
+		}
+		
+		// strip that number of whitespace from each line
+		int numberOfWhitespaceMinFinal = numberOfWhitespaceMin;
+		s = lines.stream()
+			.map((line) -> line.substring(numberOfWhitespaceMinFinal))
+			.collect(Collectors.joining("\n"));
+		
+		// done
 		return s;
 	}
 
@@ -1011,6 +1060,7 @@ public class TECL {
 		// done
 		return s;
 	}
+	
 
 	/*
 	 * 

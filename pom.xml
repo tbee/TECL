@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.tbee.tecl</groupId>
 	<artifactId>tecl-parent</artifactId>
-	<version>1.2.0</version>
+	<version>1.3.0</version>
 	<packaging>pom</packaging>
 	<name>TECL - totally encompassing configuration language</name>
 	<description>A language parser specifically aimed at configuration files, trying to solve the issues found in XML, JSON, YAML, etc.</description>

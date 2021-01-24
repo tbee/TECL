@@ -58,6 +58,11 @@ import org.slf4j.LoggerFactory;
 import org.tbee.tecl.TECLParser.ParserListener.TECLContext;
 import org.tbee.tecl.TECLSchema.Validator;
 
+/**
+ * TODO:
+ * - deal with indented multi line text
+ *
+ */
 public class TECLParser {
 	final Logger logger = LoggerFactory.getLogger(TECLParser.class);
 	

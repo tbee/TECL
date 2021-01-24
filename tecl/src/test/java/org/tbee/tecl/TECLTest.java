@@ -952,6 +952,14 @@ public class TECLTest {
 		assertEquals(3, tecl.grp("/servers").indexOf("name", "gamma"));
 		assertEquals(Integer.valueOf(12), tecl.integer("/servers/name", "gamma", "/servers/maxSessions", null));
 		assertEquals(Integer.valueOf(12), tecl.grp("/servers").integer("name", "gamma", "maxSessions", null));
+		
+		// multiline text 
+		assertEquals(" \n" + 
+				"					This should not be a problem\n" + 
+				"					Having indented multiple lines \n" + 
+				"					" + 
+				"", tecl.str("/indented/description1"));
+		assertEquals("This should not be a problem\nHaving indented multiple lines ", tecl.str("/indented/description2"));
 	}
 	
 	// ========================
