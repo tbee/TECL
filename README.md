@@ -29,7 +29,22 @@ releaseDateTime : 2020-09-12T06:34
 description : "So,
 I'm curious 
 where this will end."
- 
+
+# Single quoted strings will have all the spaces of indentation, including preceding and trailing whitespace & newlines.
+# Triple quoted strings will be stripped of the preceding and trailing whitespace & newlines, and the indentation of the lines themselves.
+# Triple quoted strings will remove as much indent as the minimal NUMBER of whitespaces used to indent any of the lines; 
+#   so if one line used 2 tabs and another 8 spaces to indent, both will get 2 whitespace removed, leaving the other line with 6 space remaining.
+indented {
+	description1: 	" 
+					All this whitespace will be in the string.
+					Including the spaces + newline after the first quote and after this line until the end quote. 
+					"
+	description2: 	"""    
+					Every newline and whitespace before the first letter of this line will be trimmed.
+					And every newline and whitespace after the end of this line as well.
+					"""
+} 
+
 # Shorcut string; no quotes are needed if the value is just one word.
 protocol : http
  
