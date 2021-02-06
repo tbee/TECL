@@ -539,7 +539,7 @@ public class TECLParser {
 				String id = "|" + key + "|";
 				TECL listTECL = teclContext.tecl.setGroup(tableRowIdx, id);
 				if (logger.isDebugEnabled()) logger.debug("new group '" + id + "' added at " + teclContext.tecl.getPath());
-				AtomicInteger idx = new AtomicInteger();
+				AtomicInteger idx = new AtomicInteger(0);
 				values.forEach(value -> {
 					listTECL.setProperty(idx.getAndIncrement(), key, value);
 				});

@@ -333,3 +333,26 @@ Or just provide a convert function:
 TECL tecl = TECL.parser().parse("...");
 List<Integer> ints = tecl.listUsingFunction("key", Integer::parseInt);
 ```
+
+## Command line arguments ##
+TECL supports adding the command line arguments as values, so it is possible to override a configuration file.
+
+```java
+static public void main(String[] args) {
+	TECL tecl = TECL.parser().parse(MyClass.getResourceAsStream("config.tecl"));
+	tecl.addCommandLineArguments(args);
+}
+```
+
+You can then call the application with arguments like:
+
+```bash
+java -jar app.jar -key value
+java -jar app.jar -/group/key value
+```
+
+In order to set multiple values, a key needs to be repeated:
+
+```bash
+java -jar app.jar -key value1 -key value2
+```

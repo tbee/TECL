@@ -673,6 +673,28 @@ public class TECLTest {
 		assertEquals("[/group1[0]/group2[0]/, /group1[0]/group2[1]/]", tecl.list("group1/group2", null,null).toString());
 	}
 	
+	// ========================
+	// REFERENCE
+	
+	@Test
+	public void addArgs() {
+		TECL tecl = parse(""
+				+ "key : value \n "
+				+ "group1 { \n"
+				+ "    key1 : value1 \n "
+				+ "}\n"
+				);
+		tecl.addCommandLineArguments(new String[]{"-key2", "value2", "-/group1/key3", "value3", "-/group2/key4", "value4", "-/group2/key4", "value4a"});
+		assertEquals("value", tecl.str("key"));
+		assertEquals("value2", tecl.str("key2"));
+		assertEquals("value4", tecl.grp("group2").str("key4"));
+		assertEquals("value4a", tecl.grp("group2").str("key4[1]"));
+	}
+	
+	
+	// ========================
+	// REFERENCE
+	
 	@Test
 	public void reference() {
 		TECL tecl = parse(""

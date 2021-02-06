@@ -310,7 +310,7 @@ public class TECL {
 			if (properties != null && properties.size() > idx && properties.get(idx).startsWith("$")) {
 				if (logger.isDebugEnabled()) logger.debug(context + "Found reference: " + properties.get(idx));
 				String var = properties.get(idx).substring(1);
-				tecl = listUsingFunction(var, emptyGroup(idx), null).get(0);
+				tecl = listUsingFunction(var, notExistingGroup(idx), null).get(0);
 				if (logger.isDebugEnabled()) logger.debug(context + "Resolved reference: " + var + " -> TECL= " + tecl.getPath());
 			}
 			else {
@@ -799,13 +799,16 @@ public class TECL {
 	 * @return
 	 */
 	public TECL grp(int idx, String key) {
-		return listUsingFunction(key + "[" + idx + "]", emptyGroup(idx), null).get(0);
+		return listUsingFunction(key + "[" + idx + "]", notExistingGroup(idx), null).get(0);
 	}
 
 
-	private List<TECL> emptyGroup(int idx) {
-		return asList(new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>"));
+	private List<TECL> notExistingGroup(int idx) {
+		TECL group = new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>");
+		group.exists = false;
+		return asList(group);
 	}
+	private boolean exists = true;
 	
 	/**
 	 * Get all groups for a key.
@@ -816,6 +819,64 @@ public class TECL {
 		return listUsingFunction(key, Collections.emptyList(), null);
 	}
 
+	// =====================================
+	// ARGS
+	
+	/**
+	 * 
+	 * @param args
+	 */
+	public void addCommandLineArguments(String[] args) {
+		
+		String key = null;
+		for (String arg : args) {
+			
+			// do we have a key?
+			if (arg.startsWith("--")) {
+				key = arg.substring(2);
+				continue;
+			}
+			if (arg.startsWith("-")) {
+				key = arg.substring(1);
+				continue;
+			}
+			// else it is a value, but for that we need a key
+			if (key != null) {
+				TECL group = getRoot();
+				String propertyId = key;
+				
+				// process intermediate groups
+				if (key.startsWith("/")) {
+					
+					// split up the path
+					String[] groupIds = key.split("\\/");
+					
+					// the first one is empty because of the starting /, the last one is a property, so skip those
+					for (int i = 1; i < groupIds.length - 1; i++) {
+						
+						// get the child group for this id
+						String groupId = groupIds[i];
+						TECL parentGroup = group;
+						group = group.grp(groupId);
+						
+						// If the child group does not exist, add it
+						if (!group.exists) {
+							group = parentGroup.addGroup(groupId);							
+						}
+					}
+					
+					// the last node is the property id
+					propertyId = groupIds[groupIds.length - 1];
+				}
+				
+				// set value
+				group.setProperty(group.count(propertyId), propertyId, arg);
+				key = null;
+			}
+		}
+	}
+	
+	
 	// =====================================
 	// SUPPORT
 	
