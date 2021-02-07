@@ -17,17 +17,17 @@
 		</license>
 	</licenses>
 	<scm>
-	    <connection>scm:git:ssh://git@bitbucket.org/tbee/tecl.git</connection>
-	    <developerConnection>scm:git:ssh://git@bitbucket.org/tbee/tecl.git</developerConnection>
-	    <url>https://bitbucket.org/tbee/tecl.git</url>
-	</scm>  
+		<connection>scm:git:ssh://git@bitbucket.org/tbee/tecl.git</connection>
+		<developerConnection>scm:git:ssh://git@bitbucket.org/tbee/tecl.git</developerConnection>
+		<url>https://bitbucket.org/tbee/tecl.git</url>
+	</scm>
 	<developers>
 		<developer>
 			<name>Tom Eugelink</name>
 			<email>tbee@tbee.org</email>
 		</developer>
 	</developers>
-	
+
 	<modules>
 		<module>tecl</module>
 	</modules>
@@ -109,6 +109,23 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>6.1.0</version>
+				<executions>
+					<execution>
+						<phase>validate</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<failBuildOnCVSS>0</failBuildOnCVSS>
+				</configuration>
+			</plugin>
+			
 			<!-- license headers -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -130,8 +147,8 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-		    <!-- attach source -->
+
+			<!-- attach source -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
@@ -145,8 +162,8 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-		    <!-- attach javadoc -->
+
+			<!-- attach javadoc -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
@@ -164,8 +181,9 @@
 					<additionalJOption>-Xdoclint:none</additionalJOption>
 				</configuration>
 			</plugin>
-     		
-			<!-- sign the jars files; the credentials are in .m2/settings.xml, the key itself is shown by the gpg list-keys command -->
+
+			<!-- sign the jars files; the credentials are in .m2/settings.xml, the 
+				key itself is shown by the gpg list-keys command -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
@@ -173,14 +191,14 @@
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
-						<phase>deploy</phase> <!--  see if this works instead of verify -->
+						<phase>deploy</phase> <!-- see if this works instead of verify -->
 						<goals>
 							<goal>sign</goal>
 						</goals>
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<!-- deploy using the special nexus-staging deploy plugin -->
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
@@ -193,6 +211,6 @@
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
 				</configuration>
 			</plugin>
-   		</plugins>
+		</plugins>
 	</build>
 </project>
