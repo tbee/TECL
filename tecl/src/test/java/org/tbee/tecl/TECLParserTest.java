@@ -32,11 +32,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TECLParserTest {
-	
-	// resource is the final match, so we cannot test undefined
-	//@Test
+
+	@Test
 	public void undefined() throws IOException {
-		TECL tecl = TECL.parser().findAndParse();
+		TECL tecl = TECL.parser().findAndParse("undefined.tecl");
 		Assert.assertNull(tecl);
 	}
 	
