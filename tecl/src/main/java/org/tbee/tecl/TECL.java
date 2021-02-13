@@ -1,5 +1,7 @@
 package org.tbee.tecl;
 
+import java.io.IOException;
+
 /*-
  * #%L
  * TECL
@@ -58,6 +60,14 @@ import org.slf4j.LoggerFactory;
  *     int timeout = tecl.integer("/servers/settings[3]/timeout", 1000);  
  * }</pre>
  * </p>
+ *   
+ * <p>Quick usage:
+ * <pre>{@code
+ *     TECL tecl = TECL.parser().findAndParse();
+ *     String title = tecl.str("title");
+ *     int timeout = tecl.integer("/servers/settings[3]/timeout", 1000);  
+ * }</pre>
+ * </p>
  */
 public class TECL {
 	private final static String ENV_PREFIX = "env@";
@@ -80,8 +90,34 @@ public class TECL {
 	// =====================================
 	// parser
 	
+	/**
+	 * 
+	 */
 	static public TECLParser parser() {
 		return new TECLParser();
+	}
+	
+	/**
+	 * Will try to find a config.tecl and then parse that.
+	 * First match will be used:
+	 * 1. See if system property config.tecl is defined (-Dconfig.tecl)
+	 * 2. See if environment variable config_tecl is defined
+	 * 3. See if the file ./config.tecl exists
+	 * 4. See if we can open the resource /config.tecl
+	 * 
+	 * Assuming the config.tecl is encoded in UTF-8.
+	 * 
+	 * @return TECL or null if not found, may throw RuntimeException containing a IOException
+	 * 
+	 * @see TECLParser
+	 */
+	static public TECL findAndParse() {
+		try {
+			return parser().findAndParse();
+		} 
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 	

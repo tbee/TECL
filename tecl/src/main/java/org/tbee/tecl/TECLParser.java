@@ -66,8 +66,6 @@ import org.tbee.tecl.TECLSchema.Validator;
 public class TECLParser {
 	final Logger logger = LoggerFactory.getLogger(TECLParser.class);
 	
-	/*private final*/ static String CONFIG_TECL_FILENAME = "./config.tecl"; // to allow unit testing
-
 	private final TECL toplevelTECL;	
 
 	public TECLParser() {
@@ -146,6 +144,13 @@ public class TECLParser {
 	// PARSE
 	
 	/**
+	 * Find and parse for "config.tecl"
+	 */
+	public TECL findAndParse() throws IOException {
+		return findAndParse("config.tecl" );
+	}
+	
+	/**
 	 * Will try to find a config.tecl and then parse that.
 	 * First match will be used:
 	 * 1. See if system property config.tecl is defined (-Dconfig.tecl)
@@ -153,53 +158,54 @@ public class TECLParser {
 	 * 3. See if the file ./config.tecl exists
 	 * 4. See if we can open the resource /config.tecl
 	 * 
-	 * Assuming the config.tecl is encoded in UTF-8.
+	 * Assuming the TECL file is encoded in UTF-8.
 	 * 
 	 * @return TECL or null if not found
 	 * @throws IOException 
 	 */
-	public TECL findAndParse() throws IOException {
+	public TECL findAndParse(String filename) throws IOException {
 		InputStream inputStream = null;
 		
 		// 1. system property
 		{
-			String value = System.getProperty("config.tecl");
+			String value = System.getProperty(filename);
 			File file = (value == null ? null : new File(value));
-			if (logger.isDebugEnabled()) logger.debug("-Dconfig.tecl=" + value + " -> " + (file == null ? null : file.getAbsolutePath() + (file.exists() ? ", exists" : ", does not exist")));
+			if (logger.isDebugEnabled()) logger.debug("-D" + filename + "=" + value + " -> " + (file == null ? null : file.getAbsolutePath() + (file.exists() ? ", exists" : ", does not exist")));
 			if (inputStream == null && file != null && file.exists()) {
-				if (logger.isInfoEnabled()) logger.info("Using -Dconfig.tecl -> " + file.getAbsolutePath());
+				if (logger.isInfoEnabled()) logger.info("Using -D" + filename + " -> " + file.getAbsolutePath());
 				inputStream = new FileInputStream(file);
 			}
 		}
 		
 		// 2. env
 		{
-			String value = System.getenv("config_tecl");
+			String envId = filename.replace(".", "_");
+			String value = System.getenv(envId);
 			File file = (value == null ? null : new File(value));
-			if (logger.isDebugEnabled()) logger.debug("env:config_tecl=" + value + " -> " + (file == null ? null : file.getAbsolutePath() + (file.exists() ? ", exists" : ", does not exist")));
+			if (logger.isDebugEnabled()) logger.debug("env:" + envId + "=" + value + " -> " + (file == null ? null : file.getAbsolutePath() + (file.exists() ? ", exists" : ", does not exist")));
 			if (inputStream == null && file != null && file.exists()) {
-				if (logger.isInfoEnabled()) logger.info("Using env:config_tecl -> " + file.getAbsolutePath());
+				if (logger.isInfoEnabled()) logger.info("Using env:" + envId + " -> " + file.getAbsolutePath());
 				inputStream = new FileInputStream(file);
 			}
 		}
 		
 		// 3. file
 		{
-			File file = new File(CONFIG_TECL_FILENAME);
-			if (logger.isDebugEnabled()) logger.debug("file:./config.tecl -> " + file.getAbsolutePath() + (file.exists() ? ", exists" : ", does not exist"));
+			File file = new File(filename);
+			if (logger.isDebugEnabled()) logger.debug("file:./" + filename + " -> " + file.getAbsolutePath() + (file.exists() ? ", exists" : ", does not exist"));
 			if (inputStream == null && file != null && file.exists()) {
-				if (logger.isInfoEnabled()) logger.info("Using -file:./config.tecl -> " + file.getAbsolutePath());
+				if (logger.isInfoEnabled()) logger.info("Using -file:./" + filename + " -> " + file.getAbsolutePath());
 				inputStream = new FileInputStream(file);
 			}
 		}
 		
 		// 4. resource
 		{
-			URL resourceURL = this.getClass().getResource("/config.tecl");
-			InputStream resourceInputStream = this.getClass().getResourceAsStream("/config.tecl");
-			if (logger.isDebugEnabled()) logger.debug("resource:/config.tecl=" + resourceURL + " -> " + (resourceInputStream != null ? "found" : "not found"));
+			URL resourceURL = this.getClass().getResource("/" + filename);
+			InputStream resourceInputStream = this.getClass().getResourceAsStream("/" + filename);
+			if (logger.isDebugEnabled()) logger.debug("resource:/" + filename + "=" + resourceURL + " -> " + (resourceInputStream != null ? "found" : "not found"));
 			if (inputStream == null && resourceInputStream != null) {
-				if (logger.isInfoEnabled()) logger.info("Using resource:/config.tecl");
+				if (logger.isInfoEnabled()) logger.info("Using resource:/" + filename);
 				inputStream = resourceInputStream;
 			}
 		}

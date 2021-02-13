@@ -61,16 +61,9 @@ public class TECLParserTest {
 	// Changing the current directory does not work, we abuse a constant
 	@Test
 	public void localFile() throws IOException {
-		String originalValue = TECLParser.CONFIG_TECL_FILENAME;
-		try {
-			TECLParser.CONFIG_TECL_FILENAME = "src/test/resources/localFile.tecl";
-			TECL tecl = TECL.parser().findAndParse();
-			Assert.assertNotNull(tecl);
-			Assert.assertEquals("localFile", tecl.str("type"));
-		}
-		finally {
-			TECLParser.CONFIG_TECL_FILENAME = originalValue;
-		}
+		TECL tecl = TECL.parser().findAndParse("src/test/resources/localFile.tecl");
+		Assert.assertNotNull(tecl);
+		Assert.assertEquals("localFile", tecl.str("type"));
 	}
 	
 	@Test
