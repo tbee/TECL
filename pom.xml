@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.tbee.tecl</groupId>
 	<artifactId>tecl-parent</artifactId>
-	<version>1.4.0</version>
+	<version>1.4.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>TECL - totally encompassing configuration language</name>
 	<description>A language parser specifically aimed at configuration files, trying to solve the issues found in XML, JSON, YAML, etc.</description>
@@ -126,7 +126,7 @@
 					<failBuildOnCVSS>0</failBuildOnCVSS>
 				</configuration>
 			</plugin>
-			
+
 			<!-- license headers -->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -210,6 +210,17 @@
 					<serverId>sonatype</serverId>
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.5.3</version>
+				<configuration>
+					<tagNameFormat>r@{project.version}</tagNameFormat>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<releaseProfiles>releases</releaseProfiles>
 				</configuration>
 			</plugin>
 		</plugins>
