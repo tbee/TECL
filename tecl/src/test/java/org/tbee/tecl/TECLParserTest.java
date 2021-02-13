@@ -58,7 +58,6 @@ public class TECLParserTest {
 	public void env() throws IOException {
 	}
 	
-	// Changing the current directory does not work, we abuse a constant
 	@Test
 	public void localFile() throws IOException {
 		TECL tecl = TECL.parser().findAndParse("src/test/resources/localFile.tecl");
