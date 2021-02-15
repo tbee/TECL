@@ -303,9 +303,9 @@ public class TECL {
 		
 		// Travel the TECL tree using the path
 		EndNode endNode = travelHierarchy(path, context);
-		TECL tecl = endNode.tecl;
-		String node = endNode.node;
-		List<Integer> idxs = endNode.idxs;
+		final TECL tecl = endNode.tecl;
+		final String node = endNode.node;
+		final List<Integer> idxs = endNode.idxs;
 		context = tecl.getPath() + " -> " + path + ": ";
 		
 		// This is the last node, it may be a property, group, list or reference
@@ -318,8 +318,8 @@ public class TECL {
 		if (logger.isDebugEnabled()) logger.debug(context + "Lists = " + list);
 		
 		// Construct the results
-		Integer idx = (idxs.isEmpty() ? null : idxs.get(0));
 		List<R> results = null;
+		Integer idx = (idxs.isEmpty() ? null : idxs.get(0));
 		// If there is no convertFunction, then the result are groups
 		if (convertFunction == null) {
 			if (logger.isDebugEnabled()) logger.debug(context + "There no convert function, so the last token must be groups.");			
@@ -356,20 +356,6 @@ public class TECL {
 	}
 
 	/* */
-	private TECL determineStartingPoint(String path, String context) {
-		TECL tecl = null;
-		if (path.startsWith("/")) {
-			tecl = this.getRoot();
-			if (logger.isDebugEnabled()) logger.debug(context + "start at root, tecl = " + tecl);
-		}
-		else {
-			tecl = this;
-			if (logger.isDebugEnabled()) logger.debug(context + "start at current, tecl = " + tecl);
-		}
-		return tecl;
-	}
-
-	/* */
 	private EndNode travelHierarchy(String path, String context) {
 
 		// Determine the starting point
@@ -378,47 +364,54 @@ public class TECL {
 		
 		// First split into its parts
 		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
-		if (logger.isDebugEnabled()) logger.debug(context + "var tokenized: "  + nodes);
+		if (logger.isDebugEnabled()) logger.debug(context + "path tokenized: " + nodes);
 		
+		// step over the nodes in the path
 		String node = null;
 		List<Integer> idxs = new ArrayList<Integer>();
 		while (!nodes.isEmpty()) { 
 			
-			// Get current token
+			// Get current node
 			node = nodes.remove(0);
 			if (logger.isDebugEnabled()) logger.debug(context + "node = "  + node);
 			context = tecl.getPath() + node + ": ";
 			
-			// extract the indexes from the node
+			// extract the indexes from the node (if any, may be two)
 			node = extractIdxs(node, idxs);
 			if (logger.isDebugEnabled()) logger.debug(context + "node = "  + node + ", idxs = "  + idxs);
 			
 			// Is this the last token? 
-			// If so, break out, because that is much more complex
+			// If so, break out, because the travel part is done (the end node is handled differently)
 			boolean lastToken = nodes.isEmpty();
 			if (lastToken) {
 				break;
 			}
 			
-			// Not the last token, so this either is a group or a reference resolving to a group
-			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
-			// if it is a reference
+			// Not the last token, get the properties for this node
 			List<String> properties = tecl.properties.get(node);
+			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
+			
+			// This either is a group or a reference resolving to a group
+			// If it is a reference
 			if (isReference(properties, idx)) {
+				
+				// it must be a list of groups at this point
 				List<TECL> tecls = resolveReference(properties, idx, notExistingGroup(idx), null, context);
 				tecl = tecls.get(0);
 				if (logger.isDebugEnabled()) logger.debug(context + "Resolved reference: TECL= " + tecl.getPath());
+				continue;
 			}
-			else {
-				// goto parent
-				if ("..".equals(node)) {
-					tecl = tecl.getParent();
-				}
-				else {
-					tecl = tecl.grp(idx, node);
-				}
+			
+			// If it is a goto parent
+			if ("..".equals(node)) {
+				tecl = tecl.getParent();
 				if (logger.isDebugEnabled()) logger.debug(context + "Assumed group, TECL= " + tecl.getPath());
+				continue;
 			}
+			
+			// It must a the name of a group then
+			tecl = tecl.grp(idx, node);
+			if (logger.isDebugEnabled()) logger.debug(context + "Assumed group, TECL= " + tecl.getPath());
 		}
 
 		// return the node we ended on
@@ -435,67 +428,78 @@ public class TECL {
 	}
 
 	/* */
+	private TECL determineStartingPoint(String path, String context) {
+		TECL tecl = null;
+		if (path.startsWith("/")) {
+			tecl = this.getRoot();
+			if (logger.isDebugEnabled()) logger.debug(context + "start at root, tecl = " + tecl);
+		}
+		else {
+			tecl = this;
+			if (logger.isDebugEnabled()) logger.debug(context + "start at current, tecl = " + tecl);
+		}
+		return tecl;
+	}
+
+	/* */
 	private <R> List<R> resolveFinalGroup(List<String> properties, List<TECL> groups, Integer idx, String context) {
-		List<R> results;
+		
 		// If we have a reference overlapping the groups
 		if (groups.isEmpty() && isReference(properties, 0)) {
 			
 			// Resolve the reference
 			if (logger.isDebugEnabled()) logger.debug(context + "We have no groups, but we do a single property which is a reference: " + properties);					
-			results = resolveReference(properties, idx, null, null, context);
+			List<R> results = resolveReference(properties, idx, null, null, context);
+			return results;
 		}
-		else {
-			// The result are the groups
-			groups = optionallyApplyIdx(context, groups, idx);
-			results = (List<R>) groups;
-		}
+			
+		// The result are the groups
+		groups = optionallyApplyIdx(context, groups, idx);
+		List<R> results = (List<R>) groups;
 		return results;
 	}
 
 	/* */
 	private <R> List<R> resolveFinalProperty(String node, List<String> properties, List<TECL> list, Integer idx, BiFunction<String, R, R> convertFunction, List<R> def, String context) {
-		List<R> results;
 		
 		// If there is a reference
 		if (isReference(properties, 0)) {
 			if (logger.isDebugEnabled()) logger.debug(context + "We have a single property which is a reference, going to resolve that: " + properties);					
-			results = resolveReference(properties, 0, null, convertFunction, context);
+			List<R> results = resolveReference(properties, 0, null, convertFunction, context);
 			results = optionallyApplyIdx(context, results, idx);
+			return results;
 		}
-		// No reference, so we're processing the properties
-		else {
 			
-			// If we have a list overlapping the properties, replace the properties with those in the list
-			if (idx != null && list.size() > idx && list.get(idx) != null) {
-				properties = list.get(idx).properties.get(node);
-				if (logger.isDebugEnabled()) logger.debug(context + "There is an overlapping list, replaced properties with its contents. Properties = " + properties);
-			}
-			
-			// Apply the index
-			properties = optionallyApplyIdx(context, properties, idx);
+		// If we have a list overlapping the properties, replace the properties with those in the list
+		if (idx != null && list.size() > idx && list.get(idx) != null) {
+			properties = list.get(idx).properties.get(node);
+			if (logger.isDebugEnabled()) logger.debug(context + "There is an overlapping list, replaced properties with its contents. Properties = " + properties);
+		}
 		
-			// Convert to end value
-			results = new ArrayList<R>();
-			for (String property : properties) {
+		// Apply the index
+		properties = optionallyApplyIdx(context, properties, idx);
+	
+		// Convert to end value
+		List<R> results = new ArrayList<R>();
+		for (String property : properties) {
+			
+			// But each property can be a reference again
+			if (isReference(property)) {
 				
-				// But each property can be a reference again
-				if (isReference(property)) {
-					
-					// Resolve reference
-					if (logger.isDebugEnabled()) logger.debug(context + "Property is a reference: " + property);
-					List<R> varResult = resolveReference(property, null, convertFunction, context);
-					results.addAll(varResult);
-				}
-				else {
-					
-					// Convert property to end type
-					property = sanatizeString(property);
-					R result = convertFunction.apply(property, def == null || def.isEmpty() ? null : def.get(0));
-					if (logger.isDebugEnabled()) logger.debug(context + "Property converted: " + property + " -> "  + result);
-					results.add(result);
-				}
-			};
-		}
+				// Resolve reference
+				if (logger.isDebugEnabled()) logger.debug(context + "Property is a reference: " + property);
+				List<R> varResult = resolveReference(property, null, convertFunction, context);
+				results.addAll(varResult);
+			}
+			else {
+				
+				// Convert property to end type
+				property = sanatizeString(property);
+				R result = convertFunction.apply(property, def == null || def.isEmpty() ? null : def.get(0));
+				if (logger.isDebugEnabled()) logger.debug(context + "Property converted: " + property + " -> "  + result);
+				results.add(result);
+			}
+		};
 		return results;
 	}
 
