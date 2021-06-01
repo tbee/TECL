@@ -19,6 +19,9 @@ indented {
 					This should not be a problem
 					Having indented multiple lines 
 					"""
+	description3: 	"""    
+					{ "bla" : 3; } Braces and quotes should not be a problem
+					"""
 }
  
 # Shorcut string; no quotes are needed in a simple property style assignment

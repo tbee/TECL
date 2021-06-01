@@ -982,6 +982,7 @@ public class TECLTest {
 				"					" + 
 				"", tecl.str("/indented/description1"));
 		assertEquals("This should not be a problem\nHaving indented multiple lines ", tecl.str("/indented/description2"));
+		assertEquals("{ \"bla\" : 3; } Braces and quotes should not be a problem", tecl.str("/indented/description3"));
 	}
 	
 	// ========================

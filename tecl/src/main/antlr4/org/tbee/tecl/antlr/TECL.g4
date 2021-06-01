@@ -137,8 +137,10 @@ NL
  ;
 
 STRING
- : ('"""' | '"') ( ~[\\"] | '\\' . )* ('"""' | '"')
+ : '"""' ( EscapedTripleQuote | . )*? '"""'
+ | '"' ( ~[\\"] | '\\' . )* '"'
  ;
+fragment EscapedTripleQuote : '\\"""';
 
 WORD
  : ~[ \t\r\n[\]{}:=<>!,|&]+
