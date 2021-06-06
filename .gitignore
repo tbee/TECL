@@ -4,3 +4,5 @@
 target/
 *.log
 *.versionsBackup
+*.releaseBackup
+release.properties
