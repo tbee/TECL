@@ -99,7 +99,7 @@ environment[env=production & os=osx] {
 ## Usage ##
 TECL consist of a tree of TECL instances, mirroring the group structure. 
 On each TECL instance you can 'get' the value of a field, but TECL supports converting that field to a specific type. 
-TECL has build-in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow
+TECL has build-in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow.
 For example, getting the value of a field as a String would look like this:
 
 	get("field", String.class)
