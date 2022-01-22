@@ -6,6 +6,7 @@ The goals are:
 
 - Simple, like properties, but supporting a hierarchy
 - Compact, like JSON, but allowing comments
+- Attributes, like XML
 - Formal hierarchy, unlike YAML’s indentation based one
 - Conditions
 - Multi line strings
@@ -87,11 +88,14 @@ servers {
     | tango    | D          | 24          | $environment                |
 }
  
-# environments can be easily done using conditions
+# Attributes allow for compact notation 
+text(x=0 y=20) : "Development mode"
+
+# Environments can be easily done using conditions
 environment[env=development] {
     datasource : tst
 }
-environment[env=production] {
+environment[env=production & os=osx] {
     datesource : prd
 }
 ```
@@ -198,6 +202,10 @@ int timeout = tecl.integer("/servers/settings[3]/timeout");
 int maxSessions = tecl.integer("/servers/name", "gamma", "/server/maxSessions"); // returns 12
 // For readability it is better to first scope on the group
 int maxSessions2 = tecl.grp("/servers").integer("name", "gamma", "maxSessions"); // returns 12
+
+// Attributes are accessed through the attr method, which returns yet another TECL with the attribute values
+int x = tecl.attr("text").int("x")
+int y = tecl.attr("text").int("y")
 ```
 
 ## Validation ##
