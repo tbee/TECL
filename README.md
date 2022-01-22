@@ -122,6 +122,8 @@ Since TECL is a tree, you can use the 'grp' method to navigate to subgroups, or 
 	integer("/database/timepout")
 	grp("/database")
 
+Starting with a '/' means from the root, otherwise the path is relative to the position of the TECL in the tree.
+
 In TECL it is possible that a field as multiple values, the methods above always returns the value at index 0.
 If you want all values, the list method is the correct way:  
 
