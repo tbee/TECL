@@ -100,23 +100,23 @@ environment[env=production & os=osx] {
 TECL consist of a tree of TECL instances, mirroring the group structure. 
 On each TECL instance you can 'get' the value of a field, but TECL supports converting that field to a specific type. 
 TECL has build-in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow
-For for example, getting the value of a field as a String would look like this:
+For example, getting the value of a field as a String would look like this:
 
 	get("field", String.class)
 
-Type String can be using for all fields, since the input is a text file.
+Type 'String' can be using for all fields, since the input is a text file.
 The buid-in types have convenience methods, so there is no need to specify the class, for example:
 
 	str("url") # String
 	integer("timepout") # Integer
-	grp("database") # Returns a new TECL for the subgroup
+	grp("database") # another TECL instance for the subgroup
 
 All methods also have a variant with a default value, which is returned in case the field does not exist:
 
 	get("field", String.class, "default")
 	str("field", "default")
 
-Since TECL is a tree, you can use the grp method to navigate to subgroups, or use slashes in the field identifier:
+Since TECL is a tree, you can use the 'grp' method to navigate to subgroups, or use slashes in the field:
 
 	str("/database/url")
 	integer("/database/timepout")
@@ -125,16 +125,16 @@ Since TECL is a tree, you can use the grp method to navigate to subgroups, or us
 In TECL it is possible that a field as multiple values, the methods above always returns the value at index 0.
 If you want all values, the list method is the correct way:  
 
-	List<R> list(String path, List<R> defaultValue, Class<R> clazz)
+	List<String> list("field", Collections.emptyList(), String.class)
 
 But if the index is known, the get and every convenience method have a version with an index as the first parameter. 
-Or you can use square brackets for the index.
+Or you can use square brackets for the index in the field.
 
 	str(1, "/hosts")
 	str("/hosts[1]")
 
 Since it is quite possible you have a value for which no build-in type exists. 
-In this case it is possible to treat it as a String, or register additional types (see the corresponding paragraph below), or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
+In this case it is always possible to treat it as a String, but you can also register additional types (see the corresponding paragraph below), or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
 
 
 Tables are nothing more than indexed properties:
@@ -142,24 +142,24 @@ Tables are nothing more than indexed properties:
     integer(4, "/servers/maxSessions")
     integer("/servers/maxSessions[4]")
     
-And the same principle is used for groups:
+And the same principle is used for multiple subgroups with the same name:
 
     grp(1, "/environment")
     grp("/environment[1]")
     
 There is one noticeable difference between properties and groups: a 'grp' call will never return null, even if the group is not present. 
-If a group does not exist, TECL will create an empty group and return that, to prevent null point exceptions. 
+If a group does not exist, TECL will create an empty group and return that, to prevent null pointer exceptions. 
 Nulls can only be returned at the leaf or value nodes. 
 
 So the call below does not result in a null pointer exception because there are missing groups, but simply returns null for the fact that 'key' does not exist in the last group:
 
 	str("/the/groups/in/the/path/do/not/exist/key")
 	
-Finally, attributes are accessed via the 'attr' method with the key as the parameter. The method also returns a TECL instance, and the same principles apply (except that attributes can't have groups).
+Finally, attributes are accessed via the 'attr' method with the key as the parameter. The method returns a TECL instance containing the attributes, and these can be accessed in the same way as values.
 
 	text(x=10 y=20): foobar
 	
-	int x = tecl.attr("text").int("x")
+	int x = tecl.attr("text").int("x") # get the attributes of field 'text' and then the value of attribute 'x'
 	
 
 ### Example ###
