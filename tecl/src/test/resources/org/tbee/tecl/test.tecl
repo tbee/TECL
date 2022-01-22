@@ -73,6 +73,9 @@ environment[env=development] {
 environment[env=production] {
     datasource: prd
 }
+environment[env=production & os=osx] {
+    datasource: prd
+}
 
 group1 { 
     key: value1 

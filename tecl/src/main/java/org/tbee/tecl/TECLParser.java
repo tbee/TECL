@@ -55,6 +55,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tbee.tecl.TECL.Attribute;
 import org.tbee.tecl.TECLParser.ParserListener.TECLContext;
 import org.tbee.tecl.TECLSchema.Validator;
 
@@ -400,7 +401,7 @@ public class TECLParser {
 		// PROPERTY
 		
 		@Override
-		public void setProperty(String key, List<String> values) {	
+		public void setProperty(String key, List<String> values) {	                                                
 			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
 			if (matchConditions == null || matchConditions) {
 				boolean allowOverwrite = (matchConditions != null);
@@ -409,7 +410,7 @@ public class TECLParser {
 				}
 				AtomicInteger idx = new AtomicInteger();
 				values.forEach(value -> {
-					teclContext.tecl.setProperty(idx.getAndIncrement(), key, value);
+					teclContext.tecl.setProperty(idx.getAndIncrement(), key, value, getAttributes());
 				});
 			}
 		}	
@@ -419,7 +420,7 @@ public class TECLParser {
 			Boolean matchConditions = matchConditions(useConditions(), teclContext, key);
 			if (matchConditions == null || matchConditions) {
 				boolean allowOverwrite = (matchConditions != null);
-				teclContext.tecl.setProperty(idx, key, value, allowOverwrite);
+				teclContext.tecl.setProperty(idx, key, value, allowOverwrite, getAttributes());
 			}
 		}	
 	
@@ -449,6 +450,27 @@ public class TECLParser {
 			teclContext = teclContextStack.peek();		
 		}
 		
+		// --------------
+		// ATTRIBUTES
+		
+		private List<Attribute> attributes;
+		
+		@Override
+		public void startAttributes() {
+			attributes = new ArrayList<Attribute>();	
+		}
+		
+		@Override
+		public void addAttribute(String key, String value) {
+			attributes.add(new Attribute(key, value));
+		}
+		
+		private List<Attribute> getAttributes() {
+			List<Attribute> attributes = this.attributes;
+			this.attributes = null;
+			return attributes;
+		}
+				
 		// --------------
 		// CONDITIONS
 		
@@ -524,7 +546,7 @@ public class TECLParser {
 			else {
 				String key = tableKeys.get(tableColIdx);
 				if (logger.isDebugEnabled()) logger.debug("addTableRow add data " + key + "[" + tableRowIdx + "]=" + value);
-				teclContext.tecl.setProperty(tableRowIdx, key, value);
+				teclContext.tecl.setProperty(tableRowIdx, key, value, null);
 			}
 			tableColIdx++;
 		}
@@ -547,7 +569,7 @@ public class TECLParser {
 				if (logger.isDebugEnabled()) logger.debug("new group '" + id + "' added at " + teclContext.tecl.getPath());
 				AtomicInteger idx = new AtomicInteger(0);
 				values.forEach(value -> {
-					listTECL.setProperty(idx.getAndIncrement(), key, value);
+					listTECL.setProperty(idx.getAndIncrement(), key, value, null);
 				});
 			}
 			tableColIdx++;

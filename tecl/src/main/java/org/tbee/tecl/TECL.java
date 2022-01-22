@@ -310,7 +310,10 @@ public class TECL {
 		
 		// This is the last node, it may be a property, group, list or reference
 		// First get all relevant info
-		List<String> properties = tecl.properties.get(node);
+		List<ValueAttibutesPair<String>> valueAttibutesPairs = tecl.properties.get(node);
+		List<String> properties = (valueAttibutesPairs == null ? null : valueAttibutesPairs.stream()
+				.map(vap -> vap == null ? null : vap.value)
+				.collect(Collectors.toList()));
 		if (logger.isDebugEnabled()) logger.debug(context + "Properties = " + properties);
 		List<TECL> groups = tecl.groups.get(node); 
 		if (logger.isDebugEnabled()) logger.debug(context + "Groups = " + groups);
@@ -388,7 +391,7 @@ public class TECL {
 			}
 			
 			// Not the last token, get the properties for this node
-			List<String> properties = tecl.properties.get(node);
+			List<String> properties = tecl.properties.get(node).stream().map(vap -> vap.value).collect(Collectors.toList());;
 			int idx = (idxs.isEmpty() ? 0 : idxs.get(0));
 			
 			// This either is a group or a reference resolving to a group
@@ -472,7 +475,7 @@ public class TECL {
 			
 		// If we have a list overlapping the properties, replace the properties with those in the list
 		if (idx != null && list.size() > idx && list.get(idx) != null) {
-			properties = list.get(idx).properties.get(node);
+			properties = list.get(idx).properties.get(node).stream().map(vap -> vap.value).collect(Collectors.toList());
 			if (logger.isDebugEnabled()) logger.debug(context + "There is an overlapping list, replaced properties with its contents. Properties = " + properties);
 		}
 		
@@ -565,15 +568,58 @@ public class TECL {
 	// =====================================
 	// properties
 	
-	final IndexedValues<String> properties = new IndexedValues<>();
+	private class ValueAttibutesPair<T> {
+		T value;
+		TECL attributes;
+		
+		ValueAttibutesPair(T value, TECL attributes) {
+			this.value = value;
+			this.attributes = attributes;
+			this.attributes.convertFunctions = TECL.this.getRoot().convertFunctions; // use the convertFunctions from the official TECL tree
+		}
+		ValueAttibutesPair(T value, List<Attribute> attributes) {
+			this(value, convertToTECL(attributes));
+		}	
+		ValueAttibutesPair(T value) {
+			this(value, EMPTY_ATTRIBUTES);
+		}	
+		
+		@Override
+		public boolean equals(Object o) {
+			if (o == this) {
+				return true;
+			}
+			if (o == null || !(o instanceof ValueAttibutesPair)) {
+				return false;
+			}
+			return value.equals(((ValueAttibutesPair)o).value);
+		}
+		
+		@Override
+		public String toString() {
+			return "" + value + (attributes == EMPTY_ATTRIBUTES ? "" : attributes.toString());
+		}
+	}
+	static private TECL convertToTECL(List<Attribute> attributes) {
+		if (attributes == null || attributes.isEmpty()) {
+			return EMPTY_ATTRIBUTES;
+		}
+		TECL tecl = new TECL("");
+		attributes.forEach(a -> tecl.setProperty(a.key, a.value, null));
+		return tecl;
+	}
+	final static private TECL EMPTY_ATTRIBUTES = new TECL("");
+	
+	
+	final IndexedValues<ValueAttibutesPair<String>> properties = new IndexedValues<>();
 	
 	/**
 	 * Set a property value. This is identical to setting an indexed property with index 0.
 	 * @param key
 	 * @param value
 	 */
-	public void setProperty(String key, String value) {
-		properties.set(0, key, value, false);
+	public void setProperty(String key, String value, List<Attribute> attributes) {
+		properties.set(0, key, new ValueAttibutesPair<String>(value, attributes), false);
 	}	
 	
 	/**
@@ -581,9 +627,10 @@ public class TECL {
 	 * @param idx
 	 * @param key
 	 * @param value
+	 * @param list 
 	 */
-	public void setProperty(int idx, String key, String value) {
-		properties.set(idx, key, value, false);
+	public void setProperty(int idx, String key, String value, List<Attribute> attributes) {
+		properties.set(idx, key, new ValueAttibutesPair<String>(value, attributes), false);
 	}
 	
 	/**
@@ -593,8 +640,8 @@ public class TECL {
 	 * @param value
 	 * @param allowOverwrite
 	 */
-	public void setProperty(int idx, String key, String value, boolean allowOverwrite) {
-		properties.set(idx, key, value, allowOverwrite);
+	public void setProperty(int idx, String key, String value, boolean allowOverwrite, List<Attribute> attributes) {
+		properties.set(idx, key, new ValueAttibutesPair<String>(value, attributes), allowOverwrite);
 	}	
 	
 	/**
@@ -620,7 +667,7 @@ public class TECL {
 	 * @return
 	 */
 	public int indexOf(String key, String value) {
-		return properties.indexOf(key, value);		
+		return properties.indexOf(key, new ValueAttibutesPair<String>(value));		
 	}
 	
 	/**
@@ -643,7 +690,26 @@ public class TECL {
 	 * @return
 	 */
 	public String raw(int idx, String key, String def) {
-		return properties.get(idx, key, null);
+		ValueAttibutesPair<String> valueAttibutesPair = properties.get(idx, key, null);
+		return valueAttibutesPair == null ? null : valueAttibutesPair.value;
+	}
+	
+	/**
+	 * Get the raw uninterpreted value of a property.
+	 * This is a last resort when, for example, there is an overlap using references.
+	 * But these situations preferably are prevented.
+	 * 
+	 * @param idx
+	 * @param key
+	 * @param def
+	 * @return
+	 */
+	public TECL attr(int idx, String key) {
+		ValueAttibutesPair<String> valueAttibutesPair = properties.get(idx, key, null);
+		return valueAttibutesPair == null ? new TECL("") : valueAttibutesPair.attributes;
+	}
+	public TECL attr(String key) {
+		return attr(0, key);
 	}
 	
 	/**
@@ -967,7 +1033,7 @@ public class TECL {
 				}
 				
 				// set value
-				group.setProperty(group.count(propertyId), propertyId, arg);
+				group.setProperty(group.count(propertyId), propertyId, arg, null);
 				key = null;
 			}
 		}
@@ -1088,7 +1154,7 @@ public class TECL {
 			}
 			values = new ArrayList<T>(values); // End users are not allowed to modify the list
 			return values;
-		}
+		}		
 
 		/*
 		 * Get a single value for a key
@@ -1243,4 +1309,20 @@ public class TECL {
 	public String toString() {
 		return getPath();
 	}
+	
+	
+	public static class Attribute {
+		final String key;
+		final String value;
+		
+		public Attribute(String key, String value) {
+			this.key = key;
+			this.value = value;
+		}
+		
+		public String toString() {
+			return key + "=" + value;
+		}
+	}
+	
 }

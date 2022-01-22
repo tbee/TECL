@@ -516,6 +516,32 @@ public class TECLTest {
 	}
 
 	// ========================
+	// PARAMETERS
+	
+	@Test
+	public void oneAttributeProperty() {
+		TECL tecl = parse("key(x=0) : value\n");
+		// assert value 
+		assertEquals("[value]", tecl.list("key", null, String.class).toString());
+		assertEquals("value", tecl.str("key"));
+		// assert arguments 
+		assertEquals(Integer.valueOf(0), tecl.attr("key").integer("x"));
+	}
+
+	@Test
+	public void manyAttributesProperty() {
+		TECL tecl = parse("key(a=0 b=1.23 c=\"a\" d=\"2020-06-20T12:34:56\") : value\n");
+		// assert value 
+		assertEquals("[value]", tecl.list("key", null, String.class).toString());
+		assertEquals("value", tecl.str("key"));
+		// assert arguments 
+		assertEquals(Integer.valueOf(0), tecl.attr("key").integer("a"));
+		assertEquals(BigDecimal.valueOf(1.23), tecl.attr("key").bd("b"));
+		assertEquals("a", tecl.attr("key").str("c"));
+		assertEquals(LocalDateTime.of(2020, 06, 20, 12, 34, 56), tecl.attr("key").localDateTime("d"));
+	}
+
+	// ========================
 	// CONDITIONS
 	
 	@Test

@@ -98,6 +98,18 @@ public class PrintLexer implements org.tbee.tecl.antlr.TECLParser.Listener {
 	}
 
 	@Override
+	public void startAttributes() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void addAttribute(String key, String value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
 	public void startConditions() {
 		// TODO Auto-generated method stub
 		

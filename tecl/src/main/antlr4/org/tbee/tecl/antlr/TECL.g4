@@ -16,6 +16,9 @@ grammar TECL;
 		void startGroup(String id);
 		void endGroup();
 		
+		void startAttributes();		
+		void addAttribute(String key, String value);
+		
 		void startConditions();		
 		void addCondition(String key, String comparator, String value);
 		
@@ -54,13 +57,13 @@ config
  ;
 
 property
- : WORD conditions? ASSIGN value						{ listener.setProperty(0, $WORD.text, $value.text); } // _localctx.start.getLine() 
- | WORD conditions? ASSIGN list							{ listener.setProperty($WORD.text, listValues); } 
- | WORD conditions? ASSIGN       						{ listener.setProperty(0, $WORD.text, ""); } 
+ : WORD attributes? conditions? ASSIGN value			    { listener.setProperty(0, $WORD.text, $value.text); } // _localctx.start.getLine() 
+ | WORD attributes? conditions? ASSIGN list				{ listener.setProperty($WORD.text, listValues); } 
+ | WORD attributes? conditions? ASSIGN       			{ listener.setProperty(0, $WORD.text, ""); } 
  ;
 
 group
- : WORD conditions?                                     { listener.startGroup($WORD.text); } 
+ : WORD conditions?                          			{ listener.startGroup($WORD.text); } 
    NL* OBRACE configs CBRACE                            { listener.endGroup(); }
  ;
 
@@ -70,7 +73,16 @@ conditions
  ;
 
 condition
- : WORD COMPAR value						 			{ listener.addCondition($WORD.text, $COMPAR.text, $value.text); }
+ : WORD EQUALS value						 			{ listener.addCondition($WORD.text, $EQUALS.text, $value.text); }
+ ;
+
+attributes
+ : OPARENTHESIS											{ listener.startAttributes(); } 
+   attribute attribute* CPARENTHESIS
+ ;
+
+attribute
+ : WORD EQUALS value						 			{ listener.addAttribute($WORD.text, $value.text); }
  ;
 
 table
@@ -123,10 +135,12 @@ OBRACK : '[';
 CBRACK : ']';
 OBRACE : '{';
 CBRACE : '}';
+OPARENTHESIS : '(';
+CPARENTHESIS : ')';
 COMMA  : ',';
 PIPE   : '|';
 AND    : '&';
-COMPAR : '=';
+EQUALS : '=';
 
 REFERENCE
  : '$' WORD
@@ -143,7 +157,7 @@ STRING
 fragment EscapedTripleQuote : '\\"""';
 
 WORD
- : ~[ \t\r\n[\]{}:=<>!,|&]+
+ : ~[ \t\r\n[\]{}():=<>!,|&]+
  ;
 
 COMMENT
