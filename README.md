@@ -111,6 +111,9 @@ The buid-in types have convenience methods, so there is no need to specify the c
 	integer("timepout") # Integer
 	grp("database") # another TECL instance for the subgroup
 
+Since it is quite possible you have a value for which no build-in type exists. 
+In this case it is always possible to treat it as a String, but you can also register additional types (see the corresponding paragraph below), or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
+
 All methods also have a variant with a default value, which is returned in case the field does not exist:
 
 	get("field", String.class, "default")
@@ -134,10 +137,6 @@ Or you can use square brackets for the index in the field.
 
 	str(1, "/hosts")
 	str("/hosts[1]")
-
-Since it is quite possible you have a value for which no build-in type exists. 
-In this case it is always possible to treat it as a String, but you can also register additional types (see the corresponding paragraph below), or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
-
 
 Tables are nothing more than indexed properties:
 
