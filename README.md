@@ -233,7 +233,7 @@ Similarly attributes are defined by referring to other groups in the 'attr' colu
 ```bash
 @version = 1
  
-| id              | type          | subtype  | enum   |minValues | maxValues  | attr      |
+| id              | type          | subtype  | enum   | minValues | maxValues | attr      |
 | title           | String        |          |        | 1         |           |           |
 | description     | String        |          |        |           |           |           |
 | releaseDateTime | LocalDateTime |          |        |           |           |           |
