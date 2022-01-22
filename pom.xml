@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.tbee.tecl</groupId>
 	<artifactId>tecl-parent</artifactId>
-	<version>1.5.0</version>
+	<version>1.5.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<!-- https://blog.sonatype.com/2010/01/how-to-generate-pgp-signatures-with-maven/ -->
