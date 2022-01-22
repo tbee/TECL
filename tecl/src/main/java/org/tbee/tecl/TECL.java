@@ -627,7 +627,7 @@ public class TECL {
 	 * @param idx
 	 * @param key
 	 * @param value
-	 * @param list 
+	 * @param attributes 
 	 */
 	public void setProperty(int idx, String key, String value, List<Attribute> attributes) {
 		properties.set(idx, key, new ValueAttibutesPair<String>(value, attributes), false);
@@ -639,6 +639,7 @@ public class TECL {
 	 * @param key
 	 * @param value
 	 * @param allowOverwrite
+	 * @param attributes 
 	 */
 	public void setProperty(int idx, String key, String value, boolean allowOverwrite, List<Attribute> attributes) {
 		properties.set(idx, key, new ValueAttibutesPair<String>(value, attributes), allowOverwrite);
@@ -701,7 +702,6 @@ public class TECL {
 	 * 
 	 * @param idx
 	 * @param key
-	 * @param def
 	 * @return
 	 */
 	public TECL attr(int idx, String key) {
