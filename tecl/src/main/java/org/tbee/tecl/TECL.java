@@ -612,7 +612,7 @@ public class TECL {
 			return EMPTY_ATTRIBUTES;
 		}
 		TECL tecl = new TECL("");
-		attributes.forEach(a -> tecl.setProperty(a.key, a.value, null));
+		attributes.forEach(a -> tecl.setProperty(a.key, a.value, null)); // Do we need to support multiple attributes (x=0 x=1 x=2 using something like list("x").size as index (1st parameter)? 
 		return tecl;
 	}
 	final static private TECL EMPTY_ATTRIBUTES = new TECL("");
