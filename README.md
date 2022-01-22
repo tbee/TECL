@@ -101,34 +101,45 @@ environment[env=production & os=osx] {
 ```
 
 ## Usage ##
-The configuration hierarchy is accessed using a single 'list' method, because each key may have multiple values:  
+TECL consist of a tree of TECL instances, mirroring the group structure. 
+On each TECL instance you can 'get' the value of a field, but TECL supports converting that field to a specific type. 
+TECL has build-in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow
+For for example, getting the value of a field as a String would look like this:
 
-	List<R> list(String path, List<R> defaultValue, Class<R> clazz)
+	get("field", String.class)
 
-But if you only want one (which is very often the case) there is the 'get':  
+Type String can be using for all fields, since the input is a text file.
+The buid-in types have convenience methods, so there is no need to specify the class, for example:
 
-	R get(String path, R defaultValue, Class<R> clazz)
+	str("url") # String
+	integer("timepout") # Integer
+	grp("database") # Returns a new TECL for the subgroup
 
-The class at the end specifies the return type. 
-TECL has build in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow.
-These build in types also have convenience methods:
+All methods also have a variant with a default value, which is returned in case the field does not exist:
+
+	get("field", String.class, "default")
+	str("field", "default")
+
+Since TECL is a tree, you can use the grp method to navigate to subgroups, or use slashes in the field identifier:
 
 	str("/database/url")
 	integer("/database/timepout")
 	grp("/database")
 
-But in case no matching convenience method is present, the get or list method is the way to go.
-It is possible to register custom types (see below), or simply provide a convert function to the 'listUsingFunction' method.
+In TECL it is possible that a field as multiple values, the methods above always returns the value at index 0.
+If you want all values, the list method is the correct way:  
 
-The path in the methods travels the hierarchy.
-If no value is found, the default is returned. Per default this is null, but can be set as the last parameter:
+	List<R> list(String path, List<R> defaultValue, Class<R> clazz)
 
-	integer("/database/timepout", 1000)
-
-Every property can have multiple values, to get to those indexes are used as the first parameter: 
+But if the index is known, the get and every convenience method have a version with an index as the first parameter. 
+Or you can use square brackets for the index.
 
 	str(1, "/hosts")
 	str("/hosts[1]")
+
+Since it is quite possible you have a value for which no build-in type exists. 
+In this case it is possible to treat it as a String, or register additional types (see the corresponding paragraph below), or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
+
 
 Tables are nothing more than indexed properties:
 
@@ -147,6 +158,12 @@ Nulls can only be returned at the leaf or value nodes.
 So the call below does not result in a null pointer exception because there are missing groups, but simply returns null for the fact that 'key' does not exist in the last group:
 
 	str("/the/groups/in/the/path/do/not/exist/key")
+	
+Finally, attributes are accessed via the 'attr' method with the key as the parameter. The method also returns a TECL instance, and the same principles apply (except that attributes can't have groups).
+
+	text(x=10 y=20): foobar
+	
+	int x = tecl.attr("text").int("x")
 	
 
 ### Example ###
