@@ -49,11 +49,6 @@ indented {
 # Shorcut string; no quotes are needed if the value is just one word.
 protocol : http
  
-# Conditions allow for overriding, best match wins (most conditions)
-# If multiple condition sets equally match, the first one will win.
-title[env=production] : "One config file to rule them all"
-title[env=production & os=osx] : "Even on Mac"
- 
 # Lists
 hosts : [alpha, beta]
  
@@ -91,7 +86,8 @@ servers {
 # Attributes allow for compact notation 
 text(x=0 y=20) : "Development mode"
 
-# Environments can be easily done using conditions
+# Conditions allow for overriding, best match wins (most conditions)
+# If multiple condition sets equally match, the first one will win.
 environment[env=development] {
     datasource : tst
 }
