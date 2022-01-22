@@ -226,20 +226,23 @@ The user basically determines at runtime how a property is to be interpreted, ca
 So it is only at runtime that you know if a value can be parsed as a double. 
 This is quite normal for configuration files, but TECL tries to improve this by supporting a schema.
 In the schema you can specify the type, frequency and other characteristics of properties and groups.
+Groups are done having the identifiers in the 'subtype' column refer to other groups in the schema.
+Similarly attributes are defined by referring to other groups in the 'attr' column, with full support for constraints.
 
 
 ```bash
 @version = 1
  
-| id              | type          | subtype  | enum   |minValues | maxValues |
-| title           | String        |          |        | 1         |           |
-| description     | String        |          |        |           |           |
-| releaseDateTime | LocalDateTime |          |        |           |           |
-| hosts           | list          | String   |        | 1         | 5         |
-| database        | group         | database |        |           |           |
-| servers         | group         | servers  |        |           | 10        |
-| protocols       | list          | String   | protos |           |           |
-| protos          | list          | String   |        |           |           |
+| id              | type          | subtype  | enum   |minValues | maxValues  | attr      |
+| title           | String        |          |        | 1         |           |           |
+| description     | String        |          |        |           |           |           |
+| releaseDateTime | LocalDateTime |          |        |           |           |           |
+| hosts           | list          | String   |        | 1         | 5         |           |
+| database        | group         | database |        |           |           |           |
+| servers         | group         | servers  |        |           | 10        |           |
+| protocols       | list          | String   | protos |           |           |           |
+| protos          | list          | String   |        |           |           |           |
+| text            | String        |          |        |           |           | textAttrs |
  
 database {
     | id       | type      | minLen | maxLen |
@@ -253,6 +256,12 @@ servers {
     | name        | String  |     |     |
     | datacenter  | String  |     |     |
     | maxSessions | Integer | 0   | 50  |
+}
+ 
+textAttrs {
+    | id | type    | min | max |
+    | x  | Integer |     |     |
+    | y  | Integer | 0   | 50  |
 }
  
 protos = [http, https]

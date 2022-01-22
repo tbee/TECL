@@ -115,6 +115,21 @@ public class TECLSchema {
 			if ("group".equals(schemaType)) {
 				validateGroup(tecl, schemaPropertyIdx, schemaPropertyId, schemaSubtype);
 			}
+			
+			// attributes
+			String schemaAttributetype = schemaTECL.str(schemaPropertyIdx, "attr");
+			TECL schemaAttrTECL = schemaTECL.grp(schemaAttributetype);
+			TECL attrTECL = tecl.attr(schemaPropertyId);
+			// if the key has attributes, then there must be an attribute schema
+			if (!attrTECL.isEmpty() && schemaAttributetype == null) {
+				throw new ValidationException("Attributes exist, but no schema for the attributes at " + tecl.createFullPathToKey(0, schemaPropertyId));				
+			}
+			try {
+				validate(attrTECL, schemaAttrTECL);
+			}
+			catch (ValidationException e) {
+				throw new ValidationException("Attributes fail to validate at " + tecl.createFullPathToKey(0, schemaPropertyId), e);
+			}
 		}
 		
 		// Check for undefined keys

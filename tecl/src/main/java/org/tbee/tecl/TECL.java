@@ -182,6 +182,13 @@ public class TECL {
 		return tecl;
 	}
 	
+	/**
+	 * Is the TECL empty; no properties, no groups
+	 * @return
+	 */
+	public boolean isEmpty() {
+		return properties.isEmpty() && groups.isEmpty();
+	}
 	
 	// =====================================
 	// get
@@ -1178,6 +1185,13 @@ public class TECL {
 			return new ArrayList<String>(keyTovaluesMap.keySet());
 		}
 		
+		/*
+		 * empty
+		 */
+		boolean isEmpty() {
+			return keyTovaluesMap.isEmpty();
+		}
+
 		/*
 		 * 
 		 */

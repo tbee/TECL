@@ -496,6 +496,54 @@ public class TECLSchemaTest {
 		}
 	}
 
+	
+	// ========================
+	// ATTRIBUTES
+
+	@Test
+	public void attrNoSchema() {
+		assertEquals("Attributes exist, but no schema for the attributes at /text[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "text(x=0 y=10) : 123 \n"
+				, ""
+				+ "| id   | type    |\n" 
+				+ "| text | Integer |\n" 
+				);
+		}).getMessage());
+	}
+
+	@Test
+	public void attrNotInSchema() {
+		assertEquals("Attributes fail to validate at /text[0]", assertThrows(ValidationException.class, () -> {
+			parse(""
+				+ "text(x=0 y=10) : 123 \n"
+				, ""
+				+ "| id   | type    | attr     |\n" 
+				+ "| text | Integer | textAttr |\n" 
+				+ "textAttr {\n"
+				+ "    | id | type    | \n" 
+				+ "    | z  | Integer |\n"
+				+ "} \n"
+				);
+		}).getMessage());
+	}
+
+
+	@Test
+	public void attrOkay() {
+		parse(""
+			+ "text(x=0 y=10) : 123 \n"
+			, ""
+			+ "| id   | type    | attr     |\n" 
+			+ "| text | Integer | textAttr |\n" 
+			+ "textAttr {\n"
+			+ "    | id | type    | \n" 
+			+ "    | x  | Integer |\n"
+			+ "    | y  | Integer |\n"
+			+ "} \n"
+			);
+	}
+
 	// ========================
 	
 	private TECL parse(String tecl, String tesd, Validator... validators) {
