@@ -10,7 +10,7 @@ The goals are:
 - Formal hierarchy, unlike YAML’s indentation based one
 - Conditions
 - Multi line strings
-- Tables
+- Cucumber-style tables
 - Schema support
 
 ## Example ##
@@ -97,48 +97,53 @@ environment[env=production & os=osx] {
 ```
 
 ## Usage ##
-TECL consist of a tree of TECL instances, mirroring the group structure. 
-On each TECL instance you can 'get' the value of a field, but TECL supports converting that field to a specific type. 
+TECL consist of a tree of TECL instances, mirroring the hierarchy in the configuration file. 
+On each TECL instance you can 'get' the value of a field by its id, but TECL immediately converts that field to a specific type. 
 TECL has build-in support for Strings, Integers, BigDecimal, BigInteger, date, time and more will follow.
 For example, getting the value of a field as a String would look like this:
 
 	get("field", String.class)
 
-Type 'String' can be using for all fields, since the input is a text file.
-The buid-in types have convenience methods, so there is no need to specify the class, for example:
+Type 'String' can be using for all fields, since the input is a text file. 
+Any value can be accessed in it's text notation by getting it as a String.
+
+But in order to make getting a value easier, all the buid-in types have convenience methods named after the type they return. For example:
 
 	str("url") # String
 	integer("timepout") # Integer
-	grp("database") # another TECL instance for the subgroup
+	bd("timepout") # BigDecimal
+	
+Naturally there will always be values that do not have a build-in type. 
+In this case you can get it as a String, and do the conversion manually, or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
+You can also register the additional type together with its convert function; see the corresponding paragraph below. 
 
-Since it is quite possible you have a value for which no build-in type exists. 
-In this case it is always possible to treat it as a String, but you can also register additional types (see the corresponding paragraph below), or provide a convert function to the 'getUsingFunction' and 'listUsingFunction' methods.
-
-All methods also have a variant with a default value, which is returned in case the field does not exist:
+All methods also have a variant with a default value as the last parameter, which is returned in case the field does not exist:
 
 	get("field", String.class, "default")
 	str("field", "default")
 
-Since TECL is a tree, you can use the 'grp' method to navigate to subgroups, or use slashes in the field:
+THe blocks that make up the TECL tree are called groups. 
+You can use the 'grp' method to navigate from one group to a subgroup.
+Alternatively slashes can be used in the field identifier to navigate to a group, similar to a file system.
+Starting with a '/' means from the root, otherwise the path is relative to the position of the TECL in the tree.
 
 	str("/database/url")
 	integer("/database/timepout")
-	grp("/database")
+	grp("/database").grp("dialect").str("database")
+	str("/database/dialect/../password")
 
-Starting with a '/' means from the root, otherwise the path is relative to the position of the TECL in the tree.
-
-In TECL it is possible that a field as multiple values, the methods above always returns the value at index 0.
+In TECL any field can have multiple values, the methods above always returns the value at index 0.
 If you want all values, the list method is the correct way:  
 
-	List<String> list("field", Collections.emptyList(), String.class)
+	List<String> list("/servers/name", Collections.emptyList(), String.class)
 
 But if the index is known, the get and every convenience method have a version with an index as the first parameter. 
-Or you can use square brackets for the index in the field.
+Or you can use square brackets denoting the index in the field identifier:
 
 	str(1, "/hosts")
 	str("/hosts[1]")
 
-Tables are nothing more than indexed properties:
+Tables are nothing more than fields with multiple values:
 
     integer(4, "/servers/maxSessions")
     integer("/servers/maxSessions[4]")
@@ -148,7 +153,7 @@ And the same principle is used for multiple subgroups with the same name:
     grp(1, "/environment")
     grp("/environment[1]")
     
-There is one noticeable difference between properties and groups: a 'grp' call will never return null, even if the group is not present. 
+There is one noticeable difference between fields and groups: a 'grp' call will never return null, even if the group is not present. 
 If a group does not exist, TECL will create an empty group and return that, to prevent null pointer exceptions. 
 Nulls can only be returned at the leaf or value nodes. 
 
@@ -223,10 +228,10 @@ int y = tecl.attr("text").int("y")
 ```
 
 ## Validation ##
-The user basically determines at runtime how a property is to be interpreted, calling `bd("key")` will make the value being parsed as a BigDecimal.
+The user basically determines at runtime how a field is to be interpreted, calling `bd("key")` will make the value being parsed as a BigDecimal.
 So it is only at runtime that you know if a value can be parsed as a double. 
 This is quite normal for configuration files, but TECL tries to improve this by supporting a schema.
-In the schema you can specify the type, frequency and other characteristics of properties and groups.
+In the schema you can specify the type, frequency and other characteristics of fields and groups.
 Groups are done having the identifiers in the 'subtype' column refer to other groups in the schema.
 Similarly attributes are defined by referring to other groups in the 'attr' column, with full support for constraints.
 
