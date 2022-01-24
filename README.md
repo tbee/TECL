@@ -31,10 +31,10 @@ description : "So,
 I'm curious 
 where this will end."
 
-# Single quoted strings will have all the spaces of indentation, including preceding and trailing whitespace & newlines.
-# Triple quoted strings will be stripped of the preceding and trailing whitespace & newlines, and the indentation of the lines themselves.
-# Triple quoted strings will remove as much indent as the minimal NUMBER of whitespaces used to indent any of the lines; 
-#   so if one line used 2 tabs and another 8 spaces to indent, both will get 2 whitespace removed, leaving the other line with 6 space remaining.
+# Single quoted strings: all whitespace & newlines are kept.
+# Triple quoted strings: preceding and trailing whitespace & newlines, and the indentation of the lines in between are stripped.
+# Indentation will be stripped to the MINIMAL NUMBER of whitespaces used to indent any of the lines,
+# so if one line is indented using 2 tabs and another with 8 spaces, both will get 2 whitespace removed, leaving one line with 6 spaces.
 indented {
 	description1: 	" 
 					All this whitespace will be in the string.
@@ -42,6 +42,7 @@ indented {
 					"
 	description2: 	"""    
 					Every newline and whitespace before the first letter of this line will be trimmed.
+					All the indent of all three lines will be removed.
 					And every newline and whitespace after the end of this line as well.
 					"""
 } 
