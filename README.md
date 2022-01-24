@@ -122,7 +122,7 @@ All methods also have a variant with a default value as the last parameter, whic
 	get("field", String.class, "default")
 	str("field", "default")
 
-THe blocks that make up the TECL tree are called groups. 
+The blocks that make up the TECL tree are called groups. 
 You can use the 'grp' method to navigate from one group to a subgroup.
 Alternatively slashes can be used in the field identifier to navigate to a group, similar to a file system.
 Starting with a '/' means from the root, otherwise the path is relative to the position of the TECL in the tree.
@@ -155,7 +155,7 @@ And the same principle is used for multiple subgroups with the same name:
     
 There is one noticeable difference between fields and groups: a 'grp' call will never return null, even if the group is not present. 
 If a group does not exist, TECL will create an empty group and return that, to prevent null pointer exceptions. 
-Nulls can only be returned at the leaf or value nodes. 
+Nulls can only be returned at the leaf /value nodes. 
 
 So the call below does not result in a null pointer exception because there are missing groups, but simply returns null for the fact that 'key' does not exist in the last group:
 
@@ -163,9 +163,7 @@ So the call below does not result in a null pointer exception because there are 
 	
 Finally, attributes are accessed via the 'attr' method with the key as the parameter. The method returns a TECL instance containing the attributes, and these can be accessed in the same way as values.
 
-	text(x=10 y=20): foobar
-	
-	int x = tecl.attr("text").int("x") # get the attributes of field 'text' and then the value of attribute 'x'
+	tecl.attr("text").int("x") # get the attributes of field 'text' and then the value of attribute 'x'
 	
 
 ### Example ###
