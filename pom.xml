@@ -75,7 +75,7 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-text</artifactId>
-				<version>1.8</version>
+				<version>1.10.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
@@ -114,7 +114,7 @@
 			<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
-				<version>6.5.3</version>
+				<version>8.2.1</version>
 				<executions>
 					<execution>
 						<phase>validate</phase>
@@ -179,7 +179,6 @@
 					</execution>
 				</executions>
 				<configuration>
-					<additionalparam>-Xdoclint:none</additionalparam>
 					<additionalJOption>-Xdoclint:none</additionalJOption>
 				</configuration>
 			</plugin>

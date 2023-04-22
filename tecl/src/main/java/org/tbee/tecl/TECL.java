@@ -373,7 +373,7 @@ public class TECL {
 		context = tecl.getPath() + " -> " + path + ": ";
 		
 		// First split into its parts
-		List<String> nodes = new StringTokenizer(path, "/").getTokenList();
+		List<String> nodes = new ArrayList<>(new StringTokenizer(path, "/").getTokenList());
 		if (logger.isDebugEnabled()) logger.debug(context + "path tokenized: " + nodes);
 		
 		// step over the nodes in the path
@@ -772,6 +772,26 @@ public class TECL {
 	}
 	public Integer integer(String indexOfKey, String indexOfValue, String key, Integer def) {
 		return list(indexOfKey, indexOfValue, key, asList(def), Integer.class).get(0);
+	}
+
+	/** Convenience method to return an Double */
+	public Double dbl(String key) {
+		return dbl(0, key, null);
+	}
+	public Double dbl(String key, Double def) {
+		return dbl(0, key, def);
+	}
+	public Double dbl(int idx, String key) {
+		return dbl(idx, key, null);
+	}
+	public Double dbl(int idx, String key, Double def) {
+		return list(key + "[" + idx + "]", asList(def), Double.class).get(0);
+	}
+	public List<Double> dbls(String key) {
+		return list(key, Collections.emptyList(), Double.class);
+	}
+	public Double dbl(String indexOfKey, String indexOfValue, String key, Double def) {
+		return list(indexOfKey, indexOfValue, key, asList(def), Double.class).get(0);
 	}
 
 	/** Convenience method to return an Boolean */

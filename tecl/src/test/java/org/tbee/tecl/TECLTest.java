@@ -157,6 +157,13 @@ public class TECLTest {
 	}
 
 	@Test
+	public void doubleProperty() {
+		TECL tecl = parse("key : 10.10\n");
+		assertEquals("10.10", tecl.str("key"));
+		assertEquals(10.1, tecl.dbl("key"), 0.00001);
+	}
+
+	@Test
 	public void integerPropertyDefault() {
 		TECL tecl = parse("key : 1 \n");
 		assertEquals(0, tecl.integer("otherKey", 0).intValue());

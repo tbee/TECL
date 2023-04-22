@@ -6,3 +6,4 @@ target/
 *.versionsBackup
 *.releaseBackup
 release.properties
+.idea

@@ -1,1 +1,1 @@
-mvn versions:set
+mvnw versions:set
