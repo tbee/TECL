@@ -434,11 +434,12 @@ public class TECLTest {
 	public void tableInGroup() {
 		TECL tecl = parse(""
 				+ "group { \n "
-				+ "    | id  | type          | \n "
-				+ "    | id1 | string        | \n"
-				+ "    | id2 | int           | \n"				
-				+ "    | id3 | date          | \n"				
-				+ "    | id3 | [aaa,bbb,ccc] | \n"
+				+ "    | id  | type            | \n "
+				+ "    | id1 | string          | \n"
+				+ "    | id2 | int             | \n"
+				+ "    | id3 | date            | \n"
+				+ "    | id3 | [aaa,bbb,ccc]   | \n"
+				+ "    | id4 | \"<xml>text</xml>\" | \n"
 				+ "}\n"
 				);
 		assertEquals("[id1]", tecl.list("/group/id[0]", null, String.class).toString());
@@ -460,6 +461,20 @@ public class TECLTest {
 				);
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
+	}
+
+	@Test
+	public void tableInGroupWithComments() {
+		TECL tecl = parse(""
+				+ "group { \n "
+				+ "    | id  | type   | # comment \n "
+				+ "    | id1 | string | # comment \n"
+				+ "    # comment \n"
+				+ "    | id2 | int    | \n"
+				+ "} \n "
+		);
+		assertEquals("id1", tecl.grp("group").str(0, "id"));
+		assertEquals("int", tecl.grp("group").str(1, "type"));
 	}
 
 	@Test
