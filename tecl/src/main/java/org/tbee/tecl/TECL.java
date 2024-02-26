@@ -128,7 +128,12 @@ public class TECL {
 		this.id = id;
 	}
 	private final String id;
-	
+
+	TECL(String id, TECL parent) {
+		this(id);
+		setParent(parent, 0);
+	}
+
 	public void setParent(TECL parent, int idxInParent) {
 		this.parent = parent;
 		this.idxInParent = idxInParent;
@@ -713,7 +718,7 @@ public class TECL {
 	 */
 	public TECL attr(int idx, String key) {
 		ValueAttibutesPair<String> valueAttibutesPair = properties.get(idx, key, null);
-		return valueAttibutesPair == null ? new TECL("") : valueAttibutesPair.attributes;
+		return valueAttibutesPair == null ? new TECL("", this) : valueAttibutesPair.attributes;
 	}
 	public TECL attr(String key) {
 		return attr(0, key);
@@ -994,7 +999,7 @@ public class TECL {
 
 
 	private List<TECL> notExistingGroup(int idx) {
-		TECL group = new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>");
+		TECL group = new TECL("<group '" + createFullPathToKey(idx, id) + "' does not exist>", this);
 		group.exists = false;
 		return asList(group);
 	}
