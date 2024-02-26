@@ -5,9 +5,13 @@
 	<parent>
 		<groupId>org.tbee.tecl</groupId>
 		<artifactId>tecl-parent</artifactId>
-		<version>1.5.1-SNAPSHOT</version>
+		<version>1.5.1</version>
 	</parent>
 	<artifactId>tecl</artifactId>
+
+	<name>TECL - totally encompassing configuration language</name>
+	<description>A language parser specifically aimed at configuration files, trying to solve the issues found in XML, JSON, YAML, etc.</description>
+	<url>https://bitbucket.org/tbee/tecl</url>
 
 	<dependencies>
 
