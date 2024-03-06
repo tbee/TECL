@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.tbee.tecl</groupId>
 		<artifactId>tecl-parent</artifactId>
-		<version>1.5.2-SNAPSHOT</version>
+		<version>1.6.0</version>
 	</parent>
 	<artifactId>tecl</artifactId>
 
@@ -30,14 +30,16 @@
 
 		<!-- Test -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j2-impl</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<scope>test</scope>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
 		</dependency>
 	</dependencies>
 
