@@ -30,6 +30,8 @@ import java.io.IOException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -85,7 +88,18 @@ public class TECL {
 		buildinConvertFunctions.put(Double.class, (s, d) -> s.isBlank() ? d : Double.valueOf(s));
 		buildinConvertFunctions.put(LocalDate.class, (s, d) -> s.isBlank() ? d : LocalDate.parse(s));
 		buildinConvertFunctions.put(LocalDateTime.class, (s, d) -> s.isBlank() ? d : LocalDateTime.parse(s));
+		buildinConvertFunctions.put(URI.class, (s, d) -> s.isBlank() ? d : toRuntimeException(() -> new URI(s)));
+		buildinConvertFunctions.put(URL.class, (s, d) -> s.isBlank() ? d : toRuntimeException(() -> new URL(s)));
 	}
+
+	static <T> T toRuntimeException(Callable<T> callable) {
+        try {
+            return callable.call();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 	
 	// =====================================
 	// parser
@@ -900,7 +914,47 @@ public class TECL {
 	public LocalDateTime localDateTime(String indexOfKey, String indexOfValue, String key, LocalDateTime def) {
 		return list(indexOfKey, indexOfValue, key, asList(def), LocalDateTime.class).get(0);
 	}
-	
+
+	/** Convenience method to return a URI */
+	public URI uri(String key) {
+		return uri(0, key, null);
+	}
+	public URI uri(String key, URI def) {
+		return uri(0, key, def);
+	}
+	public URI uri(int idx, String key) {
+		return uri(idx, key, null);
+	}
+	public URI uri(int idx, String key, URI def) {
+		return list(key + "[" + idx + "]", asList(def), URI.class).get(0);
+	}
+	public List<URI> uris(String key) {
+		return list(key, Collections.emptyList(), URI.class);
+	}
+	public URI uri(String indexOfKey, String indexOfValue, String key, URI def) {
+		return list(indexOfKey, indexOfValue, key, asList(def), URI.class).get(0);
+	}
+
+	/** Convenience method to return a URL */
+	public URL url(String key) {
+		return url(0, key, null);
+	}
+	public URL url(String key, URL def) {
+		return url(0, key, def);
+	}
+	public URL url(int idx, String key) {
+		return url(idx, key, null);
+	}
+	public URL url(int idx, String key, URL def) {
+		return list(key + "[" + idx + "]", asList(def), URL.class).get(0);
+	}
+	public List<URL> urls(String key) {
+		return list(key, Collections.emptyList(), URL.class);
+	}
+	public URL url(String indexOfKey, String indexOfValue, String key, URL def) {
+		return list(indexOfKey, indexOfValue, key, asList(def), URL.class).get(0);
+	}
+
 	// =====================================
 	// decrypt
 
