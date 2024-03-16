@@ -71,7 +71,6 @@ public class TECLParser {
 
 	public TECLParser() {
 		toplevelTECL = new TECL("");	
-		toplevelTECL.populateConvertFunctions();
 	}
 	
 	// ======================================
@@ -438,7 +437,7 @@ public class TECLParser {
 			}
 			else {
 				// We create a TECL so we can continue parsing the file, but it is not added as a group
-				teclContext = new TECLContext(new TECL("<skipping all contents because of conditions>"));
+				teclContext = new TECLContext(new TECL("<skipping all contents because of conditions>", null));
 			}
 			teclContextStack.push(teclContext);
 		}

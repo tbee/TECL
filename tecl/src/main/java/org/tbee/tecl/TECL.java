@@ -133,19 +133,21 @@ public class TECL {
 			throw new RuntimeException(e);
 		}
 	}
-	
-	
+
 	// =====================================
 	// Constructor
 	
 	public TECL(String id) {
 		this.id = id;
+		populateConvertFunctions();
 	}
 	private final String id;
 
 	TECL(String id, TECL parent) {
 		this(id);
-		setParent(parent, 0);
+		if (parent != null) {
+			setParent(parent, 0);
+		}
 	}
 
 	public void setParent(TECL parent, int idxInParent) {
@@ -1009,14 +1011,14 @@ public class TECL {
 	 * @return
 	 */
 	public TECL addGroup(String id) {
-		TECL tecl = new TECL(id);
+		TECL tecl = new TECL(id, null);
 		int idx = groups.add(id, tecl);
 		tecl.setParent(this, idx);
 		return tecl;
 	}
 	
 	TECL setGroup(int idx, String id) {
-		TECL tecl = new TECL(id);
+		TECL tecl = new TECL(id, null);
 		groups.set(idx, id, tecl, false);
 		tecl.setParent(this, idx);
 		return tecl;
