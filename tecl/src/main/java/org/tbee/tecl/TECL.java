@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -210,7 +211,15 @@ public class TECL {
 	public boolean isEmpty() {
 		return properties.isEmpty() && groups.isEmpty();
 	}
-	
+
+	/**
+	 * Return all the keys
+	 * @return
+	 */
+	public List<String> keys() {
+		return new ArrayList<>(properties.keyTovaluesMap.keySet());
+	}
+
 	// =====================================
 	// get
 	

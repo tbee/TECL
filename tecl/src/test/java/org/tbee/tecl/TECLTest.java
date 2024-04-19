@@ -39,6 +39,7 @@ import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Test;
@@ -86,6 +87,17 @@ public class TECLTest {
 				);
 		assertEquals("value1", tecl.str("key1"));
 		assertEquals("value2", tecl.str("key2"));
+	}
+
+	@Test
+	public void getProperties() {
+		TECL tecl = parse(""
+				+ "key1 : value1\n"
+				+ "key2 : value2\n"
+		);
+		List<String> keys = tecl.keys();
+		keys.sort(Comparator.naturalOrder());
+		assertEquals("[key1, key2]", keys.toString());
 	}
 
 	@Test
@@ -393,7 +405,22 @@ public class TECLTest {
 		assertEquals("value2", tecl.grp(1, "groupId").str("key"));
 		assertEquals(2, tecl.grps("groupId").size());
 	}
-	
+
+
+	@Test
+	public void identicalGroupsKeys() {
+		TECL tecl = parse(""
+				+ "groupId { \n"
+				+ "    key : value1\n"
+				+ "}\n"
+				+ "groupId { \n"
+				+ "    key : value2\n"
+				+ "}\n"
+		);
+		assertEquals("[]", tecl.keys().toString());
+	}
+
+
 	@Test
 	public void nestedGroups() {
 		TECL tecl = parse(""
@@ -428,6 +455,7 @@ public class TECLTest {
 		assertEquals("id1", tecl.str("id"));
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
+		assertEquals("[id, type]", tecl.keys().toString());
 	}
 	
 	@Test
@@ -599,6 +627,7 @@ public class TECLTest {
 				+ "key[sys=A] : value2\n"
 				);
 		assertEquals("value1", tecl.str("key"));
+		assertEquals("[key]", tecl.keys().toString());
 	}
 
 	@Test
