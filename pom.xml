@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.tbee.tecl</groupId>
 	<artifactId>tecl-parent</artifactId>
-	<version>1.7.1</version>
+	<version>1.8.0</version>
 	<packaging>pom</packaging>
 
 	<!-- https://blog.sonatype.com/2010/01/how-to-generate-pgp-signatures-with-maven/ -->
@@ -124,7 +124,7 @@
 			<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
-				<version>9.0.9</version>
+				<version>11.1.1</version>
 				<executions>
 					<execution>
 						<phase>validate</phase>

@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -218,6 +217,26 @@ public class TECL {
 	 */
 	public List<String> keys() {
 		return new ArrayList<>(properties.keyTovaluesMap.keySet());
+	}
+
+	public List<TECL> rows() {
+		int max = 0;
+		for (String key : properties.keyTovaluesMap.keySet()) {
+			int size = properties.keyTovaluesMap.get(key).size();
+			max = Math.max(max, size);
+		}
+
+		List<TECL> tecls = new ArrayList<>();
+		for (int i = 0; i < max; i++) {
+			TECL tecl = new TECL(null);
+			tecl.setParent(this, i);
+			for (String key : properties.keyTovaluesMap.keySet()) {
+				List<ValueAttibutesPair<String>> valueAttibutesPairs = properties.get(key);
+				tecl.properties.keyTovaluesMap.put(key, valueAttibutesPairs.size() <= i || valueAttibutesPairs.get(i) == null ? null : List.of(valueAttibutesPairs.get(i)));
+			}
+			tecls.add(tecl);
+		}
+		return tecls;
 	}
 
 	// =====================================

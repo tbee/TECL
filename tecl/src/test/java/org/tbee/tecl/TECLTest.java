@@ -447,8 +447,8 @@ public class TECLTest {
 				+ "| id1 | string        | \n"
 				+ "| id2 | int           | \n"				
 				+ "| id3 | date          | \n"				
-				+ "| id3 | [aaa,bbb,ccc] | \n"				
-				);
+				+ "| id3 | [aaa,bbb,ccc] | \n"
+		);
 		assertEquals("[id1]", tecl.list("id[0]", null, String.class).toString());
 		assertEquals("[int]", tecl.list("type[1]", null, String.class).toString());
 		assertEquals("[aaa, bbb, ccc]", tecl.list("type[3]", null, String.class).toString());
@@ -456,6 +456,12 @@ public class TECLTest {
 		assertEquals("id1", tecl.str(0, "id"));
 		assertEquals("int", tecl.str(1, "type"));
 		assertEquals("[id, type]", tecl.keys().toString());
+
+		List<TECL> tecls = tecl.rows();
+		assertEquals(4, tecls.size());
+		assertEquals("id1", tecls.get(0).str("id"));
+		assertEquals("int", tecls.get(1).str("type"));
+		// TO FIX: assertEquals("[aaa, bbb, ccc]", tecls.get(3).list("type", null, String.class).toString());
 	}
 	
 	@Test
@@ -476,6 +482,12 @@ public class TECLTest {
 		assertEquals("id1", tecl.str("/group/id"));
 		assertEquals("id1", tecl.str(0, "/group/id"));
 		assertEquals("int", tecl.str(1, "/group/type"));
+
+		List<TECL> tecls = tecl.grp("group").rows();
+		assertEquals(5, tecls.size());
+		assertEquals("id1", tecls.get(0).str("id"));
+		assertEquals("int", tecls.get(1).str("type"));
+		// TO FIX: assertEquals("[aaa, bbb, ccc]", tecls.get(3).list("type", null, String.class).toString());
 	}
 	
 	
